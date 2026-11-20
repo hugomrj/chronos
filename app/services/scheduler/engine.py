@@ -31,6 +31,7 @@ class Asignacion:
     bloque_id: int
     aula_id: int | None
     profesor_id: int | None
+    fijado: bool = False
 
 
 @dataclass
@@ -59,11 +60,13 @@ def _sanitizar(texto):
     return ''.join(c if c.isalnum() else '_' for c in str(texto))
 
 
-def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30):
+def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fijados=None):
     """Genera un horario para las secciones recibidas (de un mismo turno)."""
     inicio = _time.perf_counter()
     advertencias = []
     detalle = []
+
+    fijados = fijados or []
 
     if not secciones:
         return ResultadoGeneracion(
@@ -95,6 +98,48 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30):
         )
 
     # ------------------------------------------------------------------
+    # Celdas fijadas: se fuerzan en el modelo
+    # ------------------------------------------------------------------
+    items_por_sm = {item.sm.id: item for item in items}
+    fijos_por_sm = defaultdict(list)
+    profesor_forzado = {}
+    for fijo in fijados:
+        sm_id = fijo['seccion_materia_id']
+        item = items_por_sm.get(sm_id)
+        if item is None:
+            detalle.append('Una celda fijada pertenece a una sección que ya no está en el turno.')
+            continue
+        if fijo['bloque_id'] not in item.bloques_ids:
+            detalle.append(
+                f'Una celda fijada de {item.sm.materia.nombre} usa un bloque '
+                f'que no pertenece a su plantilla.'
+            )
+            continue
+        aula_id = fijo.get('aula_id')
+        if aula_id and aula_id not in {a.id for a in item.aulas}:
+            detalle.append(
+                f'Una celda fijada de {item.sm.materia.nombre} usa un aula '
+                f'que ya no está disponible para esa materia.'
+            )
+            continue
+        profesor_id = fijo.get('profesor_id')
+        if profesor_id:
+            prof = next((p for p in profesores if p.id == profesor_id), None)
+            if not prof or not prof.activo:
+                detalle.append(
+                    f'Una celda fijada de {item.sm.materia.nombre} tiene un profesor inactivo.'
+                )
+                continue
+            profesor_forzado[sm_id] = prof
+        fijos_por_sm[sm_id].append(fijo)
+
+    if detalle:
+        return ResultadoGeneracion(
+            False, 'validacion', 'Las celdas fijadas no son compatibles con los datos actuales.',
+            detalle=detalle,
+        )
+
+    # ------------------------------------------------------------------
     # Profesores: fijados o asignados por heurística
     # ------------------------------------------------------------------
     profesores_activos = [p for p in profesores if p.activo]
@@ -111,7 +156,16 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30):
             )
             continue
 
-        if sm.profesor_id:
+        if sm.id in profesor_forzado:
+            prof = profesor_forzado[sm.id]
+            item.profesor = prof
+            disponibles = sum(1 for b in item.bloques if profesor_disponible(prof, b))
+            if disponibles == 0:
+                sin_profesor.append(
+                    f'{prof.nombre} no tiene disponibilidad para '
+                    f'{sm.materia.nombre} en {item.seccion.grado.nombre} {item.seccion.nombre}.'
+                )
+        elif sm.profesor_id:
             prof = next((p for p in profesores if p.id == sm.profesor_id), None)
             if prof is None or not prof.activo:
                 sin_profesor.append(
@@ -338,6 +392,21 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30):
                 lpSum(aula_vars) == x[(item.sm.id, b.id)],
                 name=f"aula_{item.sm.id}_{b.id}",
             )
+
+    # Celdas fijadas: x = 1 y, si tiene aula, y = 1
+    for sm_id, fijos in fijos_por_sm.items():
+        for fijo in fijos:
+            b_id = fijo['bloque_id']
+            prob.addConstraint(
+                x[(sm_id, b_id)] == 1,
+                name=f"fijo_x_{sm_id}_{b_id}",
+            )
+            aula_id = fijo.get('aula_id')
+            if aula_id:
+                prob.addConstraint(
+                    y[(sm_id, b_id, aula_id)] == 1,
+                    name=f"fijo_y_{sm_id}_{b_id}_{aula_id}",
+                )
 
     # Choques de aula
     aulas_usadas = {a.id: a for item in items for a in item.aulas}
@@ -571,6 +640,7 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30):
                 bloque_id=b.id,
                 aula_id=aula.id if aula else None,
                 profesor_id=item.profesor.id,
+                fijado=(b.id in {(f['bloque_id']) for f in fijos_por_sm.get(item.sm.id, [])}),
             ))
 
     estadisticas['celdas'] = len(asignaciones)

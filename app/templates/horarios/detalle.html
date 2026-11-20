@@ -1,5 +1,5 @@
 {% extends 'layout/base.html' %}
-{% from 'academic/_partials.html' import icon_eliminar, empty_state %}
+{% from 'academic/_partials.html' import form_errors, icon_eliminar, empty_state %}
 {% block title %}{{ version.nombre or 'Horario' }}{% endblock %}
 
 {% block content %}
@@ -12,11 +12,13 @@
     <h1>{{ version.nombre or ('Versión ' ~ version.id) }}</h1>
     <p>
       {{ version.anio_lectivo.nombre }} · {{ version.turno.nombre }}
+      · {{ total_asignadas }}/{{ total_plan }} h
       · Creada el {{ version.creado_en.strftime('%d/%m/%Y %H:%M') }}
     </p>
     {% if version.notas %}<p class="hint">{{ version.notas }}</p>{% endif %}
   </div>
-  <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+
+  <div class="version-actions">
     {% if version.estado == 'publicado' %}
       <span class="status ok">Publicado</span>
     {% elif version.estado == 'archivado' %}
@@ -24,101 +26,275 @@
     {% else %}
       <span class="status" style="color: var(--warn)">Borrador</span>
     {% endif %}
-    <button type="button" class="btn btn-danger" data-del-url="{{ url_for('horario_eliminar', version_id=version.id) }}"
-            data-del-name="{{ version.nombre or ('Versión ' ~ version.id) }}">
-      Eliminar versión
-    </button>
+
+    {% if version.estado == 'borrador' %}
+    <form method="post" action="{{ url_for('horario_publicar', version_id=version.id) }}">
+      <button class="btn btn-primary btn-sm" type="submit">Publicar</button>
+    </form>
+    {% elif version.estado == 'publicado' %}
+    <form method="post" action="{{ url_for('horario_archivar', version_id=version.id) }}">
+      <button class="btn btn-ghost btn-sm" type="submit">Archivar</button>
+    </form>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('horario_duplicar', version_id=version.id) }}">
+      <button class="btn btn-ghost btn-sm" type="submit">Duplicar</button>
+    </form>
+
+    <form method="post" action="{{ url_for('horario_regenerar', version_id=version.id) }}">
+      <button class="btn btn-ghost btn-sm" type="submit" data-tip="Conserva las celdas fijadas">Regenerar</button>
+    </form>
+
+    <button class="btn btn-ghost btn-sm" type="button" onclick="window.print()">Imprimir</button>
+
+    {% if version.estado != 'publicado' %}
+    <button type="button" class="btn btn-danger btn-sm"
+            data-del-url="{{ url_for('horario_eliminar', version_id=version.id) }}"
+            data-del-name="{{ version.nombre or ('Versión ' ~ version.id) }}">Eliminar</button>
+    {% endif %}
   </div>
 </div>
 
-<div class="dash-grid">
-  <article class="dash-card glass metric dc-4">
-    <div class="metric-header">
-      <div class="ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      </div>
-      <span class="lbl">Horas del plan</span>
-    </div>
-    <div class="val">{{ total_plan }}</div>
-    <div class="metric-foot">Horas semanales a cubrir</div>
-  </article>
-
-  <article class="dash-card glass metric dc-4">
-    <div class="metric-header">
-      <div class="ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8 14h3M8 18h3M14 14h2M14 18h2"/></svg>
-      </div>
-      <span class="lbl">Bloques asignados</span>
-    </div>
-    <div class="val">{{ total_asignadas }}</div>
-    <div class="metric-foot">Celdas guardadas en esta versión</div>
-  </article>
-
-  <article class="dash-card glass metric dc-4">
-    <div class="metric-header">
-      <div class="ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-      </div>
-      <span class="lbl">Cobertura</span>
-    </div>
-    <div class="val">{{ ((total_asignadas / total_plan * 100)|round|int) if total_plan else 0 }}%</div>
-    <div class="metric-foot">Plan cubierto por el horario</div>
-  </article>
-</div>
-
-{% if total_asignadas < total_plan %}
-<div class="plan-warning">
+{% if resultado and not resultado.ok %}
+<div class="gen-error">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
   <div>
-    Faltan asignar {{ total_plan - total_asignadas }} horas. Revisá las secciones marcadas como incompletas.
+    <b>No se pudo regenerar.</b> {{ resultado.mensaje }}
+    {% if resultado.detalle %}
+    <ul>{% for linea in resultado.detalle %}<li>{{ linea }}</li>{% endfor %}</ul>
+    {% endif %}
   </div>
 </div>
 {% endif %}
 
-{% for r in resumen %}
-<section class="panel glass" style="margin-bottom: 1rem;">
+{% if resultado and resultado.advertencias %}
+<div class="plan-warning">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+  <div>{% for a in resultado.advertencias %}<div>{{ a }}</div>{% endfor %}</div>
+</div>
+{% endif %}
+
+{% if not completa %}
+<div class="plan-warning">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+  <div>
+    Faltan asignar {{ total_plan - total_asignadas }} horas.
+    Completá la grilla o regenerá el horario antes de publicarlo.
+  </div>
+</div>
+{% endif %}
+
+<div class="tabs" style="margin-bottom: 0.75rem; width: fit-content;">
+  <a class="tab {{ 'on' if vista != 'profesor' }}"
+     href="{{ url_for('horario_detalle', version_id=version.id, seccion_id=seleccionada.id if seleccionada else None) }}">Por sección</a>
+  <a class="tab {{ 'on' if vista == 'profesor' }}"
+     href="{{ url_for('horario_detalle', version_id=version.id, vista='profesor') }}">Por profesor</a>
+</div>
+
+{% if vista == 'profesor' %}
+<section class="panel glass">
   <div class="panel-head">
-    <h2>{{ r.seccion.grado.nombre }} · {{ r.seccion.nombre }}</h2>
-    <div style="display: flex; align-items: center; gap: 0.6rem;">
-      <span class="hint">{{ r.asignadas }} / {{ r.plan }} h</span>
-      {% if r.completo %}
-        <span class="status ok">Completo</span>
-      {% else %}
-        <span class="status" style="color: var(--warn)">Incompleto</span>
-      {% endif %}
-    </div>
+    <h2>Horario por profesor</h2>
+    {% if profesores %}
+    <form method="get" action="{{ url_for('horario_detalle', version_id=version.id) }}"
+          style="display: flex; gap: 0.5rem; align-items: center;">
+      <input type="hidden" name="vista" value="profesor">
+      <select class="input vanilla-select" name="profesor_id" style="min-width: 14rem;">
+        {% for p in profesores %}
+        <option value="{{ p.id }}" {{ 'selected' if profesor_sel and p.id == profesor_sel.id }}>{{ p.nombre }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-ghost btn-sm" type="submit">Ver</button>
+    </form>
+    {% endif %}
   </div>
 
-  {% if por_seccion[r.seccion.id] %}
+  {% if profesor_sel and celdas_profesor %}
   <table>
     <thead>
       <tr>
         <th class="c-state">Día</th>
         <th class="c-state">Hora</th>
+        <th>Sección</th>
         <th>Materia</th>
-        <th class="c-state">Profesor</th>
         <th class="c-state">Aula</th>
+        <th class="c-state">Fijada</th>
       </tr>
     </thead>
     <tbody>
-      {% for c in por_seccion[r.seccion.id] %}
+      {% for c in celdas_profesor %}
       <tr>
-        <td class="c-state">{{ dias[c.dia_semana] }}</td>
+        <td class="c-state">{{ dias_nombres[c.dia_semana] }}</td>
         <td class="c-state">{{ c.bloque.hora_inicio.strftime('%H:%M') }}–{{ c.bloque.hora_fin.strftime('%H:%M') }}</td>
+        <td>{{ c.seccion_materia.seccion.grado.nombre }} · {{ c.seccion_materia.seccion.nombre }}</td>
         <td><b>{{ c.seccion_materia.materia.nombre }}</b></td>
-        <td class="c-state">{{ c.profesor.nombre if c.profesor else '—' }}</td>
         <td class="c-state">{{ c.aula.nombre if c.aula else '—' }}</td>
+        <td class="c-state">{{ 'Sí' if c.fijado else '—' }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
   {% else %}
-  {{ empty_state('Sin bloques asignados', 'Esta sección no tiene celdas en la versión.') }}
+  {{ empty_state('Sin clases para este profesor', 'Elegí otro profesor o generá el horario nuevamente.') }}
   {% endif %}
 </section>
-{% endfor %}
 
-<div class="hint" style="margin-top: 1rem;">
-  La grilla visual, la edición manual y la publicación llegan en la próxima fase.
+{% else %}
+{% if secciones|length > 1 %}
+<div class="tabs" style="margin-bottom: 0.75rem;">
+  {% for s in secciones %}
+  <a class="tab {{ 'on' if seleccionada and s.id == seleccionada.id }}"
+     href="{{ url_for('horario_detalle', version_id=version.id, seccion_id=s.id) }}">
+    {{ s.grado.nombre }} · {{ s.nombre }}
+  </a>
+  {% endfor %}
 </div>
+{% endif %}
+
+{% if seleccionada %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ seleccionada.grado.nombre }} · {{ seleccionada.nombre }}</h2>
+    <span class="hint">Hacé clic en el lápiz para editar una celda o en “+” para agregar una clase.</span>
+  </div>
+
+  <div class="timetable-wrap">
+    <table class="timetable">
+      <thead>
+        <tr>
+          <th>Hora</th>
+          {% for d in dias %}
+          <th>{{ dias_nombres[d] }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for fila in filas %}
+        <tr class="{{ 'tt-break-row' if fila.tipo == 'receso' }}">
+          <th>
+            <b>{{ fila.inicio.strftime('%H:%M') }}</b>
+            <span>{{ fila.fin.strftime('%H:%M') }}</span>
+          </th>
+          {% for d in dias %}
+          {% set bloque = fila.por_dia.get(d) %}
+          <td>
+            {% if bloque %}
+              {% if bloque.tipo == 'receso' %}
+                <div class="tt-recess">Receso</div>
+              {% else %}
+                {% set celda = celdas_bloque.get(bloque.id) %}
+                {% if celda %}
+                  <div class="tt-cell" style="--subj: {{ (celda.seccion_materia.materia.id * 53) % 360 }};">
+                    <div class="tt-subject">{{ celda.seccion_materia.materia.nombre }}</div>
+                    <div class="tt-meta">{{ celda.profesor.nombre if celda.profesor else 'Sin profesor' }}</div>
+                    <div class="tt-meta">{{ celda.aula.nombre if celda.aula else 'Sin aula' }}</div>
+                    <div class="tt-cell-actions">
+                      {% if celda.fijado %}<span class="tt-fixed">Fijada</span>{% endif %}
+                      <a href="{{ url_for('horario_detalle', version_id=version.id, seccion_id=seleccionada.id, celda=celda.id) }}"
+                         class="tt-edit" data-tip="Editar celda">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                      </a>
+                    </div>
+                  </div>
+                {% else %}
+                  <a class="tt-add"
+                     href="{{ url_for('horario_detalle', version_id=version.id, seccion_id=seleccionada.id, bloque_id=bloque.id, nuevo=1) }}"
+                     data-tip="Agregar clase">+</a>
+                {% endif %}
+              {% endif %}
+            {% else %}
+              <span class="tt-empty">—</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel-foot">
+    <span>{{ total_asignadas }} de {{ total_plan }} horas asignadas en la versión.</span>
+    <span>{{ seleccionada.plantilla.nombre }}</span>
+  </div>
+</section>
+
+{% if nuevo or edit_celda or form %}
+{% set v_sm = (form.get('seccion_materia_id') or '') if form else (edit_celda.seccion_materia_id if edit_celda else '') %}
+{% set v_bloque = (form.get('bloque_id') or '') if form else ((edit_celda.bloque_id if edit_celda else bloque_id) or '') %}
+{% set v_aula = (form.get('aula_id') or '') if form else (edit_celda.aula_id if edit_celda and edit_celda.aula_id else '') %}
+{% set v_prof = (form.get('profesor_id') or '') if form else (edit_celda.profesor_id if edit_celda and edit_celda.profesor_id else '') %}
+{% set v_fijado = form.get('fijado') if form else (edit_celda.fijado if edit_celda else false) %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar celda' if edit_celda else 'Agregar clase' }}</h2>
+    <a href="{{ url_for('horario_detalle', version_id=version.id, seccion_id=seleccionada.id) }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('celda_guardar', version_id=version.id) }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit_celda %}<input type="hidden" name="celda_id" value="{{ edit_celda.id }}">{% endif %}
+
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="seccion_materia_id">Materia</label>
+        <select class="input vanilla-select" id="seccion_materia_id" name="seccion_materia_id" required>
+          <option value="">Seleccioná una materia</option>
+          {% for sm in seleccionada.materias %}
+          <option value="{{ sm.id }}" {{ 'selected' if (v_sm|string) == (sm.id|string) }}>{{ sm.materia.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-2">
+        <label for="bloque_id">Bloque</label>
+        <select class="input vanilla-select" id="bloque_id" name="bloque_id" required>
+          <option value="">Seleccioná un bloque</option>
+          {% for b in bloques_form %}
+          <option value="{{ b.id }}" {{ 'selected' if (v_bloque|string) == (b.id|string) }}>
+            {{ dias_nombres[b.dia_semana] }} · {{ b.hora_inicio.strftime('%H:%M') }}–{{ b.hora_fin.strftime('%H:%M') }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-1">
+        <label for="aula_id">Aula</label>
+        <select class="input vanilla-select" id="aula_id" name="aula_id">
+          <option value="">Sin aula</option>
+          {% for a in aulas %}
+          <option value="{{ a.id }}" {{ 'selected' if (v_aula|string) == (a.id|string) }}>{{ a.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-1">
+        <label for="profesor_id">Profesor</label>
+        <select class="input vanilla-select" id="profesor_id" name="profesor_id">
+          <option value="">Sin profesor</option>
+          {% for p in profesores %}
+          <option value="{{ p.id }}" {{ 'selected' if (v_prof|string) == (p.id|string) }}>{{ p.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-full">
+        <label class="switch-row">
+          <input type="checkbox" class="switch" name="fijado" {{ 'checked' if v_fijado }}>
+          <span class="switch-state"></span>
+        </label>
+        <div class="hint">Una celda fijada se conserva al regenerar el horario.</div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit_celda else 'Agregar clase' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('horario_detalle', version_id=version.id, seccion_id=seleccionada.id) }}">Cancelar</a>
+      {% if edit_celda %}
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-danger"
+              data-del-url="{{ url_for('celda_eliminar', version_id=version.id, celda_id=edit_celda.id) }}"
+              data-del-name="{{ edit_celda.seccion_materia.materia.nombre }} {{ dias_nombres[edit_celda.dia_semana] }}">Eliminar celda</button>
+      {% endif %}
+    </div>
+  </form>
+</section>
+{% endif %}
+{% endif %}
+{% endif %}
 {% endblock %}

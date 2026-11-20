@@ -33,3 +33,8 @@ Thumbs.db
 .ruff_cache/
 .coverage
 htmlcov/
+
+
+# Backups de base de datos
+backups/
+*.sql.bak

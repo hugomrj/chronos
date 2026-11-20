@@ -103,7 +103,7 @@
         <th>Estado</th>
         <th class="c-state">Celdas</th>
         <th class="c-state">Creada</th>
-        <th style="width: 140px; text-align: right;">Acciones</th>
+        <th style="width: 270px; text-align: right;">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -130,9 +130,23 @@
         <td>
           <div class="actions-cell">
             <a href="{{ url_for('horario_detalle', version_id=v.id) }}" class="btn btn-ghost btn-sm">Ver</a>
+            {% if v.estado == 'borrador' %}
+            <form method="post" action="{{ url_for('horario_publicar', version_id=v.id) }}">
+              <button class="btn btn-primary btn-sm" type="submit">Publicar</button>
+            </form>
+            {% elif v.estado == 'publicado' %}
+            <form method="post" action="{{ url_for('horario_archivar', version_id=v.id) }}">
+              <button class="btn btn-ghost btn-sm" type="submit">Archivar</button>
+            </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('horario_duplicar', version_id=v.id) }}">
+              <button class="btn btn-ghost btn-sm" type="submit">Duplicar</button>
+            </form>
+            {% if v.estado != 'publicado' %}
             <button type="button" class="icon-btn danger" data-tip="Eliminar"
                     data-del-url="{{ url_for('horario_eliminar', version_id=v.id) }}"
                     data-del-name="{{ v.nombre or ('Versión ' ~ v.id) }}">{{ icon_eliminar() }}</button>
+            {% endif %}
           </div>
         </td>
       </tr>
