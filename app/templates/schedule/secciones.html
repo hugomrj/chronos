@@ -1,0 +1,141 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
+{% block title %}Secciones{% endblock %}
+
+{% block content %}
+{% if anio %}
+{{ page_head('Secciones', 'Cursos concretos del año lectivo: grado + turno + nombre (A, B, Única).',
+             url_for('secciones', nuevo=1), 'Nueva sección') }}
+{% else %}
+<div class="page-head">
+  <div>
+    <h1>Secciones</h1>
+    <p>Necesitás un año lectivo activo para crear secciones.</p>
+  </div>
+  <a href="{{ url_for('anios') }}" class="btn btn-primary">Configurar año lectivo</a>
+</div>
+{% endif %}
+
+{% if anio and (edit or form or request.args.get('nuevo')) %}
+{% set v_grado = (form.get('grado_id') or '') if form else (edit.grado_id if edit else '') %}
+{% set v_turno = (form.get('turno_id') or '') if form else (edit.turno_id if edit else '') %}
+{% set v_plantilla = (form.get('plantilla_id') or '') if form else (edit.plantilla_id if edit else '') %}
+{% set v_aula = (form.get('aula_base_id') or '') if form else (edit.aula_base_id if edit else '') %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar sección' if edit else 'Nueva sección' }} · {{ anio.nombre }}</h2>
+    <a href="{{ url_for('secciones') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('seccion_guardar') }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-1">
+        <label for="grado_id">Grado</label>
+        <select class="input vanilla-select" id="grado_id" name="grado_id" required>
+          <option value="">Seleccioná un grado</option>
+          {% for g in grados %}
+          <option value="{{ g.id }}" {{ 'selected' if (v_grado|string) == (g.id|string) }}>{{ g.nivel.nombre }} · {{ g.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-1">
+        <label for="turno_id">Turno</label>
+        <select class="input vanilla-select" id="turno_id" name="turno_id" required>
+          <option value="">Seleccioná un turno</option>
+          {% for t in turnos %}
+          <option value="{{ t.id }}" {{ 'selected' if (v_turno|string) == (t.id|string) }}>{{ t.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-1">
+        <label for="nombre">Nombre / división</label>
+        <input class="input" id="nombre" name="nombre" type="text"
+               value="{{ form.get('nombre') or (edit.nombre if edit else 'A') }}"
+               placeholder="Ej. A" required>
+      </div>
+      <div class="field fw-1">
+        <label for="aula_base_id">Aula base <span class="opt">(opcional)</span></label>
+        <select class="input vanilla-select" id="aula_base_id" name="aula_base_id">
+          <option value="">Sin aula fija</option>
+          {% for a in aulas %}
+          <option value="{{ a.id }}" {{ 'selected' if (v_aula|string) == (a.id|string) }}>{{ a.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-2">
+        <label for="plantilla_id">Plantilla de horario</label>
+        <select class="input vanilla-select" id="plantilla_id" name="plantilla_id" required>
+          <option value="">Seleccioná una plantilla</option>
+          {% for p in plantillas %}
+          <option value="{{ p.id }}" {{ 'selected' if (v_plantilla|string) == (p.id|string) }}>
+            {{ p.nombre }} ({{ p.turno.nombre }})
+          </option>
+          {% endfor %}
+        </select>
+        <div class="hint">La plantilla debe pertenecer al turno elegido.</div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear sección' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('secciones') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Secciones {{ anio.nombre if anio else '' }}</h2>
+    <span class="hint">{{ items|length }} sección(es)</span>
+  </div>
+
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Sección</th>
+        <th class="c-state">Turno</th>
+        <th class="c-state">Aula base</th>
+        <th class="c-state">Plantilla</th>
+        <th>Plan</th>
+        <th style="width: 175px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in items %}
+      {% set total = s.materias|sum(attribute='horas_semanales') %}
+      {% set disp = s.plantilla.bloques|selectattr('tipo', 'equalto', 'clase')|list|length %}
+      <tr>
+        <td>
+          <b>{{ s.grado.nombre }} · {{ s.nombre }}</b>
+          <div class="hint" style="margin-top: 0.1rem;">{{ s.grado.nivel.nombre }}</div>
+        </td>
+        <td class="c-state">{{ s.turno.nombre }}</td>
+        <td class="c-state">{{ s.aula_base.nombre if s.aula_base else '—' }}</td>
+        <td class="c-state">{{ s.plantilla.nombre }}</td>
+        <td>
+          {% if total > disp %}
+            <span class="status" style="color: var(--warn)">{{ total }}/{{ disp }} h</span>
+          {% else %}
+            <span class="status ok">{{ total }}/{{ disp }} h</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="actions-cell">
+            <a href="{{ url_for('seccion_plan', seccion_id=s.id) }}" class="btn btn-ghost btn-sm">Plan</a>
+            <a href="{{ url_for('secciones', editar=s.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('seccion_eliminar', seccion_id=s.id) }}"
+                    data-del-name="{{ s.grado.nombre }} {{ s.nombre }}">{{ icon_eliminar() }}</button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay secciones', 'Creá la primera sección: elegí grado, turno y plantilla. El plan del grado se copia automáticamente.') }}
+  {% endif %}
+</section>
+{% endblock %}

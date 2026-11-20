@@ -12,8 +12,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.extensions import db
 from app.factory import create_app
 from app.models import (
-    AnioLectivo, Aula, Colegio, Grado, Materia, Nivel, Profesor,
-    ProfesorDisponibilidad, Turno,
+    AnioLectivo, Aula, Bloque, Colegio, Grado, GradoMateria, Materia, Nivel,
+    PlantillaHorario, Profesor, ProfesorDisponibilidad, Seccion,
+    SeccionMateria, Turno,
 )
 
 COLEGIO_NOMBRE = 'Colegio Demo'
@@ -43,6 +44,59 @@ MATERIAS = [
     ('Inglés', None),
     ('Educación Física', 'gimnasio'),
     ('Informática', 'informatica'),
+]
+
+BLOQUES_MANANA = [
+    ('clase', '07:00', '07:45'),
+    ('clase', '07:45', '08:30'),
+    ('clase', '08:30', '09:15'),
+    ('receso', '09:15', '09:45'),
+    ('clase', '09:45', '10:30'),
+    ('clase', '10:30', '11:15'),
+]
+
+BLOQUES_TARDE = [
+    ('clase', '13:00', '13:45'),
+    ('clase', '13:45', '14:30'),
+    ('clase', '14:30', '15:15'),
+    ('receso', '15:15', '15:45'),
+    ('clase', '15:45', '16:30'),
+    ('clase', '16:30', '17:15'),
+]
+
+PLANTILLAS = [
+    ('Mañana Primaria', 'Mañana', BLOQUES_MANANA),
+    ('Tarde Secundaria', 'Tarde', BLOQUES_TARDE),
+]
+
+PLANES_GRADO = {
+    '1er grado': [
+        ('Matemática', 5), ('Lengua y Literatura', 5), ('Ciencias Naturales', 4),
+        ('Ciencias Sociales', 3), ('Inglés', 3), ('Educación Física', 2),
+        ('Informática', 2),
+    ],
+    '2do grado': [
+        ('Matemática', 5), ('Lengua y Literatura', 5), ('Ciencias Naturales', 4),
+        ('Ciencias Sociales', 3), ('Inglés', 3), ('Educación Física', 2),
+        ('Informática', 2),
+    ],
+    '1er curso': [
+        ('Matemática', 5), ('Lengua y Literatura', 4), ('Ciencias Naturales', 4),
+        ('Ciencias Sociales', 4), ('Inglés', 3), ('Educación Física', 2),
+        ('Informática', 2),
+    ],
+    '2do curso': [
+        ('Matemática', 5), ('Lengua y Literatura', 4), ('Ciencias Naturales', 4),
+        ('Ciencias Sociales', 4), ('Inglés', 3), ('Educación Física', 2),
+        ('Informática', 2),
+    ],
+}
+
+SECCIONES = [
+    ('1er grado', 'A', 'Mañana', 'Mañana Primaria', 'Aula 1'),
+    ('2do grado', 'A', 'Mañana', 'Mañana Primaria', 'Aula 3'),
+    ('1er curso', 'A', 'Tarde', 'Tarde Secundaria', 'Aula 2'),
+    ('2do curso', 'A', 'Tarde', 'Tarde Secundaria', 'Aula 3'),
 ]
 
 PROFESORES = [
@@ -161,6 +215,79 @@ def seed():
                     tipo='disponible',
                 ))
 
+    turnos_por_nombre = {
+        t.nombre: t for t in Turno.query.filter_by(colegio_id=colegio.id).all()
+    }
+    for nombre, turno_nombre, bloques in PLANTILLAS:
+        plantilla, _ = get_or_create(
+            PlantillaHorario, colegio_id=colegio.id, nombre=nombre,
+            defaults={'turno_id': turnos_por_nombre[turno_nombre].id},
+        )
+        if not plantilla.bloques:
+            for dia in range(1, 6):
+                for numero, (tipo, desde, hasta) in enumerate(bloques, start=1):
+                    plantilla.bloques.append(Bloque(
+                        dia_semana=dia,
+                        numero=numero,
+                        hora_inicio=time.fromisoformat(desde),
+                        hora_fin=time.fromisoformat(hasta),
+                        tipo=tipo,
+                    ))
+
+    for grado_nombre, plan in PLANES_GRADO.items():
+        grado = Grado.query.filter_by(nombre=grado_nombre).first()
+        if not grado:
+            continue
+        for materia_nombre, horas in plan:
+            materia = materias_por_nombre.get(materia_nombre)
+            if not materia:
+                continue
+            get_or_create(
+                GradoMateria, grado_id=grado.id, materia_id=materia.id,
+                defaults={'horas_semanales': horas, 'max_bloques_por_dia': 1,
+                          'requiere_bloque_doble': False},
+            )
+
+    plantillas_por_nombre = {
+        p.nombre: p for p in PlantillaHorario.query.filter_by(colegio_id=colegio.id).all()
+    }
+    aulas_por_nombre = {
+        a.nombre: a for a in Aula.query.filter_by(colegio_id=colegio.id).all()
+    }
+    for grado_nombre, seccion_nombre, turno_nombre, plantilla_nombre, aula_nombre in SECCIONES:
+        grado = Grado.query.filter_by(nombre=grado_nombre).first()
+        turno = turnos_por_nombre.get(turno_nombre)
+        plantilla = plantillas_por_nombre.get(plantilla_nombre)
+        aula = aulas_por_nombre.get(aula_nombre)
+        if not (grado and turno and plantilla):
+            continue
+
+        seccion = Seccion.query.filter_by(
+            anio_lectivo_id=anio.id, grado_id=grado.id,
+            turno_id=turno.id, nombre=seccion_nombre,
+        ).first()
+        if not seccion:
+            seccion = Seccion(
+                anio_lectivo_id=anio.id, grado_id=grado.id, turno_id=turno.id,
+                nombre=seccion_nombre, aula_base_id=aula.id if aula else None,
+                plantilla_id=plantilla.id,
+            )
+            db.session.add(seccion)
+            db.session.flush()
+
+        for gm in grado.grado_materias:
+            existe = SeccionMateria.query.filter_by(
+                seccion_id=seccion.id, materia_id=gm.materia_id
+            ).first()
+            if not existe:
+                db.session.add(SeccionMateria(
+                    seccion_id=seccion.id,
+                    materia_id=gm.materia_id,
+                    horas_semanales=gm.horas_semanales,
+                    max_bloques_por_dia=gm.max_bloques_por_dia,
+                    requiere_bloque_doble=gm.requiere_bloque_doble,
+                ))
+
     db.session.commit()
 
     print('Estructura lista:')
@@ -172,6 +299,9 @@ def seed():
     print(f'  Aulas: {Aula.query.filter_by(colegio_id=colegio.id).count()}')
     print(f'  Materias: {Materia.query.filter_by(colegio_id=colegio.id).count()}')
     print(f'  Profesores: {Profesor.query.filter_by(colegio_id=colegio.id).count()}')
+    print(f'  Plantillas: {PlantillaHorario.query.filter_by(colegio_id=colegio.id).count()}')
+    print(f'  Bloques: {Bloque.query.count()}')
+    print(f'  Secciones: {Seccion.query.filter_by(anio_lectivo_id=anio.id).count()}')
 
 
 if __name__ == '__main__':

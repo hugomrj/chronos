@@ -1,5 +1,5 @@
 {% extends 'layout/base.html' %}
-{% from 'academic/_partials.html' import page_head, form_errors, row_actions, empty_state %}
+{% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
 {% block title %}Grados{% endblock %}
 
 {% block content %}
@@ -68,7 +68,15 @@
         <td><b>{{ g.nombre }}</b></td>
         <td class="c-state">{{ g.nivel.nombre }}</td>
         <td class="c-state">{{ g.orden }}</td>
-        <td>{{ row_actions(url_for('grados', editar=g.id), url_for('grado_eliminar', item_id=g.id), g.nombre) }}</td>
+        <td>
+          <div class="actions-cell">
+            <a href="{{ url_for('grado_plan', grado_id=g.id) }}" class="btn btn-ghost btn-sm">Plan</a>
+            <a href="{{ url_for('grados', editar=g.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('grado_eliminar', item_id=g.id) }}"
+                    data-del-name="{{ g.nombre }}">{{ icon_eliminar() }}</button>
+          </div>
+        </td>
       </tr>
       {% endfor %}
     </tbody>

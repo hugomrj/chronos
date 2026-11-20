@@ -21,6 +21,10 @@ def register_routes(app):
     from app.routes.teachers import register_teachers_routes
     register_teachers_routes(app)
 
+    # Plantillas, secciones y planes
+    from app.routes.schedule import register_schedule_routes
+    register_schedule_routes(app)
+
     @app.route('/')
     def index():
         return redirect(url_for('dashboard'))

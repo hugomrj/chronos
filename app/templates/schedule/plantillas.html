@@ -1,0 +1,94 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
+{% block title %}Plantillas de horario{% endblock %}
+
+{% block content %}
+{{ page_head('Plantillas de horario', 'Estructura de bloques por turno: horas de clase y recesos de cada día.',
+             url_for('plantillas', nuevo=1), 'Nueva plantilla') }}
+
+{% if edit or form or request.args.get('nuevo') %}
+{% set v_turno = (form.get('turno_id') or '') if form else (edit.turno_id if edit else '') %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar plantilla' if edit else 'Nueva plantilla' }}</h2>
+    <a href="{{ url_for('plantillas') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('plantilla_guardar') }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="nombre">Nombre</label>
+        <input class="input" id="nombre" name="nombre" type="text"
+               value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
+               placeholder="Ej. Mañana Primaria" required autofocus>
+      </div>
+      <div class="field fw-2">
+        <label for="turno_id">Turno</label>
+        <select class="input vanilla-select" id="turno_id" name="turno_id" required>
+          <option value="">Seleccioná un turno</option>
+          {% for t in turnos %}
+          <option value="{{ t.id }}" {{ 'selected' if (v_turno|string) == (t.id|string) }}>{{ t.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear plantilla' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('plantillas') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Listado</h2>
+    <span class="hint">{{ items|length }} plantilla(s)</span>
+  </div>
+
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Plantilla</th>
+        <th class="c-state">Turno</th>
+        <th class="c-state">Bloques</th>
+        <th class="c-state">Secciones</th>
+        <th style="width: 140px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in items %}
+      <tr>
+        <td>
+          <a href="{{ url_for('plantilla_detalle', plantilla_id=p.id) }}" style="color: var(--text); font-weight: 700;">
+            {{ p.nombre }}
+          </a>
+        </td>
+        <td class="c-state">{{ p.turno.nombre }}</td>
+        <td class="c-state">
+          {{ p.bloques|selectattr('tipo', 'equalto', 'clase')|list|length }} clase(s)
+          {% if p.bloques|selectattr('tipo', 'equalto', 'receso')|list|length %}
+          · {{ p.bloques|selectattr('tipo', 'equalto', 'receso')|list|length }} receso(s)
+          {% endif %}
+        </td>
+        <td class="c-state">{{ p.secciones|length }}</td>
+        <td>
+          <div class="actions-cell">
+            <a href="{{ url_for('plantilla_detalle', plantilla_id=p.id) }}" class="btn btn-ghost btn-sm">Bloques</a>
+            <a href="{{ url_for('plantillas', editar=p.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('plantilla_eliminar', plantilla_id=p.id) }}"
+                    data-del-name="{{ p.nombre }}">{{ icon_eliminar() }}</button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay plantillas', 'Creá una plantilla por turno y después cargá sus bloques de clase y recesos.') }}
+  {% endif %}
+</section>
+{% endblock %}

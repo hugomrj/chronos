@@ -1,0 +1,119 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import form_errors, icon_editar, icon_eliminar %}
+{% block title %}Bloques · {{ plantilla.nombre }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <a href="{{ url_for('plantillas') }}" class="btn-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      Plantillas
+    </a>
+    <h1>{{ plantilla.nombre }}</h1>
+    <p>
+      Turno {{ plantilla.turno.nombre }} · {{ clases }} bloque(s) de clase · {{ recesos }} receso(s)
+      · {{ plantilla.secciones|length }} sección(es)
+    </p>
+  </div>
+  <a href="{{ url_for('plantilla_detalle', plantilla_id=plantilla.id, nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Agregar bloque
+  </a>
+</div>
+
+{% if request.args.get('nuevo') or edit_bloque or form %}
+{% set v_dia = (form.get('dia_semana') or '') if form else (edit_bloque.dia_semana if edit_bloque else dia_sel) %}
+{% set v_tipo = (form.get('tipo') or '') if form else (edit_bloque.tipo if edit_bloque else 'clase') %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar bloque' if edit_bloque else 'Nuevo bloque' }}</h2>
+    <a href="{{ url_for('plantilla_detalle', plantilla_id=plantilla.id) }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('bloque_guardar', plantilla_id=plantilla.id) }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit_bloque %}<input type="hidden" name="id" value="{{ edit_bloque.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-1">
+        <label for="dia_semana">Día</label>
+        <select class="input vanilla-select" id="dia_semana" name="dia_semana" required>
+          {% for numero, nombre in dias.items() %}
+          <option value="{{ numero }}" {{ 'selected' if (v_dia|string) == (numero|string) }}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-1">
+        <label for="numero">Número</label>
+        <input class="input" id="numero" name="numero" type="number" min="1"
+               value="{{ form.get('numero') or (edit_bloque.numero if edit_bloque else (por_dia[dia_sel]|length + 1)) }}" required>
+      </div>
+      <div class="field fw-1">
+        <label for="hora_inicio">Desde</label>
+        <input class="input" id="hora_inicio" name="hora_inicio" type="time"
+               value="{{ form.get('hora_inicio') or (edit_bloque.hora_inicio.strftime('%H:%M') if edit_bloque else '') }}" required>
+      </div>
+      <div class="field fw-1">
+        <label for="hora_fin">Hasta</label>
+        <input class="input" id="hora_fin" name="hora_fin" type="time"
+               value="{{ form.get('hora_fin') or (edit_bloque.hora_fin.strftime('%H:%M') if edit_bloque else '') }}" required>
+      </div>
+      <div class="field fw-1">
+        <label for="tipo">Tipo</label>
+        <select class="input vanilla-select" id="tipo" name="tipo">
+          <option value="clase" {{ 'selected' if v_tipo == 'clase' }}>Clase</option>
+          <option value="receso" {{ 'selected' if v_tipo == 'receso' }}>Receso</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit_bloque else 'Agregar bloque' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('plantilla_detalle', plantilla_id=plantilla.id) }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Semana</h2>
+    <span class="hint">Los bloques no pueden solaparse dentro del mismo día</span>
+  </div>
+
+  <div class="blocks-grid">
+    {% for dia, nombre in dias.items() %}
+    <div class="block-day">
+      <div class="block-day-head">
+        <b>{{ nombre }}</b>
+        <span>{{ por_dia[dia]|length }}</span>
+      </div>
+
+      {% for b in por_dia[dia] %}
+      <div class="block-item {{ 'receso' if b.tipo == 'receso' }}">
+        <span class="block-num">{{ b.numero }}</span>
+        <div class="block-info">
+          <b>{{ b.hora_inicio.strftime('%H:%M') }}–{{ b.hora_fin.strftime('%H:%M') }}</b>
+          <span>{{ 'Receso' if b.tipo == 'receso' else 'Clase' }}</span>
+        </div>
+        <div class="block-actions">
+          <a href="{{ url_for('plantilla_detalle', plantilla_id=plantilla.id, editar=b.id, dia=dia) }}"
+             class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
+          <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                  data-del-url="{{ url_for('bloque_eliminar', plantilla_id=plantilla.id, bloque_id=b.id) }}"
+                  data-del-name="{{ nombre }} {{ b.hora_inicio.strftime('%H:%M') }}–{{ b.hora_fin.strftime('%H:%M') }}">
+            {{ icon_eliminar() }}
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if not por_dia[dia] %}
+      <p class="avail-empty">Sin bloques</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="panel-foot">
+    <span>Los recesos no se asignan a materias, pero ocupan un lugar en la jornada.</span>
+  </div>
+</section>
+{% endblock %}
