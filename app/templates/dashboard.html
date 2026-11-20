@@ -260,134 +260,207 @@
 
   if (typeof Chart === 'undefined') return;
 
-  var estilo = getComputedStyle(document.documentElement);
-  function color(varName, fallback) {
-    return (estilo.getPropertyValue(varName) || fallback).trim();
+  function colorCss(nombre, fallback) {
+    var sonda = document.createElement('span');
+    sonda.style.position = 'absolute';
+    sonda.style.visibility = 'hidden';
+    sonda.style.color = 'var(' + nombre + ')';
+    document.body.appendChild(sonda);
+    var color = getComputedStyle(sonda).color;
+    sonda.remove();
+    if (!color || color === 'rgba(0, 0, 0, 0)') return fallback;
+    return color;
   }
 
-  var tinta = color('--text', '#e5e7eb');
-  var tinta2 = color('--text-2', '#9ca3af');
-  var borde = color('--brd', 'rgba(255,255,255,0.08)');
-  var acento = color('--acc', '#10b981');
+  function conAlfa(color, alfa) {
+    if (color.indexOf('rgb(') === 0 ||
+        color.indexOf('rgba(') === 0) {
+      var partes = color.replace(/^rgba?\(/, '').replace(/\)$/, '').split(',');
+      return 'rgba(' + partes[0] + ',' + partes[1] + ',' + partes[2] + ',' + alfa + ')';
+    }
+    return color;
+  }
 
-  Chart.defaults.color = tinta2;
-  Chart.defaults.font.family = "'Outfit', system-ui, sans-serif";
-  Chart.defaults.font.size = 11;
+  var charts = [];
 
-  var grilla = { color: borde, borderColor: borde };
+  function construir() {
+    charts.forEach(function (c) { if (c && c.destroy) c.destroy(); });
+    charts = [];
 
-  var elProfesores = document.getElementById('chartProfesores');
-  if (elProfesores && datos.profesores.length) {
-    var maximo = Math.max.apply(null, datos.profesores.map(function (p) {
-      return Math.max(p.horas, p.maximo || p.horas);
-    }).concat([1]));
+    var tinta = colorCss('--text', '#e5e7eb');
+    var tinta2 = colorCss('--text-2', '#9ca3af');
+    var borde = colorCss('--brd', 'rgba(255,255,255,0.08)');
+    var panel = colorCss('--panel', '#111827');
 
-    new Chart(elProfesores, {
-      type: 'bar',
-      data: {
-        labels: datos.profesores.map(function (p) { return p.nombre; }),
-        datasets: [{
-          label: 'Horas asignadas',
-          data: datos.profesores.map(function (p) { return p.horas; }),
-          backgroundColor: datos.profesores.map(function (p) {
-            return (p.maximo && p.horas > p.maximo) ? '#ef4444cc' : acento + 'cc';
-          }),
-          borderRadius: 6,
-          maxBarThickness: 18
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: function (ctx) {
-                var p = datos.profesores[ctx.dataIndex];
-                return ctx.raw + ' h' + (p.maximo ? ' / máx. ' + p.maximo + ' h' : '');
+    var paleta = [
+      colorCss('--chart-1', '#0b5c43'),
+      colorCss('--chart-2', '#0e7a59'),
+      colorCss('--chart-3', '#10b981'),
+      colorCss('--chart-4', '#34d399'),
+      colorCss('--chart-5', '#6ee7b7')
+    ];
+
+    var grilla = { color: borde, borderColor: borde };
+
+    Chart.defaults.color = tinta2;
+    Chart.defaults.font.family = "'Outfit', system-ui, sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.plugins.tooltip.backgroundColor = panel;
+    Chart.defaults.plugins.tooltip.titleColor = tinta;
+    Chart.defaults.plugins.tooltip.bodyColor = tinta2;
+    Chart.defaults.plugins.tooltip.borderColor = borde;
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+
+    function colorPorCarga(horas, maximo) {
+      if (!maximo) return paleta[2];
+      var ratio = horas / maximo;
+      if (ratio <= 0.4) return paleta[0];
+      if (ratio <= 0.7) return paleta[1];
+      if (ratio <= 1.0) return paleta[2];
+      if (ratio <= 1.25) return paleta[3];
+      return paleta[4];
+    }
+
+    var elProfesores = document.getElementById('chartProfesores');
+    if (elProfesores && datos.profesores.length) {
+      var maximo = Math.max.apply(null, datos.profesores.map(function (p) {
+        return Math.max(p.horas, p.maximo || p.horas);
+      }).concat([1]));
+
+      charts.push(new Chart(elProfesores, {
+        type: 'bar',
+        data: {
+          labels: datos.profesores.map(function (p) { return p.nombre; }),
+          datasets: [{
+            label: 'Horas asignadas',
+            data: datos.profesores.map(function (p) { return p.horas; }),
+            backgroundColor: datos.profesores.map(function (p) {
+              return colorPorCarga(p.horas, p.maximo);
+            }),
+            borderRadius: 6,
+            maxBarThickness: 18
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  var p = datos.profesores[ctx.dataIndex];
+                  return ctx.raw + ' h' + (p.maximo ? ' / máx. ' + p.maximo + ' h' : '');
+                }
               }
             }
+          },
+          scales: {
+            x: { grid: grilla, beginAtZero: true, suggestedMax: maximo },
+            y: { grid: { display: false } }
           }
+        }
+      }));
+    }
+
+    var elMaterias = document.getElementById('chartMaterias');
+    if (elMaterias && datos.materias.length) {
+      charts.push(new Chart(elMaterias, {
+        type: 'doughnut',
+        data: {
+          labels: datos.materias.map(function (m) { return m.nombre; }),
+          datasets: [{
+            data: datos.materias.map(function (m) { return m.horas; }),
+            backgroundColor: datos.materias.map(function (m, i) {
+              return paleta[i % paleta.length];
+            }),
+            borderColor: panel,
+            borderWidth: 2
+          }]
         },
-        scales: {
-          x: { grid: grilla, beginAtZero: true, suggestedMax: maximo },
-          y: { grid: { display: false } }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '62%',
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 8, boxHeight: 8, padding: 8 } }
+          }
         }
-      }
-    });
-  }
+      }));
+    }
 
-  var elMaterias = document.getElementById('chartMaterias');
-  if (elMaterias && datos.materias.length) {
-    new Chart(elMaterias, {
-      type: 'doughnut',
-      data: {
-        labels: datos.materias.map(function (m) { return m.nombre; }),
-        datasets: [{
-          data: datos.materias.map(function (m) { return m.horas; }),
-          borderColor: color('--panel', '#111'),
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '62%',
-        plugins: {
-          legend: { position: 'bottom', labels: { boxWidth: 8, boxHeight: 8, padding: 8 } }
+    var elAulas = document.getElementById('chartAulas');
+    if (elAulas && datos.aulas.length) {
+      var maxAula = Math.max.apply(null, datos.aulas.map(function (a) { return a.horas; }).concat([1]));
+      charts.push(new Chart(elAulas, {
+        type: 'bar',
+        data: {
+          labels: datos.aulas.map(function (a) { return a.nombre; }),
+          datasets: [{
+            label: 'Horas',
+            data: datos.aulas.map(function (a) { return a.horas; }),
+            backgroundColor: datos.aulas.map(function (a) {
+              return colorPorCarga(a.horas, maxAula);
+            }),
+            borderRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { grid: grilla, beginAtZero: true }, x: { grid: { display: false } } }
         }
-      }
-    });
+      }));
+    }
+
+    var elDias = document.getElementById('chartDias');
+    if (elDias && datos.dias.length) {
+      charts.push(new Chart(elDias, {
+        type: 'line',
+        data: {
+          labels: datos.dias.map(function (d) { return d.dia; }),
+          datasets: [{
+            label: 'Clases',
+            data: datos.dias.map(function (d) { return d.horas; }),
+            borderColor: paleta[2],
+            backgroundColor: conAlfa(paleta[2], 0.16),
+            pointBackgroundColor: paleta[2],
+            pointBorderColor: panel,
+            pointBorderWidth: 2,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { grid: grilla, beginAtZero: true }, x: { grid: { display: false } } }
+        }
+      }));
+    }
   }
 
-  var elAulas = document.getElementById('chartAulas');
-  if (elAulas && datos.aulas.length) {
-    new Chart(elAulas, {
-      type: 'bar',
-      data: {
-        labels: datos.aulas.map(function (a) { return a.nombre; }),
-        datasets: [{
-          label: 'Horas',
-          data: datos.aulas.map(function (a) { return a.horas; }),
-          backgroundColor: acento + '99',
-          borderRadius: 5
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { grid: grilla, beginAtZero: true }, x: { grid: { display: false } } }
-      }
-    });
-  }
+  construir();
 
-  var elDias = document.getElementById('chartDias');
-  if (elDias && datos.dias.length) {
-    new Chart(elDias, {
-      type: 'line',
-      data: {
-        labels: datos.dias.map(function (d) { return d.dia; }),
-        datasets: [{
-          label: 'Clases',
-          data: datos.dias.map(function (d) { return d.horas; }),
-          borderColor: acento,
-          backgroundColor: acento + '22',
-          fill: true,
-          tension: 0.35,
-          pointRadius: 3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { grid: grilla, beginAtZero: true }, x: { grid: { display: false } } }
-      }
-    });
-  }
+  // Rehacer los gráficos cuando cambia el tema o el color de acento.
+  var ultimoTema = document.documentElement.dataset.theme;
+  var ultimoEstilo = document.documentElement.getAttribute('style');
+  new MutationObserver(function () {
+    var tema = document.documentElement.dataset.theme;
+    var estilo = document.documentElement.getAttribute('style');
+    if (tema !== ultimoTema || estilo !== ultimoEstilo) {
+      ultimoTema = tema;
+      ultimoEstilo = estilo;
+      construir();
+    }
+  }).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme', 'style']
+  });
 })();
 </script>
 {% endblock %}
