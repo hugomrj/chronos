@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 
 from app.models import AnioLectivo, Colegio
 
@@ -44,3 +44,21 @@ def parse_date(value):
         return date.fromisoformat(value)
     except (TypeError, ValueError):
         return None
+
+
+def parse_time(value):
+    """Acepta 'HH:MM' (input time) y devuelve datetime.time."""
+    if not value:
+        return None
+    try:
+        return time.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def hhmm(value):
+    return value.strftime('%H:%M') if value else ''
+
+
+def rango_horario(desde, hasta):
+    return f'{hhmm(desde)} – {hhmm(hasta)}'

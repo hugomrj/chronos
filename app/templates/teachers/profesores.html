@@ -1,0 +1,154 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, row_actions, empty_state %}
+{% block title %}Profesores{% endblock %}
+
+{% block content %}
+{{ page_head('Profesores', 'Docentes del colegio, sus materias y su carga horaria.',
+             url_for('profesores', nuevo=1), 'Nuevo profesor') }}
+
+{% if edit or form or request.args.get('nuevo') %}
+{% set v_activo = form.get('activo') if form else (edit.activo if edit else true) %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar profesor' if edit else 'Nuevo profesor' }}</h2>
+    <a href="{{ url_for('profesores') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('profesor_guardar') }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="nombre">Nombre completo</label>
+        <input class="input" id="nombre" name="nombre" type="text"
+               value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
+               placeholder="Ej. María González" required autofocus>
+      </div>
+      <div class="field fw-1">
+        <label for="documento">Documento <span class="opt">(opcional)</span></label>
+        <input class="input" id="documento" name="documento" type="text"
+               value="{{ form.get('documento') or (edit.documento if edit else '') }}"
+               placeholder="Ej. 1234567">
+      </div>
+      <div class="field fw-1">
+        <label for="contacto">Contacto <span class="opt">(opcional)</span></label>
+        <input class="input" id="contacto" name="contacto" type="text"
+               value="{{ form.get('contacto') or (edit.contacto if edit else '') }}"
+               placeholder="Teléfono o email">
+      </div>
+
+      <div class="field fw-1">
+        <label for="horas_min_semana">Mínimo semanal</label>
+        <input class="input" id="horas_min_semana" name="horas_min_semana" type="number" min="0"
+               value="{{ form.get('horas_min_semana') or (edit.horas_min_semana if edit and edit.horas_min_semana is not none else '') }}"
+               placeholder="Horas">
+      </div>
+      <div class="field fw-1">
+        <label for="horas_max_semana">Máximo semanal</label>
+        <input class="input" id="horas_max_semana" name="horas_max_semana" type="number" min="0"
+               value="{{ form.get('horas_max_semana') or (edit.horas_max_semana if edit and edit.horas_max_semana is not none else '') }}"
+               placeholder="Horas">
+      </div>
+      <div class="field fw-1">
+        <label for="horas_max_dia">Máximo por día</label>
+        <input class="input" id="horas_max_dia" name="horas_max_dia" type="number" min="0"
+               value="{{ form.get('horas_max_dia') or (edit.horas_max_dia if edit and edit.horas_max_dia is not none else '') }}"
+               placeholder="Horas">
+      </div>
+      <div class="field fw-1">
+        <label class="switch-row">
+          <input type="checkbox" class="switch" name="activo" {{ 'checked' if v_activo }}>
+          <span class="switch-state"></span>
+        </label>
+        <div class="hint">Solo los activos se usan al generar horarios.</div>
+      </div>
+    </div>
+
+    <div class="form-sep"></div>
+
+    <div class="field">
+      <label>Materias que puede dictar</label>
+      {% if materias %}
+      <div class="check-grid">
+        {% for m in materias %}
+        <label class="check-item">
+          <input type="checkbox" name="materias" value="{{ m.id }}"
+                 {{ 'checked' if (m.id|string) in seleccionadas }}>
+          <span>{{ m.nombre }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="hint">Podés seleccionar varias. El motor solo asignará materias de esta lista.</div>
+      {% else %}
+      <div class="hint">
+        Todavía no hay materias cargadas.
+        <a href="{{ url_for('materias', nuevo=1) }}" style="color: var(--acc-txt); font-weight: 600;">Crear una materia</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear profesor' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('profesores') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Listado</h2>
+    <span class="hint">{{ items|length }} profesor(es)</span>
+  </div>
+
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Profesor</th>
+        <th class="c-state">Contacto</th>
+        <th class="c-state">Materias</th>
+        <th class="c-state">Carga semanal</th>
+        <th>Estado</th>
+        <th style="width: 110px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in items %}
+      <tr>
+        <td>
+          <b>{{ p.nombre }}</b>
+          {% if p.documento %}<div class="hint" style="margin-top: 0.1rem;">CI {{ p.documento }}</div>{% endif %}
+        </td>
+        <td class="c-state">{{ p.contacto or '—' }}</td>
+        <td class="c-state">
+          {% if p.materias %}
+            {{ p.materias[:3]|map(attribute='nombre')|join(', ') }}{% if p.materias|length > 3 %} +{{ p.materias|length - 3 }}{% endif %}
+          {% else %}
+            <span class="status off">Sin materias</span>
+          {% endif %}
+        </td>
+        <td class="c-state">
+          {% if p.horas_min_semana is not none or p.horas_max_semana is not none %}
+            {{ p.horas_min_semana if p.horas_min_semana is not none else '—' }}–{{ p.horas_max_semana if p.horas_max_semana is not none else '—' }} h
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>
+          {% if p.activo %}
+            <span class="status ok">Activo</span>
+          {% else %}
+            <span class="status off">Inactivo</span>
+          {% endif %}
+        </td>
+        <td>{{ row_actions(url_for('profesores', editar=p.id), url_for('profesor_eliminar', item_id=p.id), p.nombre) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay profesores', 'Cargá los docentes del colegio, sus materias y su carga horaria para poder asignarles clases.') }}
+  {% endif %}
+</section>
+{% endblock %}

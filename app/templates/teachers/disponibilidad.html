@@ -1,0 +1,148 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import form_errors, icon_eliminar, empty_state %}
+{% block title %}Disponibilidad{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Disponibilidad</h1>
+    <p>Franjas en las que cada profesor puede o no dictar clases. Si un profesor tiene franjas “disponible”, el motor solo usará esas; las “no disponible” siempre se descartan.</p>
+  </div>
+  {% if selected %}
+  <a href="{{ url_for('disponibilidad', profesor_id=selected.id, nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Agregar franja
+  </a>
+  {% endif %}
+</div>
+
+{% if profesores %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>Profesor</h2>
+    <span class="hint">Elegí a quién querés configurar</span>
+  </div>
+  <div class="form-panel" style="padding-top: 1rem;">
+    <form method="get" action="{{ url_for('disponibilidad') }}"
+          style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+      <div class="field" style="margin: 0; flex: 1; min-width: 260px;">
+        <label for="profesor_id">Profesor</label>
+        <select class="input vanilla-select" id="profesor_id" name="profesor_id">
+          {% for p in profesores %}
+          <option value="{{ p.id }}" {{ 'selected' if selected and p.id == selected.id }}>{{ p.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit">Ver disponibilidad</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+
+{% if not profesores %}
+<section class="panel glass">
+  {{ empty_state('Todavía no hay profesores', 'Primero cargá al menos un profesor para poder configurar su disponibilidad.') }}
+  <div style="text-align: center; padding-bottom: 2rem; position: relative; z-index: 1;">
+    <a href="{{ url_for('profesores', nuevo=1) }}" class="btn btn-primary">Cargar profesor</a>
+  </div>
+</section>
+{% elif selected %}
+
+{% if request.args.get('nuevo') or form %}
+{% set v_dia = (form.get('dia_semana') or '') if form else '' %}
+{% set v_tipo = (form.get('tipo') or 'disponible') if form else 'disponible' %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>Nueva franja para {{ selected.nombre }}</h2>
+    <a href="{{ url_for('disponibilidad', profesor_id=selected.id) }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('disponibilidad_guardar') }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    <input type="hidden" name="profesor_id" value="{{ selected.id }}">
+    <div class="form-grid">
+      <div class="field fw-1">
+        <label for="dia_semana">Día</label>
+        <select class="input vanilla-select" id="dia_semana" name="dia_semana" required>
+          <option value="">Elegí un día</option>
+          {% for numero, nombre in dias.items() %}
+          <option value="{{ numero }}" {{ 'selected' if (v_dia|string) == (numero|string) }}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-1">
+        <label for="hora_desde">Desde</label>
+        <input class="input" id="hora_desde" name="hora_desde" type="time"
+               value="{{ form.get('hora_desde') or '' }}" required>
+      </div>
+      <div class="field fw-1">
+        <label for="hora_hasta">Hasta</label>
+        <input class="input" id="hora_hasta" name="hora_hasta" type="time"
+               value="{{ form.get('hora_hasta') or '' }}" required>
+      </div>
+      <div class="field fw-1">
+        <label for="tipo">Tipo</label>
+        <select class="input vanilla-select" id="tipo" name="tipo">
+          <option value="disponible" {{ 'selected' if v_tipo == 'disponible' }}>Disponible</option>
+          <option value="no_disponible" {{ 'selected' if v_tipo == 'no_disponible' }}>No disponible</option>
+        </select>
+      </div>
+      <div class="field fw-2">
+        <label for="motivo">Motivo <span class="opt">(opcional)</span></label>
+        <input class="input" id="motivo" name="motivo" type="text"
+               value="{{ form.get('motivo') or '' }}"
+               placeholder="Ej. Trabaja en otro colegio">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Agregar franja</button>
+      <a class="btn btn-ghost" href="{{ url_for('disponibilidad', profesor_id=selected.id) }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Semana de {{ selected.nombre }}</h2>
+    <span class="hint">{{ selected.disponibilidad|length }} franja(s)</span>
+  </div>
+
+  <div class="avail-grid">
+    {% for dia, nombre in dias.items() %}
+    <div class="avail-day">
+      <div class="avail-day-head">
+        <b>{{ nombre }}</b>
+        <span>{{ por_dia[dia]|length }}</span>
+      </div>
+
+      {% for b in por_dia[dia] %}
+      <div class="avail-slot {{ 'off' if b.tipo == 'no_disponible' }}">
+        <div class="avail-time">{{ b.hora_desde.strftime('%H:%M') }} – {{ b.hora_hasta.strftime('%H:%M') }}</div>
+        <div class="avail-meta">
+          {{ 'Disponible' if b.tipo == 'disponible' else 'No disponible' }}{% if b.motivo %} · {{ b.motivo }}{% endif %}
+        </div>
+        <button type="button" class="icon-btn" data-tip="Eliminar franja"
+                data-del-url="{{ url_for('disponibilidad_eliminar', item_id=b.id) }}"
+                data-del-name="{{ nombre }} {{ b.hora_desde.strftime('%H:%M') }}–{{ b.hora_hasta.strftime('%H:%M') }}">
+          {{ icon_eliminar() }}
+        </button>
+      </div>
+      {% endfor %}
+
+      {% if not por_dia[dia] %}
+      <p class="avail-empty">Sin franjas</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="panel-foot">
+    <span>Verde = disponible · Rojo = no disponible. Las franjas se validan para que no se solapen.</span>
+    {% if selected.disponibilidad|length == 0 %}
+    <span>Sin restricciones: puede dictar en cualquier horario.</span>
+    {% endif %}
+  </div>
+</section>
+
+{% endif %}
+{% endblock %}

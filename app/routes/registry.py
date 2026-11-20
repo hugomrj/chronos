@@ -17,6 +17,10 @@ def register_routes(app):
     from app.routes.academic import register_academic_routes
     register_academic_routes(app)
 
+    # Profesores y disponibilidad
+    from app.routes.teachers import register_teachers_routes
+    register_teachers_routes(app)
+
     @app.route('/')
     def index():
         return redirect(url_for('dashboard'))

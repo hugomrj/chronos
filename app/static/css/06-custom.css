@@ -474,3 +474,140 @@
   color: var(--danger);
   background: var(--danger-bg);
 }
+
+
+/* ═══ CHECKBOX GRID (MATERIAS / SELECCIÓN MÚLTIPLE) ═══ */
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--brd);
+  border-radius: 0.625rem;
+  background: var(--field);
+  font-size: 0.8125rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: 0.15s;
+  user-select: none;
+}
+
+.check-item:hover {
+  border-color: var(--acc);
+  background: var(--hover);
+}
+
+.check-item input {
+  accent-color: var(--acc-strong);
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ═══ GRILLA DE DISPONIBILIDAD ═══ */
+.avail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+  gap: 0.75rem;
+  padding: 1rem 1.375rem;
+  position: relative;
+  z-index: 1;
+}
+
+.avail-day {
+  border: 1px solid var(--brd);
+  border-radius: 0.875rem;
+  background: var(--field);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 7rem;
+}
+
+.avail-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.avail-day-head b {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.avail-day-head span {
+  font-size: 0.6875rem;
+  color: var(--text-2);
+  background: var(--hover);
+  border-radius: 999rem;
+  padding: 0.1rem 0.45rem;
+}
+
+.avail-slot {
+  position: relative;
+  border-radius: 0.625rem;
+  padding: 0.5rem 2rem 0.5rem 0.625rem;
+  background: var(--ok-bg);
+  border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent);
+}
+
+.avail-slot.off {
+  background: var(--danger-bg);
+  border-color: color-mix(in srgb, var(--danger) 28%, transparent);
+}
+
+.avail-time {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.avail-slot.off .avail-time {
+  color: var(--danger);
+}
+
+.avail-meta {
+  font-size: 0.6875rem;
+  color: var(--text-2);
+  margin-top: 0.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avail-slot .icon-btn {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  background: none;
+  color: var(--text-2);
+}
+
+.avail-slot .icon-btn:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.avail-slot .icon-btn svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.avail-empty {
+  font-size: 0.75rem;
+  color: var(--text-2);
+  opacity: 0.7;
+}
