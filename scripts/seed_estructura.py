@@ -13,7 +13,7 @@ from app.extensions import db
 from app.factory import create_app
 from app.models import (
     AnioLectivo, Aula, Bloque, Colegio, Grado, GradoMateria, Materia, Nivel,
-    PlantillaHorario, Profesor, ProfesorDisponibilidad, Seccion,
+    PlantillaHorario, Profesor, ProfesorDisponibilidad, Regla, Seccion,
     SeccionMateria, Turno,
 )
 
@@ -97,6 +97,17 @@ SECCIONES = [
     ('2do grado', 'A', 'Mañana', 'Mañana Primaria', 'Aula 3'),
     ('1er curso', 'A', 'Tarde', 'Tarde Secundaria', 'Aula 2'),
     ('2do curso', 'A', 'Tarde', 'Tarde Secundaria', 'Aula 3'),
+]
+
+REGLAS_DEMO = [
+    {'codigo': 'ANTES_DE_RECESO', 'descripcion': 'Educación Física antes del receso',
+     'obligatoria': False, 'peso': 50, 'materia': 'Educación Física'},
+    {'codigo': 'NO_ULTIMA_HORA', 'descripcion': 'Matemática no en la última hora',
+     'obligatoria': False, 'peso': 40, 'materia': 'Matemática'},
+    {'codigo': 'DISTRIBUIR_SEMANA', 'descripcion': 'Repartir las horas en la semana',
+     'obligatoria': True, 'peso': 10, 'parametros': {'max_por_dia': 1}},
+    {'codigo': 'EVITAR_HUECOS_PROFESOR', 'descripcion': 'Evitar huecos de los profesores',
+     'obligatoria': False, 'peso': 30, 'parametros': {'max_huecos': 1}},
 ]
 
 PROFESORES = [
@@ -288,6 +299,27 @@ def seed():
                     requiere_bloque_doble=gm.requiere_bloque_doble,
                 ))
 
+    for datos in REGLAS_DEMO:
+        materia = materias_por_nombre.get(datos.get('materia'))
+        existe = Regla.query.filter_by(
+            colegio_id=colegio.id,
+            codigo=datos['codigo'],
+            materia_id=materia.id if materia else None,
+            nivel_id=None,
+            profesor_id=None,
+        ).first()
+        if not existe:
+            db.session.add(Regla(
+                colegio_id=colegio.id,
+                codigo=datos['codigo'],
+                descripcion=datos['descripcion'],
+                obligatoria=datos['obligatoria'],
+                peso=datos['peso'],
+                activa=True,
+                materia_id=materia.id if materia else None,
+                parametros=datos.get('parametros', {}),
+            ))
+
     db.session.commit()
 
     print('Estructura lista:')
@@ -302,6 +334,7 @@ def seed():
     print(f'  Plantillas: {PlantillaHorario.query.filter_by(colegio_id=colegio.id).count()}')
     print(f'  Bloques: {Bloque.query.count()}')
     print(f'  Secciones: {Seccion.query.filter_by(anio_lectivo_id=anio.id).count()}')
+    print(f'  Reglas: {Regla.query.filter_by(colegio_id=colegio.id).count()}')
 
 
 if __name__ == '__main__':

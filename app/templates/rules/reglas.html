@@ -1,0 +1,189 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
+{% block title %}Reglas{% endblock %}
+
+{% block content %}
+{{ page_head('Reglas', 'Restricciones obligatorias y preferencias deseables que respeta el motor al generar horarios.',
+             url_for('reglas', nuevo=1), 'Nueva regla') }}
+
+{% if edit or form or request.args.get('nuevo') %}
+{% set v_codigo = (form.get('codigo') or '') if form else (edit.codigo if edit else '') %}
+{% set v_obligatoria = form.get('obligatoria') if form else (edit.obligatoria if edit else false) %}
+{% set v_activa = form.get('activa') if form else (edit.activa if edit else true) %}
+{% set v_materia = (form.get('materia_id') or '') if form else (edit.materia_id if edit else '') %}
+{% set v_nivel = (form.get('nivel_id') or '') if form else (edit.nivel_id if edit else '') %}
+{% set v_profesor = (form.get('profesor_id') or '') if form else (edit.profesor_id if edit else '') %}
+{% set v_peso = form.get('peso') or (edit.peso if edit else 10) %}
+{% set v_parametros = (form.get('parametros') if form else (edit.parametros|tojson if edit else '{}')) or '{}' %}
+{% set info = catalogo.get(v_codigo) %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar regla' if edit else 'Nueva regla' }}</h2>
+    <a href="{{ url_for('reglas') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('regla_guardar') }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="codigo">Tipo de regla</label>
+        <select class="input vanilla-select" id="codigo" name="codigo" required>
+          <option value="">Seleccioná una regla</option>
+          {% for codigo, datos in catalogo.items() %}
+          <option value="{{ codigo }}" {{ 'selected' if v_codigo == codigo }}>{{ datos.nombre }}</option>
+          {% endfor %}
+          {% if v_codigo and v_codigo not in catalogo %}
+          <option value="{{ v_codigo }}" selected>{{ v_codigo }}</option>
+          {% endif %}
+        </select>
+        {% if info %}
+        <div class="hint">{{ info.descripcion }} {{ info.ayuda }}</div>
+        {% endif %}
+      </div>
+      <div class="field fw-1">
+        <label for="peso">Peso <span class="opt">(0–100)</span></label>
+        <input class="input" id="peso" name="peso" type="number" min="0" max="100"
+               value="{{ v_peso }}" required>
+      </div>
+      <div class="field fw-1">
+        <label class="switch-row">
+          <input type="checkbox" class="switch" name="activa" {{ 'checked' if v_activa }}>
+          <span class="switch-state"></span>
+        </label>
+        <div class="hint">Solo las reglas activas se aplican.</div>
+      </div>
+
+      <div class="field fw-full">
+        <label for="descripcion">Descripción <span class="opt">(opcional)</span></label>
+        <input class="input" id="descripcion" name="descripcion" type="text"
+               value="{{ form.get('descripcion') or (edit.descripcion if edit else '') }}"
+               placeholder="Ej. Educación Física antes del receso">
+      </div>
+    </div>
+
+    <div class="form-sep"></div>
+
+    <div class="field">
+      <label>Alcance <span class="opt">(opcional)</span></label>
+      <div class="form-grid">
+        <div class="field fw-2" style="margin-bottom: 0;">
+          <label for="materia_id">Materia</label>
+          <select class="input vanilla-select" id="materia_id" name="materia_id">
+            <option value="">Todas las materias</option>
+            {% for m in materias %}
+            <option value="{{ m.id }}" {{ 'selected' if (v_materia|string) == (m.id|string) }}>{{ m.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field fw-1" style="margin-bottom: 0;">
+          <label for="nivel_id">Nivel</label>
+          <select class="input vanilla-select" id="nivel_id" name="nivel_id">
+            <option value="">Todos los niveles</option>
+            {% for n in niveles %}
+            <option value="{{ n.id }}" {{ 'selected' if (v_nivel|string) == (n.id|string) }}>{{ n.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field fw-1" style="margin-bottom: 0;">
+          <label for="profesor_id">Profesor</label>
+          <select class="input vanilla-select" id="profesor_id" name="profesor_id">
+            <option value="">Todos los profesores</option>
+            {% for p in profesores %}
+            <option value="{{ p.id }}" {{ 'selected' if (v_profesor|string) == (p.id|string) }}>{{ p.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="hint">Podés combinar alcances. Si no elegís ninguno, la regla es global para el colegio.</div>
+    </div>
+
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="parametros">Parámetros JSON <span class="opt">(opcional)</span></label>
+        <textarea class="textarea" id="parametros" name="parametros" rows="4"
+                  style="min-height: 6.5rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem;"
+                  spellcheck="false">{{ v_parametros }}</textarea>
+        <div class="hint">Debe ser un objeto JSON. Ejemplo: {"max_por_dia": 1}. Dejalo vacío si la regla no usa parámetros.</div>
+      </div>
+      <div class="field fw-2">
+        <label class="switch-row">
+          <input type="checkbox" class="switch" name="obligatoria" {{ 'checked' if v_obligatoria }}>
+          <span class="switch-state"></span>
+        </label>
+        <div class="hint">Una regla obligatoria no se puede incumplir; una deseable se pondera por su peso.</div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear regla' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('reglas') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Reglas configuradas</h2>
+    <span class="hint">{{ items|length }} regla(s)</span>
+  </div>
+
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Regla</th>
+        <th class="c-state">Alcance</th>
+        <th class="c-state">Tipo</th>
+        <th class="c-state">Peso</th>
+        <th>Estado</th>
+        <th style="width: 110px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in items %}
+      {% set datos = catalogo.get(r.codigo) %}
+      <tr>
+        <td>
+          <b>{{ datos.nombre if datos else r.codigo }}</b>
+          <div class="hint" style="margin-top: 0.1rem;">{{ r.codigo }}{% if r.descripcion %} · {{ r.descripcion }}{% endif %}</div>
+        </td>
+        <td class="c-state">
+          {% if r.materia %}<span class="status">Materia: {{ r.materia.nombre }}</span>{% endif %}
+          {% if r.nivel %}<span class="status">Nivel: {{ r.nivel.nombre }}</span>{% endif %}
+          {% if r.profesor %}<span class="status">Profesor: {{ r.profesor.nombre }}</span>{% endif %}
+          {% if not (r.materia or r.nivel or r.profesor) %}<span class="status off">Global</span>{% endif %}
+        </td>
+        <td class="c-state">
+          {% if r.obligatoria %}
+            <span class="status" style="color: var(--warn)">Obligatoria</span>
+          {% else %}
+            <span class="status">Deseable</span>
+          {% endif %}
+        </td>
+        <td class="c-state">{{ r.peso }}</td>
+        <td>
+          {% if r.activa %}
+            <span class="status ok">Activa</span>
+          {% else %}
+            <span class="status off">Inactiva</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="actions-cell">
+            <a href="{{ url_for('reglas', editar=r.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('regla_eliminar', item_id=r.id) }}"
+                    data-del-name="{{ datos.nombre if datos else r.codigo }}">{{ icon_eliminar() }}</button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay reglas', 'Agregá reglas como “evitar última hora” o “distribuir en la semana” para que el motor las tenga en cuenta.') }}
+  {% endif %}
+</section>
+{% endblock %}

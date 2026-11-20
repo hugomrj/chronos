@@ -25,6 +25,10 @@ def register_routes(app):
     from app.routes.schedule import register_schedule_routes
     register_schedule_routes(app)
 
+    # Reglas
+    from app.routes.rules import register_rules_routes
+    register_rules_routes(app)
+
     @app.route('/')
     def index():
         return redirect(url_for('dashboard'))
