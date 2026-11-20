@@ -1,0 +1,99 @@
+{% extends 'layout/base.html' %}
+{% block title %}Horario de {{ profesor.nombre }}{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/07-reportes.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="report-page">
+  <div class="report-head">
+    <div>
+      <a href="{{ url_for('horarios_docentes') }}" class="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Horarios docentes
+      </a>
+      <h1>Horario individual</h1>
+      <p>{{ anio.nombre if anio else '' }} · {{ versiones|length }} versión(es) vigente(s)</p>
+    </div>
+    <div class="report-toolbar">
+      <button type="button" class="btn btn-ghost" onclick="window.print()">Imprimir</button>
+    </div>
+  </div>
+
+  <section class="panel glass" style="margin-bottom: 1rem;">
+    <div class="teacher-header">
+      <div class="th-item">
+        <small>Docente</small>
+        <b>{{ profesor.nombre }}</b>
+      </div>
+      <div class="th-item">
+        <small>Disciplina</small>
+        <b>{{ materias|join(' · ') if materias else '—' }}</b>
+      </div>
+      <div class="th-item">
+        <small>Total horas</small>
+        <b>{{ total_horas }} h</b>
+      </div>
+      <div class="th-item">
+        <small>Ciclos / áreas</small>
+        <b>{{ areas|join(' · ') if areas else '—' }}</b>
+      </div>
+    </div>
+  </section>
+
+  {% if bloques_nivel %}
+    {% for grupo in bloques_nivel %}
+    <section class="panel glass teacher-block">
+      <div class="panel-head">
+        <h2>{{ grupo.nivel.nombre }} · {{ grupo.turno.nombre }}</h2>
+        <span class="hint">{{ grupo.total }} hora(s)</span>
+      </div>
+      <div class="report-scroll">
+        <table class="report-table teacher-table">
+          <thead>
+            <tr>
+              <th class="col-hora">Hora</th>
+              {% for d in grupo.dias %}
+              <th>{{ dias_nombres[d] }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for fila in grupo.filas %}
+            <tr>
+              <th>{{ fila.inicio.strftime('%H:%M') }} – {{ fila.fin.strftime('%H:%M') }}</th>
+              {% for d in grupo.dias %}
+              {% set c = fila.por_dia.get(d) %}
+              <td>
+                {% if c %}
+                <span class="teacher-cell">
+                  <b>{{ c.seccion_materia.seccion.grado.nombre }} {{ c.seccion_materia.seccion.nombre }}</b>
+                  <span>{{ c.seccion_materia.materia.nombre }}</span>
+                  {% if c.aula %}<span>{{ c.aula.nombre }}</span>{% endif %}
+                </span>
+                {% else %}
+                <span class="cell-empty">—</span>
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endfor %}
+  {% else %}
+  <section class="panel glass">
+    <div class="empty show">
+      <div class="fig">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+      </div>
+      <h3>Sin clases asignadas</h3>
+      <p>Este docente no tiene clases en las versiones publicadas (o vigentes) del año.</p>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

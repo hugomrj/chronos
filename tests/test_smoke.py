@@ -22,7 +22,8 @@ class SmokeTest(unittest.TestCase):
         rutas = [
             '/dashboard', '/anios', '/niveles', '/grados',
             '/turnos', '/aulas', '/materias', '/profesores', '/disponibilidad',
-            '/plantillas', '/secciones', '/reglas', '/horarios', '/usuarios',
+            '/plantillas', '/secciones', '/reglas', '/horarios',
+            '/horarios/docentes', '/guia', '/usuarios',
             '/perfil', '/preferencias', '/configuracion',
         ]
         for ruta in rutas:

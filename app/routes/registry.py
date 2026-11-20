@@ -41,6 +41,10 @@ def register_routes(app):
     from app.routes.docs import register_docs_routes
     register_docs_routes(app)
 
+    # Reportes imprimibles
+    from app.routes.reports import register_report_routes
+    register_report_routes(app)
+
     @app.route('/')
     def index():
         return redirect(url_for('dashboard'))

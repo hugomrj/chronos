@@ -394,8 +394,17 @@ def html_manual(fecha):
   <ul>
     <li><b>Vista por sección</b>: el horario de cada curso.</li>
     <li><b>Vista por profesor</b>: todas las clases de un docente, con curso, aula y día.</li>
-    <li><b>Imprimir</b>: genera una versión limpia, sin menús, lista para entregar o pegar en el aula.</li>
+    <li><b>Horario general</b>: una tabla con todas las secciones del turno como columnas y los días como pestañas.
+        Es la hoja que se imprime y se pega en la sala de profesores.</li>
+    <li><b>Horario individual docente</b>: la grilla de un docente con sus horas totales y sus materias,
+        separada por ciclo y por turno (por ejemplo “Secundaria · Mañana” y “Secundaria · Tarde”).
+        Se imprime desde <i>Horarios docentes</i>.</li>
+    <li><b>Imprimir</b>: genera una versión limpia, sin menús, en horizontal, lista para entregar.</li>
   </ul>
+  <div class="nota">
+    Los nombres de las filas que no son clase (Actividades Formativas, Almuerzo, Receso) se pueden
+    personalizar en <code>config.py</code>, en <code>ETIQUETAS_BLOQUES</code>, sin tocar la base de datos.
+  </div>
 
   <h2><span class="num">14</span>Dashboard</h2>
   <p>Es la pantalla de inicio y responde de un vistazo:</p>

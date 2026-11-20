@@ -8,6 +8,9 @@
     <h1>Horarios</h1>
     <p>Generá un borrador para un turno, revisalo y publicalo cuando esté listo.</p>
   </div>
+  <div class="quick-actions">
+    <a href="{{ url_for('horarios_docentes') }}" class="btn btn-ghost">Horarios docentes</a>
+  </div>
 </div>
 
 {% if not anio %}
@@ -104,7 +107,7 @@
         <th>Estado</th>
         <th class="c-state">Celdas</th>
         <th class="c-state">Creada</th>
-        <th style="width: 270px; text-align: right;">Acciones</th>
+        <th style="width: 340px; text-align: right;">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -131,6 +134,7 @@
         <td>
           <div class="actions-cell">
             <a href="{{ url_for('horario_detalle', version_id=v.id) }}" class="btn btn-ghost btn-sm">Ver</a>
+            <a href="{{ url_for('horario_general', version_id=v.id) }}" class="btn btn-ghost btn-sm">General</a>
             {% if v.estado == 'borrador' %}
             <form method="post" action="{{ url_for('horario_publicar', version_id=v.id) }}">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 # Cargar .env desde la raíz del proyecto
 env_path = Path(__file__).resolve().parent.parent / '.env'
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=env_path, override=True)
 
 DB_USER = os.getenv('DB_USER', 'postgres')
 DB_PASS = os.getenv('DB_PASS', '')

@@ -85,3 +85,30 @@ def is_safe_url(target):
     ref = urlparse(request.host_url)
     test = urlparse(urljoin(request.host_url, target))
     return test.scheme in ('http', 'https') and ref.netloc == test.netloc
+
+
+def clave_horario(bloque):
+    return f'{bloque.hora_inicio.strftime("%H:%M")}-{bloque.hora_fin.strftime("%H:%M")}'
+
+
+def etiqueta_bloque(bloque):
+    """Texto visible para un bloque no clase, sin agregar columnas a la base."""
+    if bloque.tipo == 'clase':
+        return ''
+
+    from flask import current_app
+    etiquetas = current_app.config.get('ETIQUETAS_BLOQUES') or {}
+    personalizada = etiquetas.get(clave_horario(bloque))
+    if personalizada:
+        return personalizada
+
+    inicio = bloque.hora_inicio.hour * 60 + bloque.hora_inicio.minute
+    fin = bloque.hora_fin.hour * 60 + bloque.hora_fin.minute
+    if (fin - inicio) >= 40 and 12 * 60 <= inicio < 15 * 60:
+        return 'Almuerzo'
+    return 'Receso'
+
+
+def etiqueta_seccion(seccion):
+    """Etiqueta corta para reportes: '1° BATIN A'."""
+    return f'{seccion.grado.nombre} {seccion.nombre}'.strip()

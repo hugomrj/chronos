@@ -59,6 +59,14 @@ class Config:
     # Documentación (guía de usuario)
     DOCS_DIRECTORY = str(BASE_DIR / 'docs')
 
+    # Etiquetas para bloques que no son clase (recesos, almuerzo, etc.).
+    # Se identifican por rango horario: "HH:MM-HH:MM".
+    # No requiere cambios en la base de datos.
+    ETIQUETAS_BLOQUES = {
+        '07:45-08:00': 'Actividades Formativas',
+        # '13:10-13:50': 'Almuerzo',
+    }
+
     # Servidor
     HOST = os.getenv('HOST', '0.0.0.0')
     PORT = int(os.getenv('PORT', 5000))

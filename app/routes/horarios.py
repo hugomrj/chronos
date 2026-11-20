@@ -249,12 +249,21 @@ def register_horarios_routes(app):
         profesores = Profesor.query.filter_by(
             colegio_id=colegio.id, activo=True).order_by(Profesor.nombre).all()
 
+        # Docentes que realmente tienen clases en esta versión.
+        con_clases = {}
+        for celda in celdas:
+            if celda.profesor:
+                con_clases[celda.profesor.id] = celda.profesor
+        profesores_vista = sorted(con_clases.values(), key=lambda p: p.nombre)
+
         # Vista por profesor
         profesor_sel = None
         celdas_profesor = []
-        if vista == 'profesor' and profesores:
-            profesor_sel = next((p for p in profesores if p.id == profesor_id),
-                                profesores[0])
+        if vista == 'profesor' and profesores_vista:
+            profesor_sel = next(
+                (p for p in profesores_vista if p.id == profesor_id),
+                profesores_vista[0],
+            )
             celdas_profesor = sorted(
                 [c for c in celdas if c.profesor_id == profesor_sel.id],
                 key=lambda c: (c.dia_semana, c.inicio_min),
@@ -278,6 +287,7 @@ def register_horarios_routes(app):
             bloques_form=bloques_form,
             aulas=aulas,
             profesores=profesores,
+            profesores_vista=profesores_vista,
             edit_celda=edit_celda,
             nuevo=nuevo,
             bloque_id=bloque_id,

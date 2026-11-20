@@ -99,21 +99,31 @@
 <section class="panel glass">
   <div class="panel-head">
     <h2>Horario por profesor</h2>
-    {% if profesores %}
+    <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
+    {% if profesor_sel %}
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('horario_docente', profesor_id=profesor_sel.id) }}">Horario individual</a>
+    {% endif %}
+    {% if profesores_vista %}
     <form method="get" action="{{ url_for('horario_detalle', version_id=version.id) }}"
           style="display: flex; gap: 0.5rem; align-items: center;">
       <input type="hidden" name="vista" value="profesor">
       <select class="input vanilla-select" name="profesor_id" style="min-width: 14rem;">
-        {% for p in profesores %}
+        {% for p in profesores_vista %}
         <option value="{{ p.id }}" {{ 'selected' if profesor_sel and p.id == profesor_sel.id }}>{{ p.nombre }}</option>
         {% endfor %}
       </select>
       <button class="btn btn-ghost btn-sm" type="submit">Ver</button>
     </form>
     {% endif %}
+    </div>
   </div>
 
-  {% if profesor_sel and celdas_profesor %}
+  {% if not profesores_vista %}
+  <div class="empty show" style="display:flex;">
+    <h3>Esta versión no tiene docentes asignados</h3>
+    <p>Generá el horario o asigná profesores en el plan de las secciones.</p>
+  </div>
+  {% elif profesor_sel and celdas_profesor %}
   <table>
     <thead>
       <tr>

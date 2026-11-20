@@ -34,6 +34,10 @@ de optimización que evita choques de profesores, aulas y secciones.
 - Versiones de horario: borrador, publicación, archivo, duplicado y regeneración
   conservando celdas fijadas.
 - Grilla semanal por sección y vista por profesor, edición manual e impresión.
+- Horario general por día (todas las secciones en columnas) y horario individual
+  docente imprimible, con totales y separado por ciclo y turno.
+- Etiquetas configurables para filas no clase (Actividades Formativas, Almuerzo, Receso)
+  desde `config.py`, sin cambios en la base.
 - Multi-colegio: selector de colegio activo en la barra superior.
 - Usuarios, perfil, preferencias y configuración.
 
@@ -184,8 +188,10 @@ python -m unittest discover -s tests
 ## 📋 Scripts útiles
 
 ```bash
-python scripts/seed_estructura.py     # estructura + datos demo
+python scripts/cargar_demo.py --force # DEMO completa (borra datos académicos, conserva usuarios)
+python scripts/seed_estructura.py     # estructura + datos demo (sin borrar)
 python scripts/nuevo_colegio.py 2 sanjose   # entorno de una instancia nueva
+python scripts/generar_manual.py            # guía de usuario en docs/
 python scripts/backup_db.py           # backup .sql
 python scripts/restore_db.py          # restaurar backup
 ```
