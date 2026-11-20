@@ -1,0 +1,63 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, row_actions, empty_state %}
+{% block title %}Niveles{% endblock %}
+
+{% block content %}
+{{ page_head('Niveles', 'Agrupaciones de grados, por ejemplo Inicial, Primaria y Secundaria.',
+             url_for('niveles', nuevo=1), 'Nuevo nivel') }}
+
+{% if edit or form or request.args.get('nuevo') %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar nivel' if edit else 'Nuevo nivel' }}</h2>
+    <a href="{{ url_for('niveles') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('nivel_guardar') }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="nombre">Nombre del nivel</label>
+        <input class="input" id="nombre" name="nombre" type="text"
+               value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
+               placeholder="Ej. Primaria" required autofocus>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear nivel' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('niveles') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Listado</h2>
+    <span class="hint">{{ items|length }} nivel(es)</span>
+  </div>
+
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nivel</th>
+        <th class="c-state">Grados</th>
+        <th style="width: 110px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for n in items %}
+      <tr>
+        <td><b>{{ n.nombre }}</b></td>
+        <td class="c-state">{{ n.grados|length }}</td>
+        <td>{{ row_actions(url_for('niveles', editar=n.id), url_for('nivel_eliminar', item_id=n.id), n.nombre) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay niveles', 'Creá los niveles del colegio (Inicial, Primaria, Secundaria) para después cargar sus grados.') }}
+  {% endif %}
+</section>
+{% endblock %}

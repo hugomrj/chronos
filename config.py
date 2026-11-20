@@ -1,11 +1,12 @@
 # Configuración de la aplicación
 import os
 from pathlib import Path
+from urllib.parse import quote_plus
 from dotenv import load_dotenv
 
-# Cargar variables de entorno desde la raíz
+# Cargar variables de entorno desde la raíz (el .env manda sobre el entorno del sistema)
 env_path = Path(__file__).resolve().parent / '.env'
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=env_path, override=True)
 
 
 class Config:
@@ -19,7 +20,10 @@ class Config:
     DB_PORT = os.getenv('DB_PORT', '5432')
     DB_NAME = os.getenv('DB_NAME', 'chronos_db')
     
-    SQLALCHEMY_DATABASE_URI = f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    SQLALCHEMY_DATABASE_URI = (
+        f'postgresql+psycopg2://{quote_plus(DB_USER)}:{quote_plus(DB_PASS)}'
+        f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Servidor

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chronos — {% block title %}Sistema{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Anti-FOUC -->
+<script>
+(function(){
+  function relLum(h,s,l){
+    s/=100;l/=100;
+    const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l);
+    const f=n=>{let x=l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return Math.max(0,Math.min(1,x))};
+    const lin=c=>c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);
+    return 0.2126*lin(f(0))+0.7152*lin(f(8))+0.0722*lin(f(4));
+  }
+  function inkSafeL(h,s){
+    let lo=12,hi=64;
+    while(hi-lo>0.5){const mid=(lo+hi)/2;if(relLum(h,s,mid)<=0.17)lo=mid;else hi=mid}
+    return Math.round(lo);
+  }
+  let p={};
+  try{p=JSON.parse(localStorage.getItem('ui-prefs-v2')||'{}')}catch(e){}
+  const sysLight=matchMedia('(prefers-color-scheme: light)').matches;
+  const h=p.h||160, s=p.s||84, L=inkSafeL(h,s);
+  document.documentElement.dataset.theme=p.theme||(sysLight?'light':'dark');
+  document.documentElement.style.setProperty('--h',h);
+  document.documentElement.style.setProperty('--s',s+'%');
+  document.documentElement.style.setProperty('--acc-strong',`hsl(${h} ${s}% ${L}%)`);
+  document.documentElement.style.setProperty('--glow',`hsl(${h} ${s}% ${L}% / .38)`);
+})();
+</script>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/01-theme.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/02-layout.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/03-components.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/04-dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/06-custom.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/vanilla-select.css') }}">
+</head>
+
+<body>
+<div class="scrim" id="scrim"></div>
+<div class="tooltip" id="tooltip"></div>
+
+{% include 'layout/partials/_sidebar.html' %}
+
+<div class="main">
+  {% include 'layout/partials/_topbar.html' %}
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<!-- MODAL DE ELIMINACIÓN -->
+<div class="ov" id="ovDel">
+  <div class="modal glass-deep">
+    <h3 id="delTitle">Eliminar registro</h3>
+    <p class="sub-t" id="delSub">¿Seguro? Esta acción no se puede deshacer.</p>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" onclick="closeOv(ovDel)">Cancelar</button>
+      <button class="btn btn-danger" id="btnDel" type="button">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+{% include 'layout/partials/_search_modal.html' %}
+
+<div class="toasts" id="toasts"></div>
+
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+<script src="{{ url_for('static', filename='js/components.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vanilla-select.js') }}"></script>
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <script>
+    (function(){
+      {% for category, message in messages %}
+      {% set tipo = 'ok' if category == 'success' else ('err' if category in ('error', 'danger') else ('warn' if category in ('warning', 'warn') else 'info')) %}
+      setTimeout(function(){
+        if(typeof toast === 'function'){
+          toast(
+            {{ tipo|tojson }},
+            {{ {'ok': 'Éxito', 'err': 'Error', 'warn': 'Atención', 'info': 'Información'}[tipo]|tojson }},
+            {{ message|tojson }}
+          );
+        }
+      }, 150 + {{ loop.index0 }} * 200);
+      {% endfor %}
+    })();
+  </script>
+  {% endif %}
+{% endwith %}
+</body>
+</html>

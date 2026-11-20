@@ -1,0 +1,92 @@
+<aside class="sidebar glass" id="sidebar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="17" rx="3"/>
+        <path d="M8 2v4M16 2v4M3 10h18"/>
+        <circle cx="12" cy="15" r="3"/>
+        <path d="M12 14v1l1 1"/>
+      </svg>
+    </div>
+    <div><b>Chronos</b><small>GESTIÓN DE HORARIOS</small></div>
+  </div>
+
+  <nav class="side-scroll" id="sideScroll">
+    <div class="nav-label">Principal</div>
+
+    <a href="/dashboard" class="nav-item {{ 'active' if request.path == '/dashboard' }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+      <span>Dashboard</span>
+    </a>
+
+    <div class="nav-label">Académico</div>
+
+    {% set estructura_activa = request.path.startswith('/colegios') or request.path.startswith('/anios')
+       or request.path.startswith('/niveles') or request.path.startswith('/grados')
+       or request.path.startswith('/turnos') or request.path.startswith('/aulas')
+       or request.path.startswith('/materias') %}
+    <div class="group {{ 'open' if estructura_activa }}">
+      <button class="group-btn" data-group>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9h.01M9 12h.01M9 15h.01M9 18h.01"/></svg>
+        <span>Estructura</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="sub"><div class="sub-inner">
+        <a href="/colegios" class="sub-item {{ 'active' if request.path.startswith('/colegios') }}"><span>Colegios</span></a>
+        <a href="/anios" class="sub-item {{ 'active' if request.path.startswith('/anios') }}"><span>Años lectivos</span></a>
+        <a href="/niveles" class="sub-item {{ 'active' if request.path.startswith('/niveles') }}"><span>Niveles</span></a>
+        <a href="/grados" class="sub-item {{ 'active' if request.path.startswith('/grados') }}"><span>Grados</span></a>
+        <a href="/turnos" class="sub-item {{ 'active' if request.path.startswith('/turnos') }}"><span>Turnos</span></a>
+        <a href="/aulas" class="sub-item {{ 'active' if request.path.startswith('/aulas') }}"><span>Aulas</span></a>
+        <a href="/materias" class="sub-item {{ 'active' if request.path.startswith('/materias') }}"><span>Materias</span></a>
+      </div></div>
+    </div>
+
+    <div class="group {{ 'open' if request.path.startswith('/profesores') or request.path.startswith('/disponibilidad') }}">
+      <button class="group-btn" data-group>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Profesores</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="sub"><div class="sub-inner">
+        <a href="/profesores" class="sub-item {{ 'active' if request.path == '/profesores' }}"><span>Listado</span></a>
+        <a href="/disponibilidad" class="sub-item {{ 'active' if request.path.startswith('/disponibilidad') }}"><span>Disponibilidad</span></a>
+      </div></div>
+    </div>
+
+    <div class="nav-label">Horarios</div>
+
+    {% set horarios_activo = request.path.startswith('/plantillas') or request.path.startswith('/secciones')
+       or request.path.startswith('/horarios') or request.path.startswith('/reglas') %}
+    <div class="group {{ 'open' if horarios_activo }}">
+      <button class="group-btn" data-group>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8 14h3M8 18h3M14 14h2M14 18h2"/></svg>
+        <span>Planificación</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="sub"><div class="sub-inner">
+        <a href="/plantillas" class="sub-item {{ 'active' if request.path.startswith('/plantillas') }}"><span>Plantillas y bloques</span></a>
+        <a href="/secciones" class="sub-item {{ 'active' if request.path.startswith('/secciones') }}"><span>Secciones y plan</span></a>
+        <a href="/reglas" class="sub-item {{ 'active' if request.path.startswith('/reglas') }}"><span>Reglas</span></a>
+        <a href="/horarios" class="sub-item {{ 'active' if request.path.startswith('/horarios') }}"><span>Horarios</span></a>
+      </div></div>
+    </div>
+
+    <div class="nav-label">Sistema</div>
+
+    <a href="/usuarios" class="nav-item {{ 'active' if request.path.startswith('/usuarios') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Usuarios</span>
+    </a>
+
+    <a href="/configuracion" class="nav-item {{ 'active' if request.path.startswith('/configuracion') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
+      <span>Configuración</span>
+    </a>
+  </nav>
+
+  <button class="collapse-btn" id="btnCollapse" data-tip="Colapsar / expandir menú">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg>
+    <span>Colapsar</span>
+  </button>
+</aside>

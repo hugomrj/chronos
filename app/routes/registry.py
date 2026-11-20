@@ -1,17 +1,26 @@
+# Registro centralizado de rutas
 from flask import redirect, url_for
-from app.routes.auth import register_auth_routes
+
 
 def register_routes(app):
     """Registra todas las rutas de la aplicación."""
-    
+
+    # Autenticación
+    from app.routes.auth import register_auth_routes
+    register_auth_routes(app)
+
+    # Dashboard
+    from app.routes.dashboard import register_dashboard_routes
+    register_dashboard_routes(app)
+
+    # Estructura académica
+    from app.routes.academic import register_academic_routes
+    register_academic_routes(app)
+
     @app.route('/')
     def index():
-        # Redirigir la raíz al login o al dashboard si ya está autenticado
-        return redirect(url_for('login'))
+        return redirect(url_for('dashboard'))
 
-    # 1. Registrar rutas de autenticación
-    register_auth_routes(app)
-    
-    # 2. Futuro: Registrar rutas del dashboard
-    # from app.routes.dashboard import register_dashboard_routes
-    # register_dashboard_routes(app)
+    # Futuro: importar y registrar más rutas aquí
+    # from app.routes.academic import register_academic_routes
+    # register_academic_routes(app)

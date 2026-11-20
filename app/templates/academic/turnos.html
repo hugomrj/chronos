@@ -1,0 +1,65 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, row_actions, empty_state %}
+{% block title %}Turnos{% endblock %}
+
+{% block content %}
+{{ page_head('Turnos', 'Franjas generales de funcionamiento: Mañana, Tarde, etc.',
+             url_for('turnos', nuevo=1), 'Nuevo turno') }}
+
+{% if edit or form or request.args.get('nuevo') %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar turno' if edit else 'Nuevo turno' }}</h2>
+    <a href="{{ url_for('turnos') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('turno_guardar') }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="nombre">Nombre del turno</label>
+        <input class="input" id="nombre" name="nombre" type="text"
+               value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
+               placeholder="Ej. Mañana" required autofocus>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear turno' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('turnos') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Listado</h2>
+    <span class="hint">{{ items|length }} turno(s)</span>
+  </div>
+
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Turno</th>
+        <th class="c-state">Plantillas</th>
+        <th class="c-state">Secciones</th>
+        <th style="width: 110px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in items %}
+      <tr>
+        <td><b>{{ t.nombre }}</b></td>
+        <td class="c-state">{{ t.plantillas|length }}</td>
+        <td class="c-state">{{ t.secciones|length }}</td>
+        <td>{{ row_actions(url_for('turnos', editar=t.id), url_for('turno_eliminar', item_id=t.id), t.nombre) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay turnos', 'Creá al menos un turno (Mañana o Tarde) para definir las plantillas de horario.') }}
+  {% endif %}
+</section>
+{% endblock %}

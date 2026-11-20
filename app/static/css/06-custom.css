@@ -410,3 +410,67 @@
   font-size: 0.75rem;
   color: var(--text-2);
 }
+
+/* ═══ ENCABEZADO DE PÁGINA (CRUDs) ═══ */
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.125rem;
+}
+
+.page-head h1 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.page-head p {
+  font-size: 0.84375rem;
+  color: var(--text-2);
+  margin-top: 0.3rem;
+  max-width: 42rem;
+}
+
+.page-head .btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.actions-cell .icon-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  display: inline-grid;
+  place-items: center;
+  color: var(--text-2);
+  background: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.actions-cell .icon-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.actions-cell .icon-btn:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.actions-cell .icon-btn.danger:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}

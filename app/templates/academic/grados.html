@@ -1,0 +1,80 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, row_actions, empty_state %}
+{% block title %}Grados{% endblock %}
+
+{% block content %}
+{{ page_head('Grados', 'Cursos que pertenecen a cada nivel: 1er grado, 2do grado, etc.',
+             url_for('grados', nuevo=1), 'Nuevo grado') }}
+
+{% if edit or form or request.args.get('nuevo') %}
+{% set v_nivel = (form.get('nivel_id') or '') if form else (edit.nivel_id if edit else '') %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar grado' if edit else 'Nuevo grado' }}</h2>
+    <a href="{{ url_for('grados') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('grado_guardar') }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="nombre">Nombre del grado</label>
+        <input class="input" id="nombre" name="nombre" type="text"
+               value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
+               placeholder="Ej. 1er grado" required autofocus>
+      </div>
+      <div class="field fw-1">
+        <label for="nivel_id">Nivel</label>
+        <select class="input vanilla-select" id="nivel_id" name="nivel_id" required>
+          <option value="">Seleccioná un nivel</option>
+          {% for n in niveles %}
+          <option value="{{ n.id }}" {{ 'selected' if (v_nivel|string) == (n.id|string) }}>{{ n.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-1">
+        <label for="orden">Orden <span class="opt">(opcional)</span></label>
+        <input class="input" id="orden" name="orden" type="number" min="0"
+               value="{{ form.get('orden') or (edit.orden if edit else 0) }}">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear grado' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('grados') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Listado</h2>
+    <span class="hint">{{ items|length }} grado(s)</span>
+  </div>
+
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Grado</th>
+        <th class="c-state">Nivel</th>
+        <th class="c-state">Orden</th>
+        <th style="width: 110px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in items %}
+      <tr>
+        <td><b>{{ g.nombre }}</b></td>
+        <td class="c-state">{{ g.nivel.nombre }}</td>
+        <td class="c-state">{{ g.orden }}</td>
+        <td>{{ row_actions(url_for('grados', editar=g.id), url_for('grado_eliminar', item_id=g.id), g.nombre) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay grados', 'Creá los grados de cada nivel para poder armar las secciones y su plan de estudios.') }}
+  {% endif %}
+</section>
+{% endblock %}

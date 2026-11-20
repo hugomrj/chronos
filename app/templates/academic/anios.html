@@ -1,0 +1,103 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
+{% block title %}Años lectivos{% endblock %}
+
+{% block content %}
+{{ page_head('Años lectivos', 'Períodos académicos del colegio. Solo uno puede estar activo a la vez.',
+             url_for('anios', nuevo=1), 'Nuevo año') }}
+
+{% if edit or form or request.args.get('nuevo') %}
+{% set v_activo = form.get('activo') if form else (edit.activo if edit else false) %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar año lectivo' if edit else 'Nuevo año lectivo' }}</h2>
+    <a href="{{ url_for('anios') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('anio_guardar') }}" class="form-panel" autocomplete="off">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="nombre">Nombre</label>
+        <input class="input" id="nombre" name="nombre" type="text"
+               value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
+               placeholder="Ej. 2026" required autofocus>
+      </div>
+      <div class="field fw-1">
+        <label for="fecha_inicio">Fecha de inicio</label>
+        <input class="input" id="fecha_inicio" name="fecha_inicio" type="date"
+               value="{{ form.get('fecha_inicio') or (edit.fecha_inicio.isoformat() if edit else '') }}" required>
+      </div>
+      <div class="field fw-1">
+        <label for="fecha_fin">Fecha de fin</label>
+        <input class="input" id="fecha_fin" name="fecha_fin" type="date"
+               value="{{ form.get('fecha_fin') or (edit.fecha_fin.isoformat() if edit else '') }}" required>
+      </div>
+      <div class="field fw-full">
+        <label class="switch-row">
+          <input type="checkbox" class="switch" name="activo" {{ 'checked' if v_activo }}>
+          <span class="switch-state"></span>
+        </label>
+        <div class="hint">Al activarlo, el año que estaba activo se desactiva automáticamente.</div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear año' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('anios') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Listado</h2>
+    <span class="hint">{{ items|length }} año(s)</span>
+  </div>
+
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Año</th>
+        <th class="c-state">Inicio</th>
+        <th class="c-state">Fin</th>
+        <th>Estado</th>
+        <th style="width: 175px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in items %}
+      <tr>
+        <td><b>{{ a.nombre }}</b></td>
+        <td class="c-state">{{ a.fecha_inicio.strftime('%d/%m/%Y') }}</td>
+        <td class="c-state">{{ a.fecha_fin.strftime('%d/%m/%Y') }}</td>
+        <td>
+          {% if a.activo %}
+            <span class="status ok">Activo</span>
+          {% else %}
+            <span class="status off">Inactivo</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="actions-cell">
+            {% if not a.activo %}
+            <form method="post" action="{{ url_for('anio_activar', item_id=a.id) }}">
+              <button type="submit" class="btn btn-ghost btn-sm">Activar</button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('anios', editar=a.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('anio_eliminar', item_id=a.id) }}"
+                    data-del-name="{{ a.nombre }}">{{ icon_eliminar() }}</button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay años lectivos', 'Creá el primer año (por ejemplo 2026) y activalo para empezar a generar horarios.') }}
+  {% endif %}
+</section>
+{% endblock %}
