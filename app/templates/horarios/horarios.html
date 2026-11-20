@@ -1,0 +1,148 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import form_errors, icon_eliminar, empty_state %}
+{% block title %}Horarios{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Horarios</h1>
+    <p>Generá un borrador para un turno, revisalo y publicalo cuando esté listo.</p>
+  </div>
+</div>
+
+{% if not anio %}
+<section class="panel glass">
+  {{ empty_state('No hay año lectivo activo', 'Activá un año lectivo para poder generar horarios.') }}
+  <div style="text-align: center; padding-bottom: 2rem; position: relative; z-index: 1;">
+    <a href="{{ url_for('anios') }}" class="btn btn-primary">Configurar año lectivo</a>
+  </div>
+</section>
+{% else %}
+
+{% if resultado and not resultado.ok %}
+<div class="gen-error">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+  <div>
+    <b>No se pudo generar el horario.</b>
+    {{ resultado.mensaje }}
+    {% if resultado.detalle %}
+    <ul>
+      {% for linea in resultado.detalle %}<li>{{ linea }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% if resultado.estadisticas %}
+    <div class="hint" style="margin-top: 0.4rem;">
+      Solver: {{ resultado.estadisticas.get('estado_solver') }}
+      · {{ resultado.estadisticas.get('segundos') }} s
+      · {{ resultado.estadisticas.get('variables') }} variables
+      · {{ resultado.estadisticas.get('restricciones') }} restricciones
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% if resultado and resultado.advertencias %}
+<div class="plan-warning">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+  <div>
+    {% for advertencia in resultado.advertencias %}
+    <div>{{ advertencia }}</div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>Generar horario · {{ anio.nombre }}</h2>
+    <span class="hint">Se genera un borrador por turno</span>
+  </div>
+  <form method="post" action="{{ url_for('horario_generar') }}" class="form-panel" autocomplete="off">
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="turno_id">Turno</label>
+        <select class="input vanilla-select" id="turno_id" name="turno_id" required>
+          <option value="">Seleccioná un turno</option>
+          {% for t in turnos %}
+          <option value="{{ t.id }}" {{ 'selected' if turno_sel == t.id }}>
+            {{ t.nombre }} · {{ secciones_por_turno.get(t.id, 0) }} sección(es)
+          </option>
+          {% endfor %}
+        </select>
+        <div class="hint">El motor solo programa las secciones del turno elegido.</div>
+      </div>
+      <div class="field fw-2">
+        <label for="nombre">Nombre de la versión <span class="opt">(opcional)</span></label>
+        <input class="input" id="nombre" name="nombre" type="text"
+               placeholder="Ej. Borrador marzo">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit" id="btnGenerar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 2-3 9h7l-3 11"/></svg>
+        Generar horario
+      </button>
+      <span class="hint">Puede tardar unos segundos; al terminar se guarda como borrador.</span>
+    </div>
+  </form>
+</section>
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Versiones</h2>
+    <span class="hint">{{ versiones|length }} versión(es) del año {{ anio.nombre }}</span>
+  </div>
+
+  {% if versiones %}
+  <table>
+    <thead>
+      <tr>
+        <th>Versión</th>
+        <th class="c-state">Turno</th>
+        <th>Estado</th>
+        <th class="c-state">Celdas</th>
+        <th class="c-state">Creada</th>
+        <th style="width: 140px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in versiones %}
+      <tr>
+        <td>
+          <a href="{{ url_for('horario_detalle', version_id=v.id) }}" style="color: var(--text); font-weight: 700;">
+            {{ v.nombre or ('Versión ' ~ v.id) }}
+          </a>
+          {% if v.notas %}<div class="hint" style="margin-top: 0.1rem;">{{ v.notas }}</div>{% endif %}
+        </td>
+        <td class="c-state">{{ v.turno.nombre }}</td>
+        <td>
+          {% if v.estado == 'publicado' %}
+            <span class="status ok">Publicado</span>
+          {% elif v.estado == 'archivado' %}
+            <span class="status off">Archivado</span>
+          {% else %}
+            <span class="status" style="color: var(--warn)">Borrador</span>
+          {% endif %}
+        </td>
+        <td class="c-state">{{ v.celdas|length }}</td>
+        <td class="c-state">{{ v.creado_en.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td>
+          <div class="actions-cell">
+            <a href="{{ url_for('horario_detalle', version_id=v.id) }}" class="btn btn-ghost btn-sm">Ver</a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('horario_eliminar', version_id=v.id) }}"
+                    data-del-name="{{ v.nombre or ('Versión ' ~ v.id) }}">{{ icon_eliminar() }}</button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay horarios generados', 'Elegí un turno y generá el primer borrador. El motor respeta profesores, aulas, disponibilidad y reglas.') }}
+  {% endif %}
+</section>
+
+{% endif %}
+{% endblock %}

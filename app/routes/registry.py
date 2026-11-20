@@ -29,6 +29,10 @@ def register_routes(app):
     from app.routes.rules import register_rules_routes
     register_rules_routes(app)
 
+    # Generación de horarios
+    from app.routes.horarios import register_horarios_routes
+    register_horarios_routes(app)
+
     @app.route('/')
     def index():
         return redirect(url_for('dashboard'))

@@ -133,8 +133,23 @@ PROFESORES = [
         'horas_max_dia': 4,
         'materias': ['Educación Física', 'Informática'],
         'disponibilidad': [
-            (1, '13:00', '17:00'), (2, '13:00', '17:00'), (3, '13:00', '17:00'),
-            (4, '13:00', '17:00'), (5, '13:00', '17:00'),
+            (1, '07:00', '12:00'), (2, '07:00', '12:00'), (3, '07:00', '12:00'),
+            (4, '07:00', '12:00'), (5, '07:00', '12:00'),
+            (1, '13:00', '18:00'), (2, '13:00', '18:00'), (3, '13:00', '18:00'),
+            (4, '13:00', '18:00'), (5, '13:00', '18:00'),
+        ],
+    },
+    {
+        'nombre': 'Diego Ramírez',
+        'documento': '4001004',
+        'contacto': '0984 777 888',
+        'horas_min_semana': 10,
+        'horas_max_semana': 25,
+        'horas_max_dia': 5,
+        'materias': ['Matemática', 'Ciencias Naturales'],
+        'disponibilidad': [
+            (1, '13:00', '18:00'), (2, '13:00', '18:00'), (3, '13:00', '18:00'),
+            (4, '13:00', '18:00'), (5, '13:00', '18:00'),
         ],
     },
     {
@@ -217,12 +232,25 @@ def seed():
             materias_por_nombre[m] for m in datos['materias']
             if m in materias_por_nombre
         ]
-        if not profe.disponibilidad:
-            for dia, desde, hasta in datos['disponibilidad']:
+        for dia, desde, hasta in datos['disponibilidad']:
+            hd = time.fromisoformat(desde)
+            hh = time.fromisoformat(hasta)
+            cubierta = False
+            for d in list(profe.disponibilidad):
+                if d.dia_semana != dia or d.tipo != 'disponible':
+                    continue
+                if d.hora_desde <= hd and d.hora_hasta >= hh:
+                    cubierta = True
+                    break
+                if d.hora_desde <= hd and d.hora_hasta < hh:
+                    d.hora_hasta = hh
+                    cubierta = True
+                    break
+            if not cubierta:
                 profe.disponibilidad.append(ProfesorDisponibilidad(
                     dia_semana=dia,
-                    hora_desde=time.fromisoformat(desde),
-                    hora_hasta=time.fromisoformat(hasta),
+                    hora_desde=hd,
+                    hora_hasta=hh,
                     tipo='disponible',
                 ))
 
