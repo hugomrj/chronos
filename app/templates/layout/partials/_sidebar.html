@@ -21,7 +21,7 @@
 
     <div class="nav-label">Académico</div>
 
-    {% set estructura_activa = request.path.startswith('/colegios') or request.path.startswith('/anios')
+    {% set estructura_activa = request.path.startswith('/anios')
        or request.path.startswith('/niveles') or request.path.startswith('/grados')
        or request.path.startswith('/turnos') or request.path.startswith('/aulas')
        or request.path.startswith('/materias') %}
@@ -32,7 +32,6 @@
         <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
       </button>
       <div class="sub"><div class="sub-inner">
-        <a href="/colegios" class="sub-item {{ 'active' if request.path.startswith('/colegios') }}"><span>Colegios</span></a>
         <a href="/anios" class="sub-item {{ 'active' if request.path.startswith('/anios') }}"><span>Años lectivos</span></a>
         <a href="/niveles" class="sub-item {{ 'active' if request.path.startswith('/niveles') }}"><span>Niveles</span></a>
         <a href="/grados" class="sub-item {{ 'active' if request.path.startswith('/grados') }}"><span>Grados</span></a>

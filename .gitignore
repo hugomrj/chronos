@@ -39,5 +39,4 @@ htmlcov/
 backups/
 *.sql.bak
 # Entornos de instancia (contienen secretos)
-.env.*
-!.env.example
+.env.*.local
