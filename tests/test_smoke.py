@@ -20,7 +20,7 @@ class SmokeTest(unittest.TestCase):
         self.assertEqual(r.status_code, 302)
 
         rutas = [
-            '/dashboard', '/colegios', '/anios', '/niveles', '/grados',
+            '/dashboard', '/anios', '/niveles', '/grados',
             '/turnos', '/aulas', '/materias', '/profesores', '/disponibilidad',
             '/plantillas', '/secciones', '/reglas', '/horarios', '/usuarios',
             '/perfil', '/preferencias', '/configuracion',
@@ -28,6 +28,25 @@ class SmokeTest(unittest.TestCase):
         for ruta in rutas:
             with self.subTest(ruta=ruta):
                 self.assertEqual(self.client.get(ruta).status_code, 200)
+
+    def test_colegios_solo_para_superadmin(self):
+        self.client.post('/login', data={
+            'email': 'admin@chronos.com',
+            'password': 'admin123',
+        })
+        # La instancia normal no administra colegios.
+        self.assertEqual(self.client.get('/colegios').status_code, 404)
+
+    def test_instancia_ajena_rechaza_login(self):
+        app = create_app()
+        app.config.update(TESTING=True, CSRF_ENABLED=False, COLEGIO_ID=9999)
+        client = app.test_client()
+        r = client.post('/login', data={
+            'email': 'admin@chronos.com',
+            'password': 'admin123',
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('no pertenece a esta instituci', r.get_data(as_text=True))
 
     def test_post_sin_csrf_es_rechazado(self):
         app = create_app()

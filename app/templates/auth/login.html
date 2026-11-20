@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Chronos — Acceder</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -63,8 +64,8 @@
           </svg>
         </div>
         <div class="auth-brand-txt">
-          <b>Chronos</b>
-          <small>SISTEMA DE HORARIOS</small>
+          <b>{{ colegio.nombre if colegio else 'Chronos' }}</b>
+          <small>{{ 'PORTAL DE HORARIOS' if colegio else 'SISTEMA DE HORARIOS' }}</small>
         </div>
       </div>
 

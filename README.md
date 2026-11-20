@@ -11,6 +11,7 @@ de optimización que evita choques de profesores, aulas y secciones.
 ## 🚀 Tecnologías
 
 - **Backend:** Python 3.12 + Flask (sin blueprints, rutas registradas por módulo)
+- **Servidor de aplicación:** Gunicorn (`wsgi.py`)
 - **Base de datos:** PostgreSQL 16 con `btree_gist` y restricciones `EXCLUDE`
   para impedir choques a nivel de motor de base de datos
 - **ORM:** SQLAlchemy / Flask-SQLAlchemy
@@ -96,24 +97,55 @@ python scripts/seed_data.py
 python scripts/seed_estructura.py
 ```
 
-6. Ejecutar:
+6. Ejecutar en desarrollo:
 
 ```bash
 python run.py
 ```
 
-Abrir `http://127.0.0.1:5000`.
+o en producción:
+
+```bash
+gunicorn -w 2 -b 127.0.0.1:8000 wsgi:app
+```
 
 **Credenciales demo:** `admin@chronos.com` / `admin123`.
 
 ---
 
-## 🏫 Multi-colegio
+## 🏫 Una instancia por colegio
 
-El esquema soporta varios colegios. El colegio activo se guarda en la sesión y
-se cambia desde el selector de la barra superior (aparece cuando hay más de un
-colegio). Todas las pantallas de configuración y horarios trabajan sobre el
-colegio activo.
+Cada colegio corre en su **propia instancia** (subdominio propio) usando el
+mismo código y la misma base de datos. Una instancia nunca ve datos de otra:
+
+- `COLEGIO_ID` en el `.env` define el colegio que sirve la instancia.
+- El login rechaza usuarios que no pertenecen a ese colegio.
+- No hay selector de colegio: el colegio se deriva de la configuración.
+- La gestión de colegios (`/colegios`) solo existe en la instancia maestra
+  (`SUPERADMIN=True`); en el resto responde 404.
+
+### Crear una instancia para un colegio nuevo
+
+1. Registrar el colegio en la base (instancia maestra con `SUPERADMIN=True`,
+   menú **Colegios**) y anotar su `id`.
+2. Generar el entorno de la instancia:
+
+```bash
+python scripts/nuevo_colegio.py 2 sanjose
+# crea .env.sanjose con COLEGIO_ID=2 y SECRET_KEY nueva
+```
+
+3. Completar `DB_*`, `HOST`, `PORT` y `USE_PROXY_FIX` en ese archivo y
+   enlazarlo como `.env` de la carpeta de la instancia.
+4. Arrancar:
+
+```bash
+gunicorn -w 2 -b 127.0.0.1:8001 wsgi:app
+```
+
+5. Publicar con nginx/apache en el subdominio, apuntando al puerto de la instancia.
+
+Cada colegio consume pocos recursos (Flask + 2 workers); la base es compartida.
 
 ---
 
@@ -132,6 +164,8 @@ python -m unittest discover -s tests
 - Token CSRF en todos los formularios `POST` (configurable con `CSRF_ENABLED`).
 - Hash de contraseñas con bcrypt.
 - Redirecciones post-login restringidas a rutas internas.
+- Cookies de sesión `Secure`, `HttpOnly` y `SameSite=Lax` en producción.
+- Login restringido al colegio de la instancia (`COLEGIO_ID`).
 - Restricciones de integridad en PostgreSQL para choques de horario.
 - Roles: actualmente solo `admin`; la UI de usuarios y configuración está
   protegida por rol.
@@ -151,6 +185,7 @@ python -m unittest discover -s tests
 
 ```bash
 python scripts/seed_estructura.py     # estructura + datos demo
+python scripts/nuevo_colegio.py 2 sanjose   # entorno de una instancia nueva
 python scripts/backup_db.py           # backup .sql
 python scripts/restore_db.py          # restaurar backup
 ```

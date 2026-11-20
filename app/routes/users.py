@@ -1,6 +1,6 @@
 import re
 
-from flask import flash, redirect, render_template, request, session, url_for
+from flask import current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 
@@ -218,6 +218,7 @@ def register_users_routes(app):
             'users/configuracion.html',
             crumb='Configuración',
             colegio=colegio,
+            es_superadmin=current_app.config.get('SUPERADMIN', False),
             total_colegios=Colegio.query.count(),
             total_usuarios=Usuario.query.filter_by(colegio_id=colegio.id).count(),
             total_profesores=Profesor.query.filter_by(colegio_id=colegio.id).count(),

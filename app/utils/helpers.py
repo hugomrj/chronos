@@ -1,6 +1,6 @@
 from datetime import date, time
 
-from flask import has_request_context, session
+from flask import current_app
 
 from app.extensions import db
 from app.models import AnioLectivo, Colegio
@@ -27,18 +27,16 @@ DIAS_SEMANA = {
 
 
 def colegio_actual():
-    """Colegio activo de la sesión; si no hay, el primero disponible."""
-    if has_request_context():
-        colegio_id = session.get('colegio_id')
-        if colegio_id:
-            colegio = db.session.get(Colegio, colegio_id)
-            if colegio:
-                return colegio
+    """Colegio que sirve esta instancia (COLEGIO_ID del .env).
 
-    colegio = Colegio.query.order_by(Colegio.id).first()
-    if colegio and has_request_context():
-        session['colegio_id'] = colegio.id
-    return colegio
+    Si la instancia no tiene COLEGIO_ID, en desarrollo se usa el primer
+    colegio de la base para no bloquear el trabajo local.
+    """
+    colegio_id = current_app.config.get('COLEGIO_ID') or 0
+    if colegio_id:
+        return db.session.get(Colegio, colegio_id)
+
+    return Colegio.query.order_by(Colegio.id).first()
 
 
 def anio_activo(colegio_id):

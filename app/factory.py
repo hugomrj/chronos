@@ -11,10 +11,18 @@ from app.extensions import db, login_manager, bcrypt
 def create_app(config_name=None):
     """Crea y configura la aplicación Flask."""
     if config_name is None:
-        config_name = os.getenv('FLASK_ENV', 'development')
+        config_name = (os.getenv('FLASK_CONFIG')
+                       or os.getenv('FLASK_ENV')
+                       or 'development')
+    if config_name not in config_by_name:
+        config_name = 'default'
 
     app = Flask(__name__)
     app.config.from_object(config_by_name[config_name])
+
+    if app.config.get('USE_PROXY_FIX'):
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
     # Inicializar extensiones
     db.init_app(app)
@@ -60,6 +68,7 @@ def create_app(config_name=None):
             'csrf_token': csrf_token,
             'colegio_actual': actual,
             'colegios_disponibles': colegios,
+            'es_superadmin': bool(app.config.get('SUPERADMIN')),
         }
 
     @app.errorhandler(400)

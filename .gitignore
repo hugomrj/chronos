@@ -38,3 +38,6 @@ htmlcov/
 # Backups de base de datos
 backups/
 *.sql.bak
+# Entornos de instancia (contienen secretos)
+.env.*
+!.env.example
