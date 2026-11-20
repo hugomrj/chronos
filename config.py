@@ -56,6 +56,9 @@ class Config:
     # Detrás de nginx / proxy inverso
     USE_PROXY_FIX = _env_flag('USE_PROXY_FIX', False)
 
+    # Documentación (guía de usuario)
+    DOCS_DIRECTORY = str(BASE_DIR / 'docs')
+
     # Servidor
     HOST = os.getenv('HOST', '0.0.0.0')
     PORT = int(os.getenv('PORT', 5000))

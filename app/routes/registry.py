@@ -37,6 +37,10 @@ def register_routes(app):
     from app.routes.users import register_users_routes
     register_users_routes(app)
 
+    # Guía de usuario
+    from app.routes.docs import register_docs_routes
+    register_docs_routes(app)
+
     @app.route('/')
     def index():
         return redirect(url_for('dashboard'))
