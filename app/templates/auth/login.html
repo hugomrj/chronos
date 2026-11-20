@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chronos — Acceder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Anti-FOUC -->
+<script>
+(function(){
+  function relLum(h,s,l){
+    s/=100;l/=100;
+    const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l);
+    const f=n=>{let x=l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return Math.max(0,Math.min(1,x))};
+    const lin=c=>c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);
+    return 0.2126*lin(f(0))+0.7152*lin(f(8))+0.0722*lin(f(4));
+  }
+  function inkSafeL(h,s){
+    let lo=12,hi=64;
+    while(hi-lo>0.5){const mid=(lo+hi)/2;if(relLum(h,s,mid)<=0.17)lo=mid;else hi=mid}
+    return Math.round(lo);
+  }
+  let p={};
+  try{p=JSON.parse(localStorage.getItem('ui-prefs-v2')||'{}')}catch(e){}
+  const sysLight=matchMedia('(prefers-color-scheme: light)').matches;
+  const h=p.h||160, s=p.s||84, L=inkSafeL(h,s);
+  document.documentElement.dataset.theme=p.theme||(sysLight?'light':'dark');
+  document.documentElement.style.setProperty('--h',h);
+  document.documentElement.style.setProperty('--s',s+'%');
+  document.documentElement.style.setProperty('--acc-strong',`hsl(${h} ${s}% ${L}%)`);
+  document.documentElement.style.setProperty('--glow',`hsl(${h} ${s}% ${L}% / .38)`);
+})();
+</script>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/01-theme.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/03-components.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/05-login.css') }}">
+</head>
+<body>
+
+<div class="top-actions">
+  <button class="icon-btn" id="btnTheme" aria-label="Cambiar tema">
+    <svg id="icoSun" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    <svg id="icoMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</div>
+
+<div class="auth-scene">
+  <main class="auth-stack">
+    <div class="auth-card glass" id="authCard">
+
+      <div class="auth-brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="17" rx="3"/>
+            <path d="M8 2v4M16 2v4M3 10h18"/>
+            <circle cx="12" cy="15" r="3"/>
+            <path d="M12 14v1l1 1"/>
+          </svg>
+        </div>
+        <div class="auth-brand-txt">
+          <b>Chronos</b>
+          <small>SISTEMA DE HORARIOS</small>
+        </div>
+      </div>
+
+      <form id="loginForm" method="POST"
+            action="{{ url_for('login', next=request.args.get('next')) }}" novalidate>
+
+        <div class="field">
+          <label for="email">Correo electrónico</label>
+          <div class="input-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <input class="input" type="email" id="email" name="email"
+                   placeholder="admin@chronos.local"
+                   value="{{ request.form.get('email', '') }}"
+                   autocomplete="email" spellcheck="false" required autofocus>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <div class="input-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input class="input has-eye" type="password" id="password" name="password" placeholder="••••••••"
+                   autocomplete="current-password" required>
+            <button type="button" class="eye" id="btnEye" aria-label="Mostrar u ocultar contraseña">
+              <svg id="eyeOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="eyeOff" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="btnLogin">
+          <span id="btnLabel">Iniciar sesión</span>
+          <svg id="btnArrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          <span class="spinner" id="btnSpin" style="display:none"></span>
+        </button>
+      </form>
+
+    </div>
+  </main>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <script>
+    window.__FLASHES__ = [
+      {% for category, message in messages %}
+      {
+        "type": {{ ('ok' if category == 'success' else ('err' if category in ('error', 'danger') else ('warn' if category in ('warning', 'warn') else 'info')))|tojson }},
+        "msg": {{ message|tojson }}
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+  </script>
+  {% endif %}
+{% endwith %}
+
+<script>
+/* ═══ TEMA ═══ */
+const root=document.documentElement,PREFS_KEY='ui-prefs-v2';
+function persist(){try{
+  const h=parseFloat(getComputedStyle(root).getPropertyValue('--h'))||160,
+        s=parseFloat(getComputedStyle(root).getPropertyValue('--s'))||84;
+  localStorage.setItem(PREFS_KEY,JSON.stringify({theme:root.dataset.theme,h,s}))
+}catch(e){}}
+const icoSun=document.getElementById('icoSun'),icoMoon=document.getElementById('icoMoon');
+function syncThemeIcons(){const l=root.dataset.theme==='light';
+  icoSun.style.display=l?'block':'none';icoMoon.style.display=l?'none':'block'}
+syncThemeIcons();
+document.getElementById('btnTheme').onclick=()=>{
+  root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';
+  syncThemeIcons();persist();
+};
+
+/* ═══ MOSTRAR/OCULTAR CONTRASEÑA ═══ */
+const pwd=document.getElementById('password'),
+      btnEye=document.getElementById('btnEye'),
+      eyeOn=document.getElementById('eyeOn'),
+      eyeOff=document.getElementById('eyeOff');
+btnEye.onclick=()=>{
+  const show=pwd.type==='password';
+  pwd.type=show?'text':'password';
+  eyeOn.style.display=show?'none':'block';
+  eyeOff.style.display=show?'block':'none';
+  pwd.focus();
+};
+
+/* ═══ SISTEMA DE TOASTS ═══ */
+const localIcons = {
+  ok:'<circle cx="12" cy="12" r="10"/><path d="m8.5 12.5 2.5 2.5 5-6"/>',
+  err:'<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>',
+  warn:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>'
+};
+
+function toast(type, title, msg){
+  const container = document.getElementById('toasts');
+  if(!container) return;
+  const t = document.createElement('div');
+  t.className = 'toast glass-deep ' + type;
+  t.innerHTML = `<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${localIcons[type] || localIcons.info}</svg></span>
+    <div><b>${title}</b><p>${msg}</p></div><button class="x">✕</button><span class="bar"></span>`;
+  container.appendChild(t);
+  const kill = () => { t.classList.add('out'); setTimeout(() => t.remove(), 220); };
+  t.querySelector('.x').onclick = kill;
+  setTimeout(kill, 4000);
+}
+
+/* ═══ FLASH → TOASTS ═══ */
+(function(){
+  const flashes = window.__FLASHES__ || [];
+  const titles = { ok:'Éxito', err:'Error de acceso', warn:'Atención', info:'Información' };
+  flashes.forEach((f, i) => setTimeout(() => toast(f.type, titles[f.type] || 'Chronos', f.msg), 150 + i * 200));
+})();
+
+/* ═══ ENVÍO DEL FORMULARIO ═══ */
+const form = document.getElementById('loginForm'),
+      btn = document.getElementById('btnLogin'),
+      btnLabel = document.getElementById('btnLabel'),
+      btnArrow = document.getElementById('btnArrow'),
+      btnSpin = document.getElementById('btnSpin');
+
+form.addEventListener('submit', (e) => {
+  if(!form.checkValidity()){
+    e.preventDefault();
+    const authCard = document.getElementById('authCard');
+    authCard.classList.add('shake');
+    setTimeout(()=>authCard.classList.remove('shake'), 500);
+    toast('warn', 'Atención', 'Por favor, completá todos los campos.');
+    return;
+  }
+
+  // POST normal: mostramos spinner y evitamos doble envío
+  btn.disabled = true;
+  btnLabel.textContent = 'Accediendo…';
+  btnArrow.style.display = 'none';
+  btnSpin.style.display = 'inline-block';
+});
+
+// Enfocar el input correcto al cargar
+const emailInput = document.getElementById('email');
+if(emailInput.value) pwd.focus(); else emailInput.focus();
+</script>
+
+</body>
+</html>

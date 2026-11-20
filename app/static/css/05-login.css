@@ -1,0 +1,49 @@
+/* ═══ Solo lo propio del login ═══ */
+.auth-scene{min-height:100vh;min-height:100svh;display:flex;padding:1.75rem 1.25rem 2.125rem}
+.auth-stack{margin:auto;width:100%;max-width:25rem;position:relative;z-index:1}
+.top-actions{position:fixed;top:1.125rem;right:1.125rem;z-index:50}
+
+.auth-card{border-radius:1.375rem;padding:2rem 1.875rem 1.75rem;animation:fadeInUp .5s ease both}
+.auth-card.done{animation:none}
+.auth-card.shake{animation:shakeLogin .5s}
+@keyframes shakeLogin{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+
+/* Marca */
+.auth-brand{display:flex;flex-direction:column;align-items:center;gap:.75rem;margin-bottom:1.5rem}
+.brand-mark{width:3.25rem;height:3.25rem;border-radius:1rem;display:grid;place-items:center;color:#fff;
+  background:var(--acc-strong);box-shadow:0 0 16px var(--glow),inset 0 1px 0 hsl(0 0% 100% / .25)}
+.brand-mark svg{width:1.5rem;height:1.5rem}
+.auth-brand-txt{text-align:center}
+.auth-brand-txt b{font-size:1.1875rem;letter-spacing:-.02em;display:block}
+.auth-brand-txt small{display:block;font-size:.625rem;font-weight:500;color:var(--text-2);letter-spacing:.12em;margin-top:.125rem}
+
+/* Inputs con icono */
+.input-ic{position:relative}
+.input-ic>svg{position:absolute;left:.875rem;top:50%;transform:translateY(-50%);width:1rem;height:1rem;
+  color:var(--text-2);pointer-events:none}
+.input-ic .input{padding-left:2.625rem}
+.input-ic .input.has-eye{padding-right:2.875rem}
+.eye{position:absolute;right:.4375rem;top:50%;transform:translateY(-50%);width:1.9375rem;height:1.9375rem;
+  border-radius:.5rem;border:none;background:none;color:var(--text-2);cursor:pointer;display:grid;place-items:center;transition:.15s}
+.eye:hover{color:var(--text);background:var(--hover)}
+.eye svg{width:1rem;height:1rem}
+input.input:-webkit-autofill{
+  -webkit-text-fill-color:var(--text);
+  -webkit-box-shadow:0 0 0 40px var(--panel) inset;
+  caret-color:var(--text);transition:background-color 99999s ease-in-out 0s}
+
+/* Botón */
+.btn-block{width:100%;justify-content:center;margin-top:.25rem}
+.btn:disabled{opacity:.8;cursor:default;transform:none;filter:none}
+.spinner{width:.9375rem;height:.9375rem;border-radius:50%;border:2px solid hsl(0 0% 100% / .35);
+  border-top-color:#fff;animation:rot .7s linear infinite;flex-shrink:0}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+@media (max-width:640px){
+  .auth-scene{padding:4.375rem 1rem 1.625rem}
+  .auth-card{padding:1.625rem 1.25rem 1.375rem;border-radius:1.125rem}
+  .top-actions{top:.875rem;right:.875rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
