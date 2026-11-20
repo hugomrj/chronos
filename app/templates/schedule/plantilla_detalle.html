@@ -30,6 +30,7 @@
     <a href="{{ url_for('plantilla_detalle', plantilla_id=plantilla.id) }}" class="btn btn-ghost btn-sm">Cerrar</a>
   </div>
   <form method="post" action="{{ url_for('bloque_guardar', plantilla_id=plantilla.id) }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {{ form_errors(errors) }}
     {% if edit_bloque %}<input type="hidden" name="id" value="{{ edit_bloque.id }}">{% endif %}
     <div class="form-grid">

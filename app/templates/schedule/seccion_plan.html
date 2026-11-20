@@ -17,6 +17,7 @@
   </div>
   <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
     <form method="post" action="{{ url_for('seccion_plan_sincronizar', seccion_id=seccion.id) }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-ghost" type="submit">Sincronizar desde el grado</button>
     </form>
     <a href="{{ url_for('seccion_plan', seccion_id=seccion.id, nuevo=1) }}" class="btn btn-primary">
@@ -56,6 +57,7 @@
     <a href="{{ url_for('seccion_plan', seccion_id=seccion.id) }}" class="btn btn-ghost btn-sm">Cerrar</a>
   </div>
   <form method="post" action="{{ url_for('seccion_plan_guardar', seccion_id=seccion.id) }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {{ form_errors(errors) }}
     {% if edit %}
     <input type="hidden" name="sm_id" value="{{ edit.id }}">

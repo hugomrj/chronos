@@ -27,6 +27,7 @@
     <a href="{{ url_for('grado_plan', grado_id=grado.id) }}" class="btn btn-ghost btn-sm">Cerrar</a>
   </div>
   <form method="post" action="{{ url_for('grado_plan_guardar', grado_id=grado.id) }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {{ form_errors(errors) }}
     {% if edit %}
     <input type="hidden" name="materia_id" value="{{ edit.materia_id }}">

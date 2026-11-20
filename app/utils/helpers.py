@@ -1,5 +1,8 @@
 from datetime import date, time
 
+from flask import has_request_context, session
+
+from app.extensions import db
 from app.models import AnioLectivo, Colegio
 
 TIPOS_AULA = ('regular', 'laboratorio', 'informatica', 'gimnasio', 'otro')
@@ -24,8 +27,18 @@ DIAS_SEMANA = {
 
 
 def colegio_actual():
-    """El colegio con el que trabaja la app (hoy, el primero)."""
-    return Colegio.query.order_by(Colegio.id).first()
+    """Colegio activo de la sesión; si no hay, el primero disponible."""
+    if has_request_context():
+        colegio_id = session.get('colegio_id')
+        if colegio_id:
+            colegio = db.session.get(Colegio, colegio_id)
+            if colegio:
+                return colegio
+
+    colegio = Colegio.query.order_by(Colegio.id).first()
+    if colegio and has_request_context():
+        session['colegio_id'] = colegio.id
+    return colegio
 
 
 def anio_activo(colegio_id):
@@ -62,3 +75,15 @@ def hhmm(value):
 
 def rango_horario(desde, hasta):
     return f'{hhmm(desde)} – {hhmm(hasta)}'
+
+
+def is_safe_url(target):
+    """Solo permite redirecciones internas (evita open redirect)."""
+    from urllib.parse import urljoin, urlparse
+    from flask import request
+
+    if not target:
+        return False
+    ref = urlparse(request.host_url)
+    test = urlparse(urljoin(request.host_url, target))
+    return test.scheme in ('http', 'https') and ref.netloc == test.netloc

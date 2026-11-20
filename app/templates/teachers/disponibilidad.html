@@ -57,6 +57,7 @@
     <a href="{{ url_for('disponibilidad', profesor_id=selected.id) }}" class="btn btn-ghost btn-sm">Cerrar</a>
   </div>
   <form method="post" action="{{ url_for('disponibilidad_guardar') }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {{ form_errors(errors) }}
     <input type="hidden" name="profesor_id" value="{{ selected.id }}">
     <div class="form-grid">

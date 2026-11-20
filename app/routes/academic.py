@@ -1,11 +1,11 @@
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import AnioLectivo, Aula, Colegio, Grado, Materia, Nivel, Turno
 from app.utils.helpers import (
-    TIPOS_AULA, TIPOS_AULA_LABEL, colegio_actual, parse_date, parse_int,
+    TIPOS_AULA, TIPOS_AULA_LABEL, colegio_actual, is_safe_url, parse_date, parse_int,
 )
 
 
@@ -68,6 +68,22 @@ def register_academic_routes(app):
             flash('No se pudo guardar el colegio. Verificá los datos.', 'error')
 
         return redirect(url_for('colegios'))
+
+    @app.route('/colegios/seleccionar', methods=['POST'])
+    @login_required
+    def colegio_seleccionar():
+        colegio_id = request.form.get('colegio_id', type=int)
+        colegio = db.session.get(Colegio, colegio_id) if colegio_id else None
+        if not colegio:
+            flash('El colegio seleccionado no existe.', 'error')
+        else:
+            session['colegio_id'] = colegio.id
+            flash(f'Colegio activo: {colegio.nombre}', 'success')
+
+        destino = request.referrer
+        if not is_safe_url(destino):
+            destino = url_for('dashboard')
+        return redirect(destino)
 
     @app.route('/colegios/<int:item_id>/eliminar', methods=['POST'])
     @login_required

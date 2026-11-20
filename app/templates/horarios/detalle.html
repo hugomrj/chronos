@@ -29,19 +29,23 @@
 
     {% if version.estado == 'borrador' %}
     <form method="post" action="{{ url_for('horario_publicar', version_id=version.id) }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-primary btn-sm" type="submit">Publicar</button>
     </form>
     {% elif version.estado == 'publicado' %}
     <form method="post" action="{{ url_for('horario_archivar', version_id=version.id) }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-ghost btn-sm" type="submit">Archivar</button>
     </form>
     {% endif %}
 
     <form method="post" action="{{ url_for('horario_duplicar', version_id=version.id) }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-ghost btn-sm" type="submit">Duplicar</button>
     </form>
 
     <form method="post" action="{{ url_for('horario_regenerar', version_id=version.id) }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-ghost btn-sm" type="submit" data-tip="Conserva las celdas fijadas">Regenerar</button>
     </form>
 
@@ -231,6 +235,7 @@
     <a href="{{ url_for('horario_detalle', version_id=version.id, seccion_id=seleccionada.id) }}" class="btn btn-ghost btn-sm">Cerrar</a>
   </div>
   <form method="post" action="{{ url_for('celda_guardar', version_id=version.id) }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {{ form_errors(errors) }}
     {% if edit_celda %}<input type="hidden" name="celda_id" value="{{ edit_celda.id }}">{% endif %}
 

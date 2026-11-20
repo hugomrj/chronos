@@ -1,0 +1,85 @@
+{% extends 'layout/base.html' %}
+{% block title %}Configuración{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Configuración</h1>
+    <p>Datos generales del colegio activo y accesos de administración.</p>
+  </div>
+</div>
+
+<div class="dash-grid">
+  <section class="panel glass" style="grid-column: span 7;">
+    <div class="panel-head">
+      <h2>Colegio activo</h2>
+      <span class="status">{{ colegio.nombre }}</span>
+    </div>
+    <form method="post" action="{{ url_for('configuracion_guardar') }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <div class="form-grid">
+        <div class="field fw-full">
+          <label for="nombre">Nombre del colegio</label>
+          <input class="input" id="nombre" name="nombre" type="text"
+                 value="{{ colegio.nombre }}" required>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Guardar nombre</button>
+        <a class="btn btn-ghost" href="{{ url_for('colegios') }}">Administrar colegios</a>
+      </div>
+    </form>
+    <div class="panel-foot">
+      <span>Cambiar el nombre no afecta los datos asociados.</span>
+    </div>
+  </section>
+
+  <section class="panel glass" style="grid-column: span 5;">
+    <div class="panel-head">
+      <h2>Resumen</h2>
+    </div>
+    <div style="padding: 1.25rem 1.375rem; position: relative; z-index: 1;">
+      <ul class="acts">
+        <li>
+          <span class="dot"></span>
+          <span class="txt">Colegios en el sistema</span>
+          <span class="status">{{ total_colegios }}</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="txt">Usuarios del colegio</span>
+          <span class="status">{{ total_usuarios }}</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="txt">Profesores del colegio</span>
+          <span class="status">{{ total_profesores }}</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="txt">Año lectivo activo</span>
+          {% set anio_act = colegio.anios|selectattr('activo')|list|first %}
+          {% if anio_act %}
+            <span class="status ok">{{ anio_act.nombre }}</span>
+          {% else %}
+            <span class="status" style="color: var(--warn)">Sin activar</span>
+          {% endif %}
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="panel glass dc-12">
+    <div class="panel-head">
+      <h2>Accesos rápidos</h2>
+    </div>
+    <div style="padding: 1rem 1.375rem; display: flex; gap: 0.5rem; flex-wrap: wrap; position: relative; z-index: 1;">
+      <a class="btn btn-ghost" href="{{ url_for('colegios') }}">Colegios</a>
+      <a class="btn btn-ghost" href="{{ url_for('anios') }}">Años lectivos</a>
+      <a class="btn btn-ghost" href="{{ url_for('usuarios') }}">Usuarios</a>
+      <a class="btn btn-ghost" href="{{ url_for('profesores') }}">Profesores</a>
+      <a class="btn btn-ghost" href="{{ url_for('horarios') }}">Horarios</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

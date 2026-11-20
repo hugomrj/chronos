@@ -1,0 +1,53 @@
+{% extends 'layout/base.html' %}
+{% block title %}Preferencias{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Preferencias</h1>
+    <p>Personalización visual del sistema. Se guardan en este navegador.</p>
+  </div>
+</div>
+
+<div class="dash-grid">
+  <section class="panel glass dc-6" style="grid-column: span 6;">
+    <div class="panel-head">
+      <h2>Tema</h2>
+    </div>
+    <div style="padding: 1.25rem 1.375rem; position: relative; z-index: 1; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      <button type="button" class="btn btn-ghost" onclick="aplicarTema('dark')">Oscuro</button>
+      <button type="button" class="btn btn-ghost" onclick="aplicarTema('light')">Claro</button>
+    </div>
+    <div class="panel-foot">
+      <span>El tema actual se comparte con la barra superior.</span>
+    </div>
+  </section>
+
+  <section class="panel glass" style="grid-column: span 6;">
+    <div class="panel-head">
+      <h2>Color de acento</h2>
+    </div>
+    <div style="padding: 1.25rem 1.375rem; position: relative; z-index: 1;">
+      <div class="u-swatches" style="justify-content: flex-start; gap: 0.75rem;">
+        <span class="swatch" data-h="160" data-s="84" style="background:hsl(160 84% 40%)"></span>
+        <span class="swatch" data-h="212" data-s="85" style="background:hsl(212 85% 52%)"></span>
+        <span class="swatch" data-h="262" data-s="80" style="background:hsl(262 80% 60%)"></span>
+        <span class="swatch" data-h="20" data-s="85" style="background:hsl(20 85% 55%)"></span>
+        <span class="swatch" data-h="340" data-s="75" style="background:hsl(340 75% 55%)"></span>
+      </div>
+      <div class="hint" style="margin-top: 0.75rem;">También podés elegir un color personalizado desde el menú de tu cuenta.</div>
+    </div>
+  </section>
+</div>
+
+<script>
+function aplicarTema(tema) {
+  let prefs = {};
+  try { prefs = JSON.parse(localStorage.getItem('ui-prefs-v2') || '{}'); } catch (e) {}
+  prefs.theme = tema;
+  localStorage.setItem('ui-prefs-v2', JSON.stringify(prefs));
+  document.documentElement.dataset.theme = tema;
+  window.location.reload();
+}
+</script>
+{% endblock %}

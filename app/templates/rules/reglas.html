@@ -22,6 +22,7 @@
     <a href="{{ url_for('reglas') }}" class="btn btn-ghost btn-sm">Cerrar</a>
   </div>
   <form method="post" action="{{ url_for('regla_guardar') }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {{ form_errors(errors) }}
     {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
 

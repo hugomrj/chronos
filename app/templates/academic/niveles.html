@@ -13,6 +13,7 @@
     <a href="{{ url_for('niveles') }}" class="btn btn-ghost btn-sm">Cerrar</a>
   </div>
   <form method="post" action="{{ url_for('nivel_guardar') }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {{ form_errors(errors) }}
     {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
     <div class="form-grid">

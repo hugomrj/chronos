@@ -62,6 +62,7 @@ class Usuario(db.Model, UserMixin):
 
     colegio = db.relationship('Colegio', backref='usuarios')
     rol = db.relationship('Rol', backref='usuarios')
+    profesor = db.relationship('Profesor', backref='usuarios')
 
     def get_id(self):
         return str(self.id)

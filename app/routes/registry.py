@@ -33,6 +33,10 @@ def register_routes(app):
     from app.routes.horarios import register_horarios_routes
     register_horarios_routes(app)
 
+    # Usuarios, perfil y configuración
+    from app.routes.users import register_users_routes
+    register_users_routes(app)
+
     @app.route('/')
     def index():
         return redirect(url_for('dashboard'))

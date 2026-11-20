@@ -25,6 +25,9 @@ class Config:
         f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Seguridad
+    CSRF_ENABLED = os.getenv('CSRF_ENABLED', 'true').lower() in ('1', 'true', 'yes', 'on')
     
     # Servidor
     HOST = os.getenv('HOST', '0.0.0.0')

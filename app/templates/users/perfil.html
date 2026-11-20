@@ -1,0 +1,48 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import form_errors %}
+{% block title %}Mi perfil{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Mi perfil</h1>
+    <p>{{ current_user.rol.nombre|capitalize }} · {{ current_user.colegio.nombre }}</p>
+  </div>
+</div>
+
+<section class="panel glass" style="max-width: 40rem;">
+  <div class="panel-head">
+    <h2>Datos de acceso</h2>
+  </div>
+  <form method="post" action="{{ url_for('perfil') }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {{ form_errors(errors) }}
+    <div class="form-grid">
+      <div class="field fw-full">
+        <label for="email">Correo electrónico</label>
+        <input class="input" id="email" name="email" type="email" required
+               value="{{ form.get('email') or current_user.email }}">
+      </div>
+      <div class="field fw-full">
+        <label for="password_actual">Contraseña actual</label>
+        <input class="input" id="password_actual" name="password_actual" type="password"
+               autocomplete="current-password" required>
+        <div class="hint">Necesaria para confirmar cualquier cambio.</div>
+      </div>
+      <div class="field fw-2">
+        <label for="password_nueva">Nueva contraseña <span class="opt">(opcional)</span></label>
+        <input class="input" id="password_nueva" name="password_nueva" type="password"
+               autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="field fw-2">
+        <label for="password_confirmar">Confirmar nueva contraseña</label>
+        <input class="input" id="password_confirmar" name="password_confirmar" type="password"
+               autocomplete="new-password" placeholder="Repetí la contraseña">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Guardar cambios</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

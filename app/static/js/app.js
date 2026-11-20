@@ -105,6 +105,13 @@ document.addEventListener('DOMContentLoaded', function(){
       const m = document.createElement('input');
       m.type = 'hidden'; m.name = '_method'; m.value = 'DELETE';
       form.appendChild(m);
+
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      if (meta) {
+        const t = document.createElement('input');
+        t.type = 'hidden'; t.name = '_csrf_token'; t.value = meta.content;
+        form.appendChild(t);
+      }
       document.body.appendChild(form);
       form.submit();
     });

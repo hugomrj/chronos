@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chronos — Solicitud inválida</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/01-theme.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/03-components.css') }}">
+</head>
+<body style="display:grid;place-items:center;min-height:100vh;padding:1.5rem;">
+  <div class="panel glass" style="max-width:28rem;padding:2rem;text-align:center;position:relative;">
+    <div style="position:relative;z-index:1;">
+      <div style="width:3.5rem;height:3.5rem;border-radius:1rem;background:var(--danger-bg);color:var(--danger);display:grid;place-items:center;margin:0 auto 1rem;">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      </div>
+      <h1 style="font-size:1.2rem;font-weight:800;margin-bottom:0.4rem;">Solicitud inválida</h1>
+      <p style="color:var(--text-2);font-size:0.86rem;line-height:1.55;margin-bottom:1.25rem;">{{ mensaje }}</p>
+      <a class="btn btn-primary" href="{{ url_for('dashboard') }}">Volver al dashboard</a>
+    </div>
+  </div>
+</body>
+</html>

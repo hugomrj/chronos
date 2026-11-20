@@ -59,6 +59,7 @@
     <span class="hint">Se genera un borrador por turno</span>
   </div>
   <form method="post" action="{{ url_for('horario_generar') }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     <div class="form-grid">
       <div class="field fw-2">
         <label for="turno_id">Turno</label>
@@ -132,14 +133,17 @@
             <a href="{{ url_for('horario_detalle', version_id=v.id) }}" class="btn btn-ghost btn-sm">Ver</a>
             {% if v.estado == 'borrador' %}
             <form method="post" action="{{ url_for('horario_publicar', version_id=v.id) }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-primary btn-sm" type="submit">Publicar</button>
             </form>
             {% elif v.estado == 'publicado' %}
             <form method="post" action="{{ url_for('horario_archivar', version_id=v.id) }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-ghost btn-sm" type="submit">Archivar</button>
             </form>
             {% endif %}
             <form method="post" action="{{ url_for('horario_duplicar', version_id=v.id) }}">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-ghost btn-sm" type="submit">Duplicar</button>
             </form>
             {% if v.estado != 'publicado' %}
