@@ -1,0 +1,115 @@
+{% extends 'layout/base.html' %}
+{% block title %}Distribución de materias{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Distribución de materias</h1>
+    <p>Plan de estudios, áreas y docentes por sección.</p>
+  </div>
+  <button class="btn btn-ghost" type="button" onclick="window.print()">Imprimir</button>
+</div>
+
+<section class="panel glass no-print" style="margin-bottom: 1rem;">
+  <div class="panel-head"><h2>Filtros</h2></div>
+  <form method="get" action="{{ url_for('distribucion_materias') }}" class="form-panel">
+    <div class="form-grid">
+      <div class="field fw-1">
+        <label for="anio_id">Año lectivo</label>
+        <select class="input vanilla-select" id="anio_id" name="anio_id" onchange="this.form.submit()">
+          {% for a in anios %}
+          <option value="{{ a.id }}" {{ 'selected' if anio and a.id == anio.id }}>{{ a.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-2">
+        <label for="plan_id">Plan de estudios</label>
+        <select class="input vanilla-select" id="plan_id" name="plan_id" onchange="this.form.submit()">
+          {% for p in planes %}
+          <option value="{{ p.id }}" {{ 'selected' if plan and p.id == plan.id }}>{{ p.nombre }} · {{ p.nivel.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-1">
+        <label for="grado_id">Grado</label>
+        <select class="input vanilla-select" id="grado_id" name="grado_id" onchange="this.form.submit()">
+          {% for g in grados %}
+          <option value="{{ g.id }}" {{ 'selected' if grado and g.id == grado.id }}>{{ g.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-full">
+        <button class="btn btn-primary btn-sm" type="submit">Actualizar</button>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section class="panel glass report-panel">
+  <div class="report-head">
+    <div>
+      <h2>{% if plan %}{{ plan.nombre }}{% else %}Sin plan{% endif %}</h2>
+      <p>{% if grado %}{{ grado.nombre }} · {% endif %}{% if anio %}{{ anio.nombre }}{% endif %} · Hora cátedra {{ colegio.minutos_hora_catedra }} min</p>
+    </div>
+    {% if secciones %}<span class="status">{{ secciones|length }} sección(es)</span>{% endif %}
+  </div>
+
+  {% if grupos and secciones %}
+  <div class="report-scroll">
+    <table class="report-table dist-table">
+      <thead>
+        <tr>
+          <th class="col-materia">Materia</th>
+          <th class="col-horas">Horas</th>
+          <th class="col-areas">Área(s)</th>
+          {% for s in secciones %}
+          <th>{{ s.nombre }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for grupo in grupos %}
+        <tr class="dist-group">
+          <td colspan="{{ 3 + secciones|length }}">
+            <b>{{ grupo.tipo_label }}</b> · {{ grupo.area_nombre }} · {{ grupo.total }} h
+          </td>
+        </tr>
+        {% for fila in grupo.filas %}
+        <tr>
+          <td><b>{{ fila.gm.materia.nombre }}</b></td>
+          <td class="c-state">{{ fila.horas }}</td>
+          <td>
+            {% for a in fila.areas %}<span class="status">{{ a.nombre }}</span>{% else %}<span class="hint">—</span>{% endfor %}
+          </td>
+          {% for d in fila.docentes %}
+          <td>
+            {% if d.profesor %}{{ d.profesor.nombre }}
+            {% elif d.sm %}<span class="hint">Sin asignar</span>
+            {% else %}<span class="hint">—</span>{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+        {% endfor %}
+        <tr class="dist-total">
+          <td colspan="2"><b>Total</b></td>
+          <td><b>{{ total_general }} h</b></td>
+          {% for s in secciones %}
+          <td><b>{{ totales_seccion.get(s.id, 0) }} h</b></td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="report-hint">Las horas se toman del plan del grado. Si una materia tiene varias áreas, se muestra una sola vez y se listan todas sus áreas.</p>
+  {% elif not plan %}
+  <p class="report-hint">No hay planes de estudio cargados. Creá uno en <a href="{{ url_for('planes') }}">Planes de estudio</a>.</p>
+  {% elif not grado %}
+  <p class="report-hint">El plan no tiene grados asignados. Asignalos en <a href="{{ url_for('planes') }}">Planes de estudio</a>.</p>
+  {% elif not secciones %}
+  <p class="report-hint">No hay secciones de {{ grado.nombre }} en {{ anio.nombre if anio else 'el año seleccionado' }}.</p>
+  {% else %}
+  <p class="report-hint">El grado no tiene materias en su plan.</p>
+  {% endif %}
+</section>
+{% endblock %}

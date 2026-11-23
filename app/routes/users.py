@@ -233,11 +233,20 @@ def register_users_routes(app):
             return redirect(url_for('colegios'))
 
         nombre = (request.form.get('nombre') or '').strip()
+        minutos = parse_int(request.form.get('minutos_hora_catedra'), 40)
+
+        errors = []
         if not nombre:
-            flash('El nombre del colegio es obligatorio.', 'error')
+            errors.append('El nombre del colegio es obligatorio.')
+        if minutos is None or minutos < 20 or minutos > 120:
+            errors.append('La hora cátedra debe estar entre 20 y 120 minutos.')
+        if errors:
+            for error in errors:
+                flash(error, 'error')
             return redirect(url_for('configuracion'))
 
         colegio.nombre = nombre
+        colegio.minutos_hora_catedra = minutos
         db.session.commit()
         flash('Configuración del colegio actualizada.', 'success')
         return redirect(url_for('configuracion'))

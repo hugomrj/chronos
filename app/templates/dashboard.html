@@ -321,6 +321,42 @@
       return paleta[4];
     }
 
+    function gradienteBarra(context, color, horizontal) {
+      var chart = context.chart;
+      var area = chart.chartArea;
+      if (!area) return conAlfa(color, 0.55);
+      var ctx = chart.ctx;
+      var g = horizontal
+        ? ctx.createLinearGradient(area.left, 0, area.right, 0)
+        : ctx.createLinearGradient(0, area.top, 0, area.bottom);
+      g.addColorStop(0, conAlfa(color, 0.28));
+      g.addColorStop(0.55, conAlfa(color, 0.72));
+      g.addColorStop(1, color);
+      return g;
+    }
+
+    function gradienteArea(context) {
+      var chart = context.chart;
+      var area = chart.chartArea;
+      if (!area) return conAlfa(paleta[2], 0.16);
+      var g = chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+      g.addColorStop(0, conAlfa(paleta[2], 0.46));
+      g.addColorStop(0.5, conAlfa(paleta[3], 0.16));
+      g.addColorStop(1, conAlfa(paleta[2], 0));
+      return g;
+    }
+
+    function gradienteLinea(context) {
+      var chart = context.chart;
+      var area = chart.chartArea;
+      if (!area) return paleta[2];
+      var g = chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
+      g.addColorStop(0, paleta[1]);
+      g.addColorStop(0.48, paleta[2]);
+      g.addColorStop(1, paleta[4]);
+      return g;
+    }
+
     var elProfesores = document.getElementById('chartProfesores');
     if (elProfesores && datos.profesores.length) {
       var maximo = Math.max.apply(null, datos.profesores.map(function (p) {
@@ -334,9 +370,10 @@
           datasets: [{
             label: 'Horas asignadas',
             data: datos.profesores.map(function (p) { return p.horas; }),
-            backgroundColor: datos.profesores.map(function (p) {
-              return colorPorCarga(p.horas, p.maximo);
-            }),
+            backgroundColor: function (context) {
+              var p = datos.profesores[context.dataIndex];
+              return gradienteBarra(context, colorPorCarga(p.horas, p.maximo), true);
+            },
             borderRadius: 6,
             maxBarThickness: 18
           }]
@@ -372,9 +409,17 @@
           labels: datos.materias.map(function (m) { return m.nombre; }),
           datasets: [{
             data: datos.materias.map(function (m) { return m.horas; }),
-            backgroundColor: datos.materias.map(function (m, i) {
-              return paleta[i % paleta.length];
-            }),
+            backgroundColor: function (context) {
+              var color = paleta[context.dataIndex % paleta.length];
+              var chart = context.chart;
+              var area = chart.chartArea;
+              if (!area) return color;
+              var g = chart.ctx.createLinearGradient(
+                area.left, area.top, area.right, area.bottom);
+              g.addColorStop(0, color);
+              g.addColorStop(1, conAlfa(color, 0.55));
+              return g;
+            },
             borderColor: panel,
             borderWidth: 2
           }]
@@ -400,9 +445,10 @@
           datasets: [{
             label: 'Horas',
             data: datos.aulas.map(function (a) { return a.horas; }),
-            backgroundColor: datos.aulas.map(function (a) {
-              return colorPorCarga(a.horas, maxAula);
-            }),
+            backgroundColor: function (context) {
+              var a = datos.aulas[context.dataIndex];
+              return gradienteBarra(context, colorPorCarga(a.horas, maxAula), false);
+            },
             borderRadius: 5
           }]
         },
@@ -424,14 +470,16 @@
           datasets: [{
             label: 'Clases',
             data: datos.dias.map(function (d) { return d.horas; }),
-            borderColor: paleta[2],
-            backgroundColor: conAlfa(paleta[2], 0.16),
-            pointBackgroundColor: paleta[2],
+            borderColor: gradienteLinea,
+            backgroundColor: gradienteArea,
+            borderWidth: 2.5,
+            pointBackgroundColor: paleta[4],
             pointBorderColor: panel,
             pointBorderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 4,
             fill: true,
-            tension: 0.35,
-            pointRadius: 3
+            tension: 0.4
           }]
         },
         options: {

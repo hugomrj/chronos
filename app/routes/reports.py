@@ -5,11 +5,13 @@ from flask_login import login_required
 
 from app.extensions import db
 from app.models import (
-    Grado, HorarioCelda, HorarioVersion, Profesor, Seccion, Turno,
+    AnioLectivo, AreaConocimiento, Grado, GradoMateria, HorarioCelda,
+    HorarioVersion, Materia, PlanEstudio, Profesor, Seccion, SeccionMateria,
+    Turno,
 )
 from app.utils.helpers import (
-    DIAS_SEMANA, anio_activo, colegio_actual, etiqueta_bloque,
-    etiqueta_seccion,
+    DIAS_SEMANA, TIPOS_PLAN_LABEL, anio_activo, colegio_actual,
+    etiqueta_bloque, etiqueta_seccion, parse_int,
 )
 
 
@@ -53,6 +55,164 @@ def register_report_routes(app):
             if version:
                 vigentes.append(version)
         return vigentes
+
+    # ------------------------------------------------------------------
+    # DISTRIBUCIÓN DE MATERIAS POR PLAN / GRADO
+    # ------------------------------------------------------------------
+    @app.route('/reportes/distribucion')
+    @login_required
+    def distribucion_materias():
+        colegio = _colegio()
+        if not colegio:
+            return redirect(url_for('colegios'))
+
+        anios = AnioLectivo.query.filter_by(colegio_id=colegio.id) \
+                                  .order_by(AnioLectivo.nombre.desc()).all()
+        anio = None
+        anio_id = request.args.get('anio_id', type=int)
+        if anio_id:
+            anio = db.session.get(AnioLectivo, anio_id)
+            if anio and anio.colegio_id != colegio.id:
+                anio = None
+        if anio is None:
+            anio = anio_activo(colegio.id) or (anios[0] if anios else None)
+
+        planes = PlanEstudio.query.filter_by(colegio_id=colegio.id) \
+                                   .order_by(PlanEstudio.orden, PlanEstudio.nombre).all()
+        plan = None
+        plan_id = request.args.get('plan_id', type=int)
+        if plan_id:
+            plan = db.session.get(PlanEstudio, plan_id)
+            if plan and plan.colegio_id != colegio.id:
+                plan = None
+        if plan is None:
+            plan = planes[0] if planes else None
+
+        grados = []
+        if plan:
+            grados = Grado.query.filter_by(plan_id=plan.id) \
+                                 .order_by(Grado.orden, Grado.nombre).all()
+        grado = None
+        grado_id = request.args.get('grado_id', type=int)
+        if grado_id:
+            grado = db.session.get(Grado, grado_id)
+            if grado and (not plan or grado.plan_id != plan.id):
+                grado = None
+        if grado is None and grados:
+            grado = grados[0]
+
+        secciones = []
+        items = []
+        grupos = []
+        total_general = 0
+        totales_seccion = {}
+        if anio and grado:
+            secciones = Seccion.query.filter_by(
+                anio_lectivo_id=anio.id, grado_id=grado.id
+            ).order_by(Seccion.nombre).all()
+            seccion_ids = [s.id for s in secciones]
+            sms = SeccionMateria.query.filter(
+                SeccionMateria.seccion_id.in_(seccion_ids)
+            ).all() if seccion_ids else []
+            sm_map = {(sm.seccion_id, sm.materia_id): sm for sm in sms}
+            totales_seccion = {s.id: 0 for s in secciones}
+
+            # Docente real: primero el fijado en el plan de la sección;
+            # si no, el que quedó asignado en la versión vigente del turno.
+            versiones = HorarioVersion.query.filter_by(
+                anio_lectivo_id=anio.id
+            ).all()
+            vigentes = {}
+            for v in versiones:
+                actual = vigentes.get(v.turno_id)
+                if actual is None:
+                    vigentes[v.turno_id] = v
+                elif v.estado == 'publicado' and actual.estado != 'publicado':
+                    vigentes[v.turno_id] = v
+                elif (v.estado == actual.estado and
+                      v.creado_en and actual.creado_en and
+                      v.creado_en > actual.creado_en):
+                    vigentes[v.turno_id] = v
+            version_ids = [v.id for v in vigentes.values()]
+            prof_map = {}
+            if version_ids:
+                for celda in HorarioCelda.query.filter(
+                        HorarioCelda.version_id.in_(version_ids)).all():
+                    sm = celda.seccion_materia
+                    if sm and celda.profesor:
+                        prof_map[(sm.seccion_id, sm.materia_id)] = celda.profesor
+            for sm in sms:
+                totales_seccion[sm.seccion_id] = totales_seccion.get(sm.seccion_id, 0) + sm.horas_semanales
+
+            items = GradoMateria.query.filter_by(grado_id=grado.id) \
+                                       .join(Materia).order_by(Materia.nombre).all()
+
+            orden_tipo = {'comun': 1, 'especifico': 2, 'optativo': 3}
+            filas = []
+            for gm in items:
+                areas = sorted([ga.area for ga in gm.areas],
+                               key=lambda a: (a.orden, a.nombre))
+                area_principal = areas[0] if areas else None
+                filas.append({
+                    'gm': gm,
+                    'tipo_plan': gm.tipo_plan,
+                    'tipo_label': TIPOS_PLAN_LABEL.get(gm.tipo_plan, gm.tipo_plan),
+                    'area': area_principal,
+                    'areas': areas,
+                    'horas': gm.horas_semanales,
+                    'docentes': [
+                        {
+                            'sm': sm_map.get((s.id, gm.materia_id)),
+                            'profesor': (
+                                sm_map[(s.id, gm.materia_id)].profesor
+                                if sm_map.get((s.id, gm.materia_id)) and
+                                sm_map[(s.id, gm.materia_id)].profesor
+                                else prof_map.get((s.id, gm.materia_id))
+                            ),
+                        }
+                        for s in secciones
+                    ],
+                })
+
+            filas.sort(key=lambda f: (
+                orden_tipo.get(f['tipo_plan'], 9),
+                f['area'].orden if f['area'] else 999,
+                f['area'].nombre if f['area'] else 'Sin área',
+                f['gm'].materia.nombre,
+            ))
+
+            grupos_map = {}
+            for fila in filas:
+                clave = (fila['tipo_plan'],
+                         fila['area'].id if fila['area'] else 0)
+                if clave not in grupos_map:
+                    grupos_map[clave] = {
+                        'tipo_label': fila['tipo_label'],
+                        'area_nombre': fila['area'].nombre if fila['area'] else 'Sin área',
+                        'filas': [],
+                        'total': 0,
+                    }
+                    grupos.append(grupos_map[clave])
+                grupos_map[clave]['filas'].append(fila)
+                grupos_map[clave]['total'] += fila['horas']
+                total_general += fila['horas']
+
+        return render_template(
+            'reportes/distribucion.html',
+            crumb='Distribución de materias',
+            colegio=colegio,
+            anios=anios,
+            anio=anio,
+            planes=planes,
+            plan=plan,
+            grados=grados,
+            grado=grado,
+            secciones=secciones,
+            grupos=grupos,
+            total_general=total_general,
+            totales_seccion=totales_seccion,
+            tipos_plan_label=TIPOS_PLAN_LABEL,
+        )
 
     # ------------------------------------------------------------------
     # HORARIO GENERAL (todas las secciones de un turno)

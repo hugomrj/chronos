@@ -18,10 +18,19 @@
     <form method="post" action="{{ url_for('configuracion_guardar') }}" class="form-panel" autocomplete="off">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <div class="form-grid">
-        <div class="field fw-full">
+        <div class="field fw-2">
           <label for="nombre">Nombre del colegio</label>
           <input class="input" id="nombre" name="nombre" type="text"
                  value="{{ colegio.nombre }}" required>
+        </div>
+        <div class="field fw-1">
+          <label for="minutos_hora_catedra">Minutos por hora cátedra</label>
+          <input class="input" id="minutos_hora_catedra" name="minutos_hora_catedra"
+                 type="number" min="20" max="120" step="5"
+                 value="{{ colegio.minutos_hora_catedra or 40 }}" required>
+        </div>
+        <div class="field fw-full">
+          <div class="hint">Dato informativo para reportes y planificación. La duración real de cada bloque se define en la plantilla del horario.</div>
         </div>
       </div>
       <div class="form-actions">

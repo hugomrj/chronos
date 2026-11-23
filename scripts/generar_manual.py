@@ -227,10 +227,12 @@ def html_manual(fecha):
       <tr><td><b>Estructura → Turnos</b></td><td>Mañana, Tarde.</td></tr>
       <tr><td><b>Estructura → Aulas</b></td><td>Aulas regulares, laboratorios, sala de informática, gimnasio.</td></tr>
       <tr><td><b>Estructura → Materias</b></td><td>Las asignaturas y, si corresponde, el tipo de aula que necesitan.</td></tr>
+      <tr><td><b>Estructura → Áreas</b></td><td>Agrupaciones de materias: Lengua, Ciencias Básicas, Técnicas, etc. Una materia puede estar en varias.</td></tr>
+      <tr><td><b>Estructura → Planes</b></td><td>Planes de estudio de cada ciclo y los grados que los componen.</td></tr>
       <tr><td><b>Profesores → Listado</b></td><td>Docentes, materias que pueden dictar y su carga máxima.</td></tr>
       <tr><td><b>Profesores → Disponibilidad</b></td><td>Días y horarios en que cada docente puede dar clases.</td></tr>
       <tr><td><b>Planificación → Plantillas y bloques</b></td><td>La grilla horaria de cada turno: horas de clase y recesos.</td></tr>
-      <tr><td><b>Grados → Plan</b></td><td>Materias y horas semanales de cada grado.</td></tr>
+      <tr><td><b>Grados → Plan</b></td><td>Materias, horas semanales, tipo de plan y áreas de cada grado.</td></tr>
       <tr><td><b>Planificación → Secciones y plan</b></td><td>Los cursos concretos (A, B) con su profesor por materia.</td></tr>
       <tr><td><b>Planificación → Reglas</b></td><td>Preferencias pedagógicas opcionales.</td></tr>
       <tr><td><b>Planificación → Horarios</b></td><td>Generar, revisar y publicar el horario.</td></tr>
@@ -294,7 +296,7 @@ def html_manual(fecha):
   <table>
     <thead><tr><th style="width: 40%">Dónde</th><th>Para qué</th></tr></thead>
     <tbody>
-      <tr><td><b>Grados → Plan</b></td><td>Define las materias y horas semanales de cada grado. Es el plan modelo.</td></tr>
+      <tr><td><b>Grados → Plan</b></td><td>Define las materias, horas semanales, tipo de plan (común, específico u optativo) y áreas de cada grado. Es el plan modelo.</td></tr>
       <tr><td><b>Secciones → Plan</b></td><td>Cada curso concreto puede tener ajustes propios.</td></tr>
     </tbody>
   </table>
@@ -399,11 +401,14 @@ def html_manual(fecha):
     <li><b>Horario individual docente</b>: la grilla de un docente con sus horas totales y sus materias,
         separada por ciclo y por turno (por ejemplo “Secundaria · Mañana” y “Secundaria · Tarde”).
         Se imprime desde <i>Horarios docentes</i>.</li>
+    <li><b>Distribución de materias</b>: materias por área y tipo de plan, horas semanales y docente
+        asignado en cada sección. Se filtra por año, plan y grado.</li>
     <li><b>Imprimir</b>: genera una versión limpia, sin menús, en horizontal, lista para entregar.</li>
   </ul>
   <div class="nota">
     Los nombres de las filas que no son clase (Actividades Formativas, Almuerzo, Receso) se pueden
     personalizar en <code>config.py</code>, en <code>ETIQUETAS_BLOQUES</code>, sin tocar la base de datos.
+    La duración informativa de la hora cátedra se configura en <b>Configuración</b>.
   </div>
 
   <h2><span class="num">14</span>Dashboard</h2>

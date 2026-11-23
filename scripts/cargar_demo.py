@@ -4,7 +4,7 @@
   profesores, materias, aulas, reglas y horarios).
 - NO borra usuarios ni roles: el login sigue funcionando.
 - Carga un colegio demo con Tercer Ciclo y Nivel Medio, incluyendo BATAN.
-- Genera y publica un horario para Mañana y otro para Tarde.
+- Genera y publica un horario de doble escolaridad para ambos ciclos.
 
 Uso:
     python scripts/cargar_demo.py
@@ -49,6 +49,10 @@ MATERIAS = [
     ('Contabilidad', None),
     ('Administración', None),
     ('Orientación', None),
+    ('Guaraní', None),
+    ('Expresión Artística', None),
+    ('Formación Ética', None),
+    ('Historia y Geografía', None),
 ]
 
 AULAS = [
@@ -56,19 +60,27 @@ AULAS = [
     ('Aula 2', 'regular', 35),
     ('Aula 3', 'regular', 35),
     ('Aula 4', 'regular', 30),
+    ('Aula 5', 'regular', 30),
+    ('Aula 6', 'regular', 30),
+    ('Aula 7', 'regular', 30),
     ('Laboratorio 1', 'laboratorio', 30),
     ('Sala Informática', 'informatica', 30),
     ('Gimnasio', 'gimnasio', 80),
 ]
 
 PLAN_TERCER_CICLO = [
-    ('Matemática', 5),
-    ('Lengua y Literatura', 5),
-    ('Ciencias Naturales', 4),
-    ('Ciencias Sociales', 4),
-    ('Inglés', 3),
-    ('Educación Física', 2),
-    ('Informática', 2),
+    ('Matemática', 6),
+    ('Lengua y Literatura', 6),
+    ('Ciencias Naturales', 5),
+    ('Ciencias Sociales', 5),
+    ('Inglés', 4),
+    ('Educación Física', 3),
+    ('Informática', 4),
+    ('Orientación', 2),
+    ('Expresión Artística', 4),
+    ('Formación Ética', 3),
+    ('Historia y Geografía', 2),
+    ('Guaraní', 3),
 ]
 
 PLAN_INFO = [
@@ -103,20 +115,27 @@ AREAS_POR_MATERIA = {
     'Contabilidad': ['Técnicas y Tecnológicas'],
     'Administración': ['Técnicas y Tecnológicas'],
     'Orientación': ['Desarrollo Personal y Social'],
+    'Guaraní': ['Lengua y Literatura'],
+    'Expresión Artística': ['Expresión Artística'],
+    'Formación Ética': ['Ciencias Sociales'],
+    'Historia y Geografía': ['Ciencias Sociales'],
 }
 
-# (nombre, documento, materias, max semanal, max diario, turno de disponibilidad)
+# (nombre, documento, materias, max semanal, max diario, referencia)
 PROFESORES = [
-    # Tercer Ciclo · Mañana
+    # Tercer Ciclo
     ('Cynthia Rojas', '4002001', ['Matemática'], 25, 6, 'Mañana'),
     ('Rossana Villalba', '4002002', ['Lengua y Literatura'], 25, 6, 'Mañana'),
     ('Soledad Insfrán', '4002003', ['Ciencias Naturales'], 25, 6, 'Mañana'),
-    ('Alejandra Benítez', '4002004', ['Ciencias Sociales'], 25, 6, 'Mañana'),
+    ('Alejandra Benítez', '4002004', ['Ciencias Sociales', 'Formación Ética', 'Historia y Geografía'], 35, 6, 'Mañana'),
     ('Fernando Acosta', '4002005', ['Inglés'], 25, 6, 'Mañana'),
     ('José Giménez', '4002006', ['Educación Física'], 25, 6, 'Mañana'),
     ('Marcos Duarte', '4002007', ['Informática'], 25, 6, 'Mañana'),
+    ('Marta Ayala', '4002008', ['Guaraní'], 25, 6, 'Mañana'),
+    ('Rocío Benítez', '4002009', ['Orientación'], 25, 6, 'Mañana'),
+    ('Hugo Villalba', '4002010', ['Expresión Artística'], 25, 6, 'Mañana'),
 
-    # Nivel Medio · Tarde
+    # Nivel Medio
     ('Diego Ramírez', '4002011', ['Matemática'], 30, 7, 'Tarde'),
     ('Laura Gómez', '4002012', ['Lengua y Literatura'], 30, 7, 'Tarde'),
     ('Patricia Cáceres', '4002013', ['Ciencias Naturales'], 30, 7, 'Tarde'),
@@ -129,8 +148,23 @@ PROFESORES = [
     ('Priscila Ayala', '4002020', ['Orientación'], 30, 7, 'Tarde'),
 ]
 
-BLOQUES_MANANA = [
-    ('receso', '07:45', '08:00'),
+BLOQUES_TERCER_CICLO = [
+    ('clase', '08:00', '08:40'),
+    ('clase', '08:40', '09:20'),
+    ('receso', '09:20', '09:35'),
+    ('clase', '09:35', '10:15'),
+    ('clase', '10:15', '10:55'),
+    ('receso', '10:55', '11:10'),
+    ('clase', '11:10', '11:50'),
+    ('clase', '11:50', '12:30'),
+    ('receso', '12:30', '13:00'),
+    ('clase', '13:00', '13:40'),
+    ('clase', '13:40', '14:20'),
+    ('receso', '14:20', '14:30'),
+    ('clase', '14:30', '15:00'),
+]
+
+BLOQUES_NIVEL_MEDIO = [
     ('clase', '08:00', '08:40'),
     ('clase', '08:40', '09:20'),
     ('clase', '09:20', '10:00'),
@@ -140,16 +174,13 @@ BLOQUES_MANANA = [
     ('receso', '11:40', '11:50'),
     ('clase', '11:50', '12:30'),
     ('clase', '12:30', '13:10'),
-]
-
-BLOQUES_TARDE = [
-    ('clase', '13:00', '13:40'),
-    ('clase', '13:40', '14:20'),
-    ('clase', '14:20', '15:00'),
-    ('receso', '15:00', '15:20'),
-    ('clase', '15:20', '16:00'),
-    ('clase', '16:00', '16:40'),
-    ('clase', '16:40', '17:20'),
+    ('receso', '13:10', '13:50'),
+    ('clase', '13:50', '14:25'),
+    ('clase', '14:25', '15:00'),
+    ('receso', '15:00', '15:10'),
+    ('clase', '15:10', '15:45'),
+    ('clase', '15:45', '16:20'),
+    ('clase', '16:20', '17:00'),
 ]
 
 
@@ -253,10 +284,9 @@ def crear_estructura(colegio):
     db.session.flush()
 
     turnos = {}
-    for nombre in ['Mañana', 'Tarde']:
-        turno = Turno(colegio_id=colegio.id, nombre=nombre)
-        db.session.add(turno)
-        turnos[nombre] = turno
+    turno = Turno(colegio_id=colegio.id, nombre='Doble escolaridad')
+    db.session.add(turno)
+    turnos['Doble escolaridad'] = turno
     db.session.flush()
 
     aulas = {}
@@ -278,6 +308,7 @@ def crear_estructura(colegio):
     areas = {}
     for orden, nombre in enumerate([
         'Lengua y Literatura',
+        'Expresión Artística',
         'Ciencias Básicas',
         'Matemática y sus Tecnologías',
         'Ciencias Sociales',
@@ -300,8 +331,8 @@ def crear_plantillas(colegio, turnos):
     plantillas = {}
 
     for nombre, turno_nombre, bloques in [
-        ('Mañana Tercer Ciclo', 'Mañana', BLOQUES_MANANA),
-        ('Tarde Nivel Medio', 'Tarde', BLOQUES_TARDE),
+        ('Tercer Ciclo', 'Doble escolaridad', BLOQUES_TERCER_CICLO),
+        ('Nivel Medio', 'Doble escolaridad', BLOQUES_NIVEL_MEDIO),
     ]:
         plantilla = PlantillaHorario(
             colegio_id=colegio.id,
@@ -311,7 +342,12 @@ def crear_plantillas(colegio, turnos):
         db.session.add(plantilla)
         db.session.flush()
         for dia in range(1, 6):
-            for numero, (tipo, desde, hasta) in enumerate(bloques, start=1):
+            bloques_dia = list(bloques)
+            # El esqueleto de Tercer Ciclo suma 47 bloques semanales:
+            # 9 bloques de lunes a viernes y un décimo bloque martes y jueves.
+            if nombre == 'Tercer Ciclo' and dia in (2, 4):
+                bloques_dia.append(('clase', '15:00', '15:40'))
+            for numero, (tipo, desde, hasta) in enumerate(bloques_dia, start=1):
                 db.session.add(Bloque(
                     plantilla_id=plantilla.id,
                     dia_semana=dia,
@@ -327,7 +363,7 @@ def crear_plantillas(colegio, turnos):
 
 def crear_profesores(colegio, materias):
     profesores = {}
-    for nombre, documento, nombres_materias, max_sem, max_dia, turno in PROFESORES:
+    for nombre, documento, nombres_materias, max_sem, max_dia, _referencia in PROFESORES:
         profe = Profesor(
             colegio_id=colegio.id,
             nombre=nombre,
@@ -342,11 +378,7 @@ def crear_profesores(colegio, materias):
         db.session.add(profe)
         db.session.flush()
 
-        if turno == 'Mañana':
-            desde, hasta = time(7, 30), time(13, 30)
-        else:
-            desde, hasta = time(12, 30), time(18, 0)
-
+        desde, hasta = time(7, 30), time(18, 0)
         for dia in range(1, 6):
             db.session.add(ProfesorDisponibilidad(
                 profesor_id=profe.id,
@@ -379,7 +411,7 @@ def crear_planes(grados, materias, areas):
                 grado_id=grado.id,
                 materia_id=materia.id,
                 horas_semanales=horas,
-                max_bloques_por_dia=1,
+                max_bloques_por_dia=(2 if horas > 5 else 1),
                 requiere_bloque_doble=False,
                 tipo_plan=tipo,
             )
@@ -397,13 +429,13 @@ def crear_planes(grados, materias, areas):
 
 def crear_secciones(anio, grados, turnos, aulas, plantillas):
     datos = [
-        ('7°', 'A', 'Mañana', 'Mañana Tercer Ciclo', 'Aula 1'),
-        ('8°', 'A', 'Mañana', 'Mañana Tercer Ciclo', 'Aula 2'),
-        ('9°', 'A', 'Mañana', 'Mañana Tercer Ciclo', 'Aula 3'),
-        ('1° BATIN Informática', 'A', 'Tarde', 'Tarde Nivel Medio', 'Aula 1'),
-        ('1° BATIN Informática', 'B', 'Tarde', 'Tarde Nivel Medio', 'Aula 2'),
-        ('2° BATIN Informática', 'A', 'Tarde', 'Tarde Nivel Medio', 'Aula 3'),
-        ('1° BATAN Contabilidad', 'A', 'Tarde', 'Tarde Nivel Medio', 'Aula 4'),
+        ('7°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 1'),
+        ('8°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 2'),
+        ('9°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 3'),
+        ('1° BATIN Informática', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 1'),
+        ('1° BATIN Informática', 'B', 'Doble escolaridad', 'Nivel Medio', 'Aula 2'),
+        ('2° BATIN Informática', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 3'),
+        ('1° BATAN Contabilidad', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 4'),
     ]
 
     for grado_nombre, nombre, turno_nombre, plantilla_nombre, aula_nombre in datos:

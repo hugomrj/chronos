@@ -17,6 +17,10 @@ def register_routes(app):
     from app.routes.academic import register_academic_routes
     register_academic_routes(app)
 
+    # Áreas de conocimiento y planes de estudio
+    from app.routes.plans import register_plan_routes
+    register_plan_routes(app)
+
     # Profesores y disponibilidad
     from app.routes.teachers import register_teachers_routes
     register_teachers_routes(app)

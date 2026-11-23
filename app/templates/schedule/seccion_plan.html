@@ -166,6 +166,15 @@
       {% for sm in items %}
       <tr>
         <td><b>{{ sm.materia.nombre }}</b></td>
+        {% set gm = gm_map.get(sm.materia_id) %}
+        <td class="c-state">
+          {% if gm %}<span class="status">{{ {'comun':'Común','especifico':'Específico','optativo':'Optativo'}.get(gm.tipo_plan, gm.tipo_plan) }}</span>{% else %}—{% endif %}
+        </td>
+        <td>
+          {% if gm %}
+            {% for ga in gm.areas %}<span class="status">{{ ga.area.nombre }}</span>{% else %}<span class="hint">—</span>{% endfor %}
+          {% else %}<span class="hint">—</span>{% endif %}
+        </td>
         <td class="c-state">{{ sm.horas_semanales }}</td>
         <td class="c-state">{{ sm.max_bloques_por_dia }}</td>
         <td class="c-state">{{ 'Sí' if sm.requiere_bloque_doble else 'No' }}</td>

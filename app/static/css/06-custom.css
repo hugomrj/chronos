@@ -1234,3 +1234,8 @@
   .quick-actions { width: 100%; }
   .quick-actions .btn { flex: 1; justify-content: center; }
 }
+
+/* Glow suave de los gráficos */
+.chart-box canvas {
+  filter: drop-shadow(0 10px 18px rgba(16, 185, 129, .08));
+}

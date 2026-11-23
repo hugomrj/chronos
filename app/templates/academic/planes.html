@@ -1,0 +1,121 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
+{% block title %}Planes de estudio{% endblock %}
+
+{% block content %}
+{{ page_head('Planes de estudio', 'Un ciclo puede tener varios planes. Cada plan agrupa los grados que comparten una organización curricular.',
+             url_for('planes', nuevo=1), 'Nuevo plan') }}
+
+{% if edit or form or request.args.get('nuevo') %}
+{% set v_nivel = (form.get('nivel_id') or '') if form else (edit.nivel_id if edit else '') %}
+{% set v_activo = (form.get('activo') == 'on') if form else (edit.activo if edit else true) %}
+{% set seleccionados = (form.getlist('grado_ids') if form else (edit.grados|map(attribute='id')|list if edit else [])) %}
+{% set seleccionados_str = seleccionados|map('string')|list %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar plan' if edit else 'Nuevo plan' }}</h2>
+    <a href="{{ url_for('planes') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+  </div>
+  <form method="post" action="{{ url_for('plan_guardar') }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="nombre">Nombre del plan</label>
+        <input class="input" id="nombre" name="nombre" type="text" required autofocus
+               value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
+               placeholder="Ej. E.E.B. 7°-9°">
+      </div>
+      <div class="field fw-1">
+        <label for="nivel_id">Ciclo educativo</label>
+        <select class="input vanilla-select" id="nivel_id" name="nivel_id" required>
+          <option value="">Seleccioná un ciclo</option>
+          {% for n in niveles %}
+          <option value="{{ n.id }}" {{ 'selected' if (v_nivel|string) == (n.id|string) }}>{{ n.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-1">
+        <label for="orden">Orden</label>
+        <input class="input" id="orden" name="orden" type="number" min="0"
+               value="{{ form.get('orden') or (edit.orden if edit else 0) }}">
+      </div>
+      <div class="field fw-full">
+        <label>Grados que forman este plan</label>
+        <div class="check-grid">
+          {% for g in grados %}
+          <label class="check-item">
+            <input type="checkbox" name="grado_ids" value="{{ g.id }}"
+                   {{ 'checked' if (g.id|string) in seleccionados_str }}>
+            <span>{{ g.nombre }} <small>· {{ g.nivel.nombre }}</small></span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="hint">Un grado puede pertenecer a un solo plan. Al asignarlo acá se quita de otro plan.</div>
+      </div>
+      <div class="field fw-full">
+        <label class="switch-row">
+          <input type="checkbox" class="switch" name="activo" {{ 'checked' if v_activo }}>
+          <span class="switch-state"></span>
+        </label>
+        <div class="hint">Los planes inactivos no aparecen en los reportes de distribución.</div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear plan' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('planes') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Listado</h2>
+    <span class="hint">{{ items|length }} plan(es)</span>
+  </div>
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Plan</th>
+        <th class="c-state">Ciclo</th>
+        <th>Grados</th>
+        <th class="c-state">Estado</th>
+        <th style="width: 110px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in items %}
+      <tr>
+        <td><b>{{ p.nombre }}</b></td>
+        <td class="c-state">{{ p.nivel.nombre }}</td>
+        <td>
+          {% for g in p.grados|sort(attribute='orden') %}
+          <span class="status">{{ g.nombre }}</span>
+          {% else %}
+          <span class="hint">Sin grados</span>
+          {% endfor %}
+        </td>
+        <td class="c-state">
+          {% if p.activo %}<span class="status ok">Activo</span>
+          {% else %}<span class="status off">Inactivo</span>{% endif %}
+        </td>
+        <td>
+          <div class="actions-cell">
+            <a href="{{ url_for('planes', editar=p.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('plan_eliminar', item_id=p.id) }}"
+                    data-del-name="{{ p.nombre }}">{{ icon_eliminar() }}</button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay planes', 'Creá planes como E.E.B. 7°-9° o BATIN y asignales sus grados.') }}
+  {% endif %}
+</section>
+{% endblock %}

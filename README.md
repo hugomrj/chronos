@@ -39,9 +39,13 @@ de optimización que evita choques de profesores, aulas y secciones.
 - Grilla semanal por sección y vista por profesor, edición manual e impresión.
 - Horario general por día (todas las secciones en columnas) y horario individual
   docente imprimible, con totales y separado por ciclo y turno.
+- Reporte de distribución de materias por plan, grado y sección, con áreas,
+  tipo de plan y docentes asignados.
+- Demo con doble escolaridad: Tercer Ciclo 47 bloques semanales (9 diarios y
+  un décimo bloque martes y jueves) y Nivel Medio 60 bloques (12 diarios).
 - Etiquetas configurables para filas no clase (Actividades Formativas, Almuerzo, Receso)
   desde `config.py`, sin cambios en la base.
-- Multi-colegio: selector de colegio activo en la barra superior.
+- Una instancia por colegio con `COLEGIO_ID`; el superadmin administra los colegios.
 - Usuarios, perfil, preferencias y configuración.
 
 ---
@@ -54,7 +58,7 @@ chronos/
 │   ├── factory.py             # Application factory + CSRF + contexto global
 │   ├── extensions.py          # db, login_manager, bcrypt
 │   ├── models/                # Modelos SQLAlchemy
-│   ├── routes/                # Rutas (auth, academic, teachers, schedule, horarios, rules, users)
+│   ├── routes/                # Rutas (auth, academic, plans, teachers, schedule, horarios, rules, users)
 │   ├── services/scheduler/    # Motor, catálogo de reglas y restricciones
 │   ├── utils/                 # Helpers y decoradores
 │   ├── static/                # CSS y JS
@@ -164,6 +168,14 @@ Cada colegio consume pocos recursos (Flask + 2 workers); la base es compartida.
 
 ---
 
+## 📄 Documentación y presentación
+
+- `AGENT.md`: guía técnica para agentes/desarrolladores.
+- `CONTEXT.md`: contexto funcional, decisiones y estado del proyecto.
+- `docs/doc.html`: presentación de una sola página para el cliente.
+  Se sirve en `/presentacion` (también `/doc`) y sus enlaces abren el sistema
+  en una pestaña nueva usando la sesión activa.
+
 ## 🧪 Tests
 
 Los smoke tests requieren PostgreSQL y el `.env` configurado:
@@ -199,7 +211,7 @@ python -m unittest discover -s tests
 ## 📋 Scripts útiles
 
 ```bash
-python scripts/cargar_demo.py --force # DEMO completa (borra datos académicos, conserva usuarios)
+python scripts/cargar_demo.py --force # DEMO doble escolaridad: Tercer Ciclo 47 h, Nivel Medio 60 bloques (conserva usuarios)
 python scripts/seed_estructura.py     # estructura básica (sin borrar)
 python scripts/nuevo_colegio.py 2 sanjose   # entorno de una instancia nueva
 python scripts/generar_manual.py            # guía de usuario en docs/

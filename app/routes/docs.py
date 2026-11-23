@@ -11,6 +11,13 @@ def register_docs_routes(app):
         destino = app.config.get('DOCS_DIRECTORY') or 'docs'
         return send_from_directory(destino, 'Guia_Chronos.html', mimetype='text/html')
 
+    @app.route('/presentacion')
+    @app.route('/doc')
+    def presentacion_cliente():
+        """Presentación comercial/funcional de una sola página."""
+        destino = app.config.get('DOCS_DIRECTORY') or 'docs'
+        return send_from_directory(destino, 'doc.html', mimetype='text/html')
+
     @app.route('/guia/pdf')
     @login_required
     def guia_pdf():

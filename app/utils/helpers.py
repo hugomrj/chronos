@@ -15,6 +15,14 @@ TIPOS_AULA_LABEL = {
     'otro': 'Otro',
 }
 
+TIPOS_PLAN = ('comun', 'especifico', 'optativo')
+
+TIPOS_PLAN_LABEL = {
+    'comun': 'Plan común',
+    'especifico': 'Plan específico',
+    'optativo': 'Plan optativo',
+}
+
 DIAS_SEMANA = {
     1: 'Lunes',
     2: 'Martes',

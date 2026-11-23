@@ -63,8 +63,8 @@ class Config:
     # Se identifican por rango horario: "HH:MM-HH:MM".
     # No requiere cambios en la base de datos.
     ETIQUETAS_BLOQUES = {
-        '07:45-08:00': 'Actividades Formativas',
-        # '13:10-13:50': 'Almuerzo',
+        '12:30-13:00': 'Almuerzo',
+        '13:10-13:50': 'Almuerzo',
     }
 
     # Servidor

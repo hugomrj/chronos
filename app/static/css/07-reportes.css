@@ -346,3 +346,22 @@
     margin-bottom: 0.35rem;
   }
 }
+
+/* Distribución de materias */
+.dist-table .col-materia { width: 22%; }
+.dist-table .col-horas { width: 5.2rem; }
+.dist-table .col-areas { width: 15%; }
+.dist-table .dist-group td {
+  background: var(--hover);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.66rem;
+  color: var(--text-2);
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}
+.dist-table .dist-total td {
+  border-top: 2px solid var(--brd);
+  background: var(--hover);
+}
+.dist-table td .status { margin: 0 0.15rem 0.15rem 0; }

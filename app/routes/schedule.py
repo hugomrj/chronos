@@ -4,11 +4,13 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import (
-    AnioLectivo, Aula, Bloque, Grado, GradoMateria, Materia, PlantillaHorario,
-    Profesor, Seccion, SeccionMateria, Turno,
+    AnioLectivo, AreaConocimiento, Aula, Bloque, Grado, GradoMateria,
+    GradoMateriaArea, Materia, PlantillaHorario, Profesor, Seccion,
+    SeccionMateria, Turno,
 )
 from app.utils.helpers import (
-    DIAS_SEMANA, anio_activo, colegio_actual, parse_int, parse_time,
+    DIAS_SEMANA, TIPOS_PLAN, TIPOS_PLAN_LABEL, anio_activo, colegio_actual,
+    parse_int, parse_time,
 )
 
 
@@ -110,6 +112,11 @@ def register_schedule_routes(app):
                                      .order_by(Materia.nombre).all(),
             materias=Materia.query.filter_by(colegio_id=grado.nivel.colegio_id)
                                   .order_by(Materia.nombre).all(),
+            areas=AreaConocimiento.query.filter_by(
+                colegio_id=grado.nivel.colegio_id
+            ).order_by(AreaConocimiento.orden, AreaConocimiento.nombre).all(),
+            tipos_plan=TIPOS_PLAN,
+            tipos_plan_label=TIPOS_PLAN_LABEL,
             edit=edit,
             form=form or {},
             errors=errors or [],
@@ -120,10 +127,13 @@ def register_schedule_routes(app):
                                     .join(Materia).order_by(Materia.nombre).all()
         total = sum(sm.horas_semanales for sm in items)
         disponible = _clase_count(seccion.plantilla)
+        gm_map = {gm.materia_id: gm for gm in GradoMateria.query.filter_by(
+            grado_id=seccion.grado_id).all()}
         return dict(
             crumb=f'Plan · {seccion.grado.nombre} {seccion.nombre}',
             seccion=seccion,
             items=items,
+            gm_map=gm_map,
             total_horas=total,
             disponible=disponible,
             materias=Materia.query.filter_by(
@@ -378,6 +388,8 @@ def register_schedule_routes(app):
         horas = parse_int(request.form.get('horas_semanales'))
         max_dia = parse_int(request.form.get('max_bloques_por_dia'), 1) or 1
         doble = request.form.get('requiere_bloque_doble') == 'on'
+        tipo_plan = request.form.get('tipo_plan') or 'comun'
+        area_ids = [int(x) for x in request.form.getlist('area_ids') if x.isdigit()]
 
         materia = db.session.get(Materia, materia_id) if materia_id else None
         if materia and materia.colegio_id != colegio.id:
@@ -394,6 +406,14 @@ def register_schedule_routes(app):
             errors.append('Las horas semanales deben ser mayores a cero.')
         if max_dia < 1:
             errors.append('El máximo por día debe ser mayor a cero.')
+        if tipo_plan not in TIPOS_PLAN:
+            errors.append('El tipo de plan seleccionado no es válido.')
+        areas_sel = AreaConocimiento.query.filter(
+            AreaConocimiento.id.in_(area_ids),
+            AreaConocimiento.colegio_id == colegio.id,
+        ).all() if area_ids else []
+        if area_ids and len(areas_sel) != len(set(area_ids)):
+            errors.append('Alguna área seleccionada no es válida.')
         if materia and not original_id:
             if db.session.get(GradoMateria, (grado.id, materia.id)):
                 errors.append('Esa materia ya está en el plan del grado.')
@@ -411,6 +431,18 @@ def register_schedule_routes(app):
         edit.horas_semanales = horas
         edit.max_bloques_por_dia = max_dia
         edit.requiere_bloque_doble = doble
+        edit.tipo_plan = tipo_plan
+        db.session.flush()
+
+        GradoMateriaArea.query.filter_by(
+            grado_id=grado.id, materia_id=edit.materia_id
+        ).delete(synchronize_session=False)
+        for area in areas_sel:
+            db.session.add(GradoMateriaArea(
+                grado_id=grado.id,
+                materia_id=edit.materia_id,
+                area_id=area.id,
+            ))
 
         try:
             db.session.commit()
