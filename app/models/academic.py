@@ -20,6 +20,41 @@ class Nivel(BaseModel):
         return f'<Nivel {self.nombre}>'
 
 
+class PlanEstudio(BaseModel):
+    __tablename__ = 'plan_estudio'
+    __table_args__ = (
+        db.UniqueConstraint('colegio_id', 'nombre', name='uq_plan_colegio_nombre'),
+    )
+
+    colegio_id = db.Column(db.Integer, db.ForeignKey('colegio.id'), nullable=False)
+    nivel_id = db.Column(db.Integer, db.ForeignKey('nivel.id'), nullable=False)
+    nombre = db.Column(db.Text, nullable=False)
+    orden = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    activo = db.Column(db.Boolean, nullable=False, default=True, server_default='true')
+
+    nivel = db.relationship('Nivel', backref='planes_estudio')
+    grados = db.relationship('Grado', back_populates='plan')
+
+    def __repr__(self):
+        return f'<PlanEstudio {self.nombre}>'
+
+
+class AreaConocimiento(BaseModel):
+    __tablename__ = 'area_conocimiento'
+    __table_args__ = (
+        db.UniqueConstraint('colegio_id', 'nombre',
+                            name='uq_area_colegio_nombre'),
+    )
+
+    colegio_id = db.Column(db.Integer, db.ForeignKey('colegio.id'), nullable=False)
+    nombre = db.Column(db.Text, nullable=False)
+    orden = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    activa = db.Column(db.Boolean, nullable=False, default=True, server_default='true')
+
+    def __repr__(self):
+        return f'<AreaConocimiento {self.nombre}>'
+
+
 class Grado(BaseModel):
     __tablename__ = 'grado'
     __table_args__ = (
@@ -27,10 +62,13 @@ class Grado(BaseModel):
     )
 
     nivel_id = db.Column(db.Integer, db.ForeignKey('nivel.id'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('plan_estudio.id',
+                                                  ondelete='SET NULL'))
     nombre = db.Column(db.Text, nullable=False)
     orden = db.Column(db.Integer, nullable=False, default=0, server_default='0')
 
     nivel = db.relationship('Nivel', back_populates='grados')
+    plan = db.relationship('PlanEstudio', back_populates='grados')
     grado_materias = db.relationship(
         'GradoMateria', back_populates='grado', cascade='all, delete-orphan'
     )

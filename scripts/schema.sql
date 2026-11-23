@@ -8,7 +8,9 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 -- ---------------------------------------------------------------------
 CREATE TABLE colegio (
   id      serial PRIMARY KEY,
-  nombre  text NOT NULL
+  nombre  text NOT NULL,
+  minutos_hora_catedra int NOT NULL DEFAULT 40
+                       CHECK (minutos_hora_catedra BETWEEN 20 AND 120)
 );
 
 CREATE TABLE anio_lectivo (
@@ -41,9 +43,21 @@ CREATE TABLE turno (
   UNIQUE (colegio_id, nombre)
 );
 
+-- Un ciclo educativo (nivel) puede tener varios planes.
+CREATE TABLE plan_estudio (
+  id         serial PRIMARY KEY,
+  colegio_id int  NOT NULL REFERENCES colegio(id),
+  nivel_id   int  NOT NULL REFERENCES nivel(id),
+  nombre     text NOT NULL,                -- 'E.E.B. 7-9', 'BATIN', 'BATAN'
+  orden      int  NOT NULL DEFAULT 0,
+  activo     boolean NOT NULL DEFAULT true,
+  UNIQUE (colegio_id, nombre)
+);
+
 CREATE TABLE grado (
   id       serial PRIMARY KEY,
   nivel_id int  NOT NULL REFERENCES nivel(id),
+  plan_id  int  REFERENCES plan_estudio(id) ON DELETE SET NULL,
   nombre   text NOT NULL,                  -- '7mo grado'
   orden    int  NOT NULL DEFAULT 0,
   UNIQUE (nivel_id, nombre)
@@ -66,6 +80,16 @@ CREATE TABLE materia (
   nombre              text NOT NULL,
   tipo_aula_requerida text CHECK (tipo_aula_requerida IN
                         ('regular','laboratorio','informatica','gimnasio','otro')),
+  UNIQUE (colegio_id, nombre)
+);
+
+-- Areas de conocimiento: agrupan materias y pueden solaparse.
+CREATE TABLE area_conocimiento (
+  id         serial PRIMARY KEY,
+  colegio_id int  NOT NULL REFERENCES colegio(id),
+  nombre     text NOT NULL,
+  orden      int  NOT NULL DEFAULT 0,
+  activa     boolean NOT NULL DEFAULT true,
   UNIQUE (colegio_id, nombre)
 );
 
@@ -113,7 +137,19 @@ CREATE TABLE grado_materia (
   horas_semanales      int NOT NULL CHECK (horas_semanales > 0),
   max_bloques_por_dia  int NOT NULL DEFAULT 1 CHECK (max_bloques_por_dia > 0),
   requiere_bloque_doble boolean NOT NULL DEFAULT false,
+  tipo_plan            text NOT NULL DEFAULT 'comun'
+                       CHECK (tipo_plan IN ('comun','especifico','optativo')),
   PRIMARY KEY (grado_id, materia_id)
+);
+
+-- Una materia puede pertenecer a varias areas dentro del mismo plan/grado.
+CREATE TABLE grado_materia_area (
+  grado_id    int NOT NULL,
+  materia_id  int NOT NULL,
+  area_id     int NOT NULL REFERENCES area_conocimiento(id) ON DELETE CASCADE,
+  PRIMARY KEY (grado_id, materia_id, area_id),
+  FOREIGN KEY (grado_id, materia_id)
+    REFERENCES grado_materia(grado_id, materia_id) ON DELETE CASCADE
 );
 
 -- Plan efectivo por seccion (se copia de grado_materia y se puede ajustar)

@@ -26,6 +26,9 @@ de optimización que evita choques de profesores, aulas y secciones.
 
 - Autenticación, sesión y dashboard.
 - ABM de colegios, años lectivos, niveles, grados, turnos, aulas y materias.
+- Planes de estudio por ciclo, áreas de conocimiento y tipo de plan
+  (común / específico / optativo).
+- Duración de la hora cátedra configurable por institución (`minutos_hora_catedra`).
 - Profesores con materias habilitadas, carga horaria y disponibilidad semanal.
 - Plantillas de horario con bloques de clase y receso.
 - Secciones por año/grado/turno con plan de estudios por grado y por sección.
@@ -90,6 +93,14 @@ cp .env.example .env
 4. Crear la base y aplicar el esquema:
 
 ```bash
+python scripts/create_db.py
+python scripts/init_schema.py
+```
+
+Si ya existe una base con un esquema anterior, hay que recrearla:
+
+```bash
+python scripts/drop_db.py
 python scripts/create_db.py
 python scripts/init_schema.py
 ```
@@ -189,7 +200,7 @@ python -m unittest discover -s tests
 
 ```bash
 python scripts/cargar_demo.py --force # DEMO completa (borra datos académicos, conserva usuarios)
-python scripts/seed_estructura.py     # estructura + datos demo (sin borrar)
+python scripts/seed_estructura.py     # estructura básica (sin borrar)
 python scripts/nuevo_colegio.py 2 sanjose   # entorno de una instancia nueva
 python scripts/generar_manual.py            # guía de usuario en docs/
 python scripts/backup_db.py           # backup .sql

@@ -25,10 +25,10 @@ from sqlalchemy import delete
 from app.extensions import db
 from app.factory import create_app
 from app.models import (
-    AnioLectivo, Aula, Bloque, Colegio, Grado, GradoMateria, HorarioCelda,
-    HorarioVersion, Materia, Nivel, PlantillaHorario, Profesor,
-    ProfesorDisponibilidad, ProfesorMateria, Regla, Seccion, SeccionMateria,
-    Turno, Usuario,
+    AnioLectivo, AreaConocimiento, Aula, Bloque, Colegio, Grado, GradoMateria,
+    GradoMateriaArea, HorarioCelda, HorarioVersion, Materia, Nivel,
+    PlanEstudio, PlantillaHorario, Profesor, ProfesorDisponibilidad,
+    ProfesorMateria, Regla, Seccion, SeccionMateria, Turno, Usuario,
 )
 from app.services.scheduler.engine import generar_horario
 from app.utils.helpers import DIAS_SEMANA
@@ -92,6 +92,19 @@ PLAN_CONTA = [
     ('Administración', 4),
 ]
 
+AREAS_POR_MATERIA = {
+    'Matemática': ['Matemática y sus Tecnologías'],
+    'Lengua y Literatura': ['Lengua y Literatura'],
+    'Ciencias Naturales': ['Ciencias Básicas'],
+    'Ciencias Sociales': ['Ciencias Sociales'],
+    'Inglés': ['Lengua y Literatura', 'S.I.L.'],
+    'Educación Física': ['Educación Física'],
+    'Informática': ['Técnicas y Tecnológicas', 'S.I.L.'],
+    'Contabilidad': ['Técnicas y Tecnológicas'],
+    'Administración': ['Técnicas y Tecnológicas'],
+    'Orientación': ['Desarrollo Personal y Social'],
+}
+
 # (nombre, documento, materias, max semanal, max diario, turno de disponibilidad)
 PROFESORES = [
     # Tercer Ciclo · Mañana
@@ -152,7 +165,8 @@ def limpiar_datos():
     orden = [
         HorarioCelda, HorarioVersion,
         SeccionMateria, Seccion,
-        GradoMateria, Grado,
+        GradoMateriaArea, GradoMateria, Grado,
+        PlanEstudio, AreaConocimiento,
         Regla,
         ProfesorDisponibilidad, ProfesorMateria,
         Bloque, PlantillaHorario,
@@ -180,6 +194,10 @@ def crear_colegio(usuario, colegio_id=None):
         colegio = Colegio(nombre=COLEGIO_DEMO)
         db.session.add(colegio)
         db.session.flush()
+
+    if not colegio.minutos_hora_catedra:
+        colegio.minutos_hora_catedra = 40
+        db.session.flush()
     return colegio
 
 
@@ -199,15 +217,37 @@ def crear_estructura(colegio):
     db.session.add_all([nivel_tercero, nivel_medio])
     db.session.flush()
 
+    planes = {}
+    for nivel, nombre, orden in [
+        (nivel_tercero, 'E.E.B. 7°-9°', 1),
+        (nivel_medio, 'BATIN', 1),
+        (nivel_medio, 'BATAN', 2),
+    ]:
+        plan = PlanEstudio(
+            colegio_id=colegio.id,
+            nivel_id=nivel.id,
+            nombre=nombre,
+            orden=orden,
+            activo=True,
+        )
+        db.session.add(plan)
+        planes[nombre] = plan
+    db.session.flush()
+
     grados = {}
     for orden, nombre in enumerate(['7°', '8°', '9°'], start=1):
-        grado = Grado(nivel_id=nivel_tercero.id, nombre=nombre, orden=orden)
+        grado = Grado(nivel_id=nivel_tercero.id,
+                      plan_id=planes['E.E.B. 7°-9°'].id,
+                      nombre=nombre, orden=orden)
         db.session.add(grado)
         grados[nombre] = grado
-    for orden, nombre in enumerate(
-            ['1° BATAN Informática', '2° BATAN Informática',
-             '1° BATAN Contabilidad'], start=1):
-        grado = Grado(nivel_id=nivel_medio.id, nombre=nombre, orden=orden)
+    for orden, (nombre, plan_nombre) in enumerate([
+            ('1° BATIN Informática', 'BATIN'),
+            ('2° BATIN Informática', 'BATIN'),
+            ('1° BATAN Contabilidad', 'BATAN')], start=1):
+        grado = Grado(nivel_id=nivel_medio.id,
+                      plan_id=planes[plan_nombre].id,
+                      nombre=nombre, orden=orden)
         db.session.add(grado)
         grados[nombre] = grado
     db.session.flush()
@@ -235,7 +275,25 @@ def crear_estructura(colegio):
         materias[nombre] = materia
     db.session.flush()
 
-    return anio, grados, turnos, aulas, materias
+    areas = {}
+    for orden, nombre in enumerate([
+        'Lengua y Literatura',
+        'Ciencias Básicas',
+        'Matemática y sus Tecnologías',
+        'Ciencias Sociales',
+        'Educación Física',
+        'Desarrollo Personal y Social',
+        'Técnicas y Tecnológicas',
+        'S.I.L.',
+        'Plan Optativo',
+    ], start=1):
+        area = AreaConocimiento(
+            colegio_id=colegio.id, nombre=nombre, orden=orden, activa=True)
+        db.session.add(area)
+        areas[nombre] = area
+    db.session.flush()
+
+    return anio, grados, turnos, aulas, materias, planes, areas
 
 
 def crear_plantillas(colegio, turnos):
@@ -302,25 +360,38 @@ def crear_profesores(colegio, materias):
     return profesores
 
 
-def crear_planes(grados, materias):
+def crear_planes(grados, materias, areas):
     planes = {
         '7°': PLAN_TERCER_CICLO,
         '8°': PLAN_TERCER_CICLO,
         '9°': PLAN_TERCER_CICLO,
-        '1° BATAN Informática': PLAN_INFO,
-        '2° BATAN Informática': PLAN_INFO,
+        '1° BATIN Informática': PLAN_INFO,
+        '2° BATIN Informática': PLAN_INFO,
         '1° BATAN Contabilidad': PLAN_CONTA,
     }
     for grado_nombre, plan in planes.items():
         grado = grados[grado_nombre]
         for materia_nombre, horas in plan:
-            db.session.add(GradoMateria(
+            materia = materias[materia_nombre]
+            tipo = 'especifico' if materia_nombre in (
+                'Informática', 'Contabilidad', 'Administración') else 'comun'
+            gm = GradoMateria(
                 grado_id=grado.id,
-                materia_id=materias[materia_nombre].id,
+                materia_id=materia.id,
                 horas_semanales=horas,
                 max_bloques_por_dia=1,
                 requiere_bloque_doble=False,
-            ))
+                tipo_plan=tipo,
+            )
+            db.session.add(gm)
+            db.session.flush()
+
+            for area_nombre in AREAS_POR_MATERIA.get(materia_nombre, []):
+                db.session.add(GradoMateriaArea(
+                    grado_id=grado.id,
+                    materia_id=materia.id,
+                    area_id=areas[area_nombre].id,
+                ))
     db.session.flush()
 
 
@@ -329,9 +400,9 @@ def crear_secciones(anio, grados, turnos, aulas, plantillas):
         ('7°', 'A', 'Mañana', 'Mañana Tercer Ciclo', 'Aula 1'),
         ('8°', 'A', 'Mañana', 'Mañana Tercer Ciclo', 'Aula 2'),
         ('9°', 'A', 'Mañana', 'Mañana Tercer Ciclo', 'Aula 3'),
-        ('1° BATAN Informática', 'A', 'Tarde', 'Tarde Nivel Medio', 'Aula 1'),
-        ('1° BATAN Informática', 'B', 'Tarde', 'Tarde Nivel Medio', 'Aula 2'),
-        ('2° BATAN Informática', 'A', 'Tarde', 'Tarde Nivel Medio', 'Aula 3'),
+        ('1° BATIN Informática', 'A', 'Tarde', 'Tarde Nivel Medio', 'Aula 1'),
+        ('1° BATIN Informática', 'B', 'Tarde', 'Tarde Nivel Medio', 'Aula 2'),
+        ('2° BATIN Informática', 'A', 'Tarde', 'Tarde Nivel Medio', 'Aula 3'),
         ('1° BATAN Contabilidad', 'A', 'Tarde', 'Tarde Nivel Medio', 'Aula 4'),
     ]
 
@@ -449,10 +520,10 @@ def main():
         print(f'Limpiando datos académicos de {colegio.nombre}...')
         limpiar_datos()
 
-        anio, grados, turnos, aulas, materias = crear_estructura(colegio)
+        anio, grados, turnos, aulas, materias, planes, areas = crear_estructura(colegio)
         plantillas = crear_plantillas(colegio, turnos)
         profesores = crear_profesores(colegio, materias)
-        crear_planes(grados, materias)
+        crear_planes(grados, materias, areas)
         crear_secciones(anio, grados, turnos, aulas, plantillas)
         crear_reglas(colegio, materias)
 
@@ -469,6 +540,8 @@ def main():
         print('  Profesores:', Profesor.query.count())
         print('  Materias:', Materia.query.count())
         print('  Aulas:', Aula.query.count())
+        print('  Planes:', PlanEstudio.query.filter_by(colegio_id=colegio.id).count())
+        print('  Áreas:', AreaConocimiento.query.filter_by(colegio_id=colegio.id).count())
         print('  Usuarios preservados:', total_usuarios)
         print('  Login: los usuarios existentes siguen funcionando.')
 

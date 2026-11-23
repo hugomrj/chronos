@@ -14,6 +14,8 @@ class Colegio(BaseModel):
     __tablename__ = 'colegio'
 
     nombre = db.Column(db.Text, nullable=False)
+    minutos_hora_catedra = db.Column(
+        db.Integer, nullable=False, default=40, server_default='40')
 
     anios = db.relationship(
         'AnioLectivo', back_populates='colegio',
