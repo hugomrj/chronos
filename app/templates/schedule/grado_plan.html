@@ -22,8 +22,6 @@
 {% set v_materia = (form.get('materia_id') or '') if form else (edit.materia_id if edit else '') %}
 {% set v_doble = form.get('requiere_bloque_doble') if form else (edit.requiere_bloque_doble if edit else false) %}
 {% set v_tipo = (form.get('tipo_plan') if form else (edit.tipo_plan if edit else 'comun')) or 'comun' %}
-{% set v_areas = (form.getlist('area_ids') if form else (edit.areas|map(attribute='area_id')|list if edit else [])) %}
-{% set v_areas_str = v_areas|map('string')|list %}
 <section class="panel glass" style="margin-bottom: 1rem;">
   <div class="panel-head">
     <h2>{{ 'Editar materia del plan' if edit else 'Agregar materia al plan' }}</h2>
@@ -46,7 +44,7 @@
           <option value="">Seleccioná una materia</option>
           {% for m in materias %}
           {% if m.id not in items|map(attribute='materia_id')|list %}
-          <option value="{{ m.id }}" {{ 'selected' if (v_materia|string) == (m.id|string) }}>{{ m.nombre }}</option>
+          <option value="{{ m.id }}" {{ 'selected' if (v_materia|string) == (m.id|string) }}>{{ m.nombre }}{% if m.area %} · {{ m.area.nombre }}{% endif %}</option>
           {% endif %}
           {% endfor %}
         </select>
@@ -69,22 +67,6 @@
           <option value="{{ t }}" {{ 'selected' if v_tipo == t }}>{{ tipos_plan_label[t] }}</option>
           {% endfor %}
         </select>
-      </div>
-      <div class="field fw-full">
-        <label>Áreas de conocimiento <span class="opt">(puede ser más de una)</span></label>
-        {% if areas %}
-        <div class="check-grid">
-          {% for a in areas %}
-          <label class="check-item">
-            <input type="checkbox" name="area_ids" value="{{ a.id }}"
-                   {{ 'checked' if (a.id|string) in v_areas_str }}>
-            <span>{{ a.nombre }}{% if not a.activa %} <small>(inactiva)</small>{% endif %}</span>
-          </label>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="hint">Todavía no hay áreas. <a href="{{ url_for('areas', nuevo=1) }}" style="color: var(--acc-txt); font-weight: 600;">Crear un área</a></div>
-        {% endif %}
       </div>
       <div class="field fw-full">
         <label class="switch-row">
@@ -127,11 +109,11 @@
         <td><b>{{ gm.materia.nombre }}</b></td>
         <td class="c-state"><span class="status">{{ tipos_plan_label.get(gm.tipo_plan, gm.tipo_plan) }}</span></td>
         <td>
-          {% for ga in gm.areas %}
-            <span class="status">{{ ga.area.nombre }}</span>
+          {% if gm.materia.area %}
+            <span class="status">{{ gm.materia.area.nombre }}</span>
           {% else %}
             <span class="hint">—</span>
-          {% endfor %}
+          {% endif %}
         </td>
         <td class="c-state">{{ gm.horas_semanales }}</td>
         <td class="c-state">{{ gm.max_bloques_por_dia }}</td>

@@ -29,6 +29,7 @@ de optimización que evita choques de profesores, aulas y secciones.
 - Planes de estudio por ciclo, áreas de conocimiento y tipo de plan
   (común / específico / optativo).
 - Duración de la hora cátedra configurable por institución (`minutos_hora_catedra`).
+- Límite semanal de horas por área y horas semanales por profesor con historial por año.
 - Profesores con materias habilitadas, carga horaria y disponibilidad semanal.
 - Plantillas de horario con bloques de clase y receso.
 - Secciones por año/grado/turno con plan de estudios por grado y por sección.

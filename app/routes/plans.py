@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import (
-    AreaConocimiento, Grado, GradoMateriaArea, Nivel, PlanEstudio, Seccion,
+    AreaConocimiento, Grado, GradoMateria, Nivel, PlanEstudio, Seccion,
 )
 from app.utils.helpers import colegio_actual, parse_int
 
@@ -77,12 +77,30 @@ def register_plan_routes(app):
         nombre = (request.form.get('nombre') or '').strip()
         orden = parse_int(request.form.get('orden'), 0) or 0
         activa = request.form.get('activa') == 'on'
+        raw_horas = (request.form.get('horas_max_semana') or '').strip()
+        horas_max = parse_int(raw_horas) if raw_horas else None
 
         errors = []
         if not nombre:
             errors.append('El nombre del área es obligatorio.')
         if orden < 0:
             errors.append('El orden no puede ser negativo.')
+        if horas_max is not None and horas_max < 1:
+            errors.append('El máximo de horas debe ser mayor a cero.')
+        if item is not None and horas_max is not None:
+            totales_grado = {}
+            if item.materias:
+                for gm in GradoMateria.query.filter(
+                        GradoMateria.materia_id.in_(
+                            [m.id for m in item.materias])).all():
+                    totales_grado[gm.grado_id] = (
+                        totales_grado.get(gm.grado_id, 0) + gm.horas_semanales
+                    )
+            if any(total > horas_max for total in totales_grado.values()):
+                errors.append(
+                    'El máximo no puede ser menor a las horas ya asignadas '
+                    'en alguno de los grados.'
+                )
         existente = AreaConocimiento.query.filter_by(
             colegio_id=colegio.id, nombre=nombre
         ).first()
@@ -100,6 +118,7 @@ def register_plan_routes(app):
         item.nombre = nombre
         item.orden = orden
         item.activa = activa
+        item.horas_max_semana = horas_max
 
         try:
             db.session.commit()
@@ -118,8 +137,8 @@ def register_plan_routes(app):
         item = db.get_or_404(AreaConocimiento, item_id)
         if item.colegio_id != colegio.id:
             abort(404)
-        if GradoMateriaArea.query.filter_by(area_id=item.id).first():
-            flash('No se puede eliminar: el área está asignada a materias de un plan.', 'error')
+        if item.materias:
+            flash('No se puede eliminar: el área está asignada a materias.', 'error')
             return redirect(url_for('areas'))
         try:
             db.session.delete(item)

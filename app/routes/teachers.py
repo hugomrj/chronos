@@ -3,9 +3,12 @@ from flask_login import login_required
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
-from app.models import Materia, Profesor, ProfesorDisponibilidad
+from app.models import (
+    Materia, Profesor, ProfesorDisponibilidad, ProfesorHorasAnio, Seccion,
+    SeccionMateria,
+)
 from app.utils.helpers import (
-    DIAS_SEMANA, colegio_actual, parse_int, parse_time,
+    DIAS_SEMANA, anio_activo, colegio_actual, parse_int, parse_time,
 )
 
 
@@ -52,6 +55,18 @@ def register_teachers_routes(app):
             errors=errors or [],
         )
 
+    def _carga_anual(colegio_id, profesor_id, excluir_sm=None):
+        anio = anio_activo(colegio_id)
+        if not anio:
+            return 0
+        consulta = SeccionMateria.query.join(Seccion).filter(
+            Seccion.anio_lectivo_id == anio.id,
+            SeccionMateria.profesor_id == profesor_id,
+        )
+        if excluir_sm:
+            consulta = consulta.filter(SeccionMateria.id != excluir_sm)
+        return sum(sm.horas_semanales for sm in consulta.all())
+
     # ------------------------------------------------------------------
     # PROFESORES
     # ------------------------------------------------------------------
@@ -91,9 +106,7 @@ def register_teachers_routes(app):
         nombre = (request.form.get('nombre') or '').strip()
         documento = (request.form.get('documento') or '').strip() or None
         contacto = (request.form.get('contacto') or '').strip() or None
-        h_min = parse_int(request.form.get('horas_min_semana')) if request.form.get('horas_min_semana') else None
         h_max = parse_int(request.form.get('horas_max_semana')) if request.form.get('horas_max_semana') else None
-        h_max_dia = parse_int(request.form.get('horas_max_dia')) if request.form.get('horas_max_dia') else None
         activo = request.form.get('activo') == 'on'
 
         materias_ids = request.form.getlist('materias')
@@ -107,13 +120,15 @@ def register_teachers_routes(app):
         errors = []
         if not nombre:
             errors.append('El nombre del profesor es obligatorio.')
-        for etiqueta, valor in (('mínimo semanal', h_min),
-                                ('máximo semanal', h_max),
-                                ('máximo diario', h_max_dia)):
-            if valor is not None and valor < 0:
-                errors.append(f'El valor {etiqueta} no puede ser negativo.')
-        if h_min is not None and h_max is not None and h_min > h_max:
-            errors.append('El mínimo semanal no puede superar al máximo semanal.')
+        if h_max is not None and h_max < 0:
+            errors.append('Las horas semanales no pueden ser negativas.')
+        if item is not None and h_max is not None:
+            carga_actual = _carga_anual(colegio.id, item.id)
+            if carga_actual > h_max:
+                errors.append(
+                    f'La carga actual del profesor es de {carga_actual} h y '
+                    f'no puede bajar su máximo semanal a {h_max} h.'
+                )
 
         if errors:
             return render_template(
@@ -130,11 +145,22 @@ def register_teachers_routes(app):
         item.nombre = nombre
         item.documento = documento
         item.contacto = contacto
-        item.horas_min_semana = h_min
         item.horas_max_semana = h_max
-        item.horas_max_dia = h_max_dia
         item.activo = activo
         item.materias = materias
+
+        anio = anio_activo(colegio.id)
+        if anio and h_max is not None:
+            registro = next(
+                (h for h in item.horas_anio if h.anio_lectivo_id == anio.id),
+                None,
+            )
+            if registro is None:
+                item.horas_anio.append(ProfesorHorasAnio(
+                    anio_lectivo_id=anio.id, horas_max_semana=h_max,
+                ))
+            else:
+                registro.horas_max_semana = h_max
 
         try:
             db.session.commit()

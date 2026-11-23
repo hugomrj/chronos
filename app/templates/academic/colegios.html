@@ -32,6 +32,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -61,4 +62,5 @@
   {{ empty_state('Todavía no hay colegios', 'Creá el primer colegio para empezar a configurar la estructura académica.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

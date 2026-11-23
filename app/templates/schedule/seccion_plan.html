@@ -74,7 +74,7 @@
           <option value="">Seleccioná una materia</option>
           {% for m in materias %}
           {% if m.id not in items|map(attribute='materia_id')|list %}
-          <option value="{{ m.id }}" {{ 'selected' if (v_materia|string) == (m.id|string) }}>{{ m.nombre }}</option>
+          <option value="{{ m.id }}" {{ 'selected' if (v_materia|string) == (m.id|string) }}>{{ m.nombre }}{% if m.area %} · {{ m.area.nombre }}{% endif %}</option>
           {% endif %}
           {% endfor %}
         </select>
@@ -172,7 +172,7 @@
         </td>
         <td>
           {% if gm %}
-            {% for ga in gm.areas %}<span class="status">{{ ga.area.nombre }}</span>{% else %}<span class="hint">—</span>{% endfor %}
+            {% if gm.materia.area %}<span class="status">{{ gm.materia.area.nombre }}</span>{% else %}<span class="hint">—</span>{% endif %}
           {% else %}<span class="hint">—</span>{% endif %}
         </td>
         <td class="c-state">{{ sm.horas_semanales }}</td>

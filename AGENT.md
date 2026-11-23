@@ -97,7 +97,7 @@ tests/test_smoke.py
 - `materia`: asignatura.
 - `grado_materia`: plan por grado; incluye horas, máximo por día, bloque doble y `tipo_plan` (`comun`, `especifico`, `optativo`).
 - `area_conocimiento`: áreas del colegio.
-- `grado_materia_area`: M2M; una materia puede estar en varias áreas.
+- `materia.area_id`: cada materia pertenece a un área. Si se necesita el mismo nombre en otra área, se crea otra materia.
 - `seccion`: curso concreto (`7° A`), año, grado, turno y plantilla.
 - `seccion_materia`: copia del plan del grado; el motor la usa.
 - `horario_version` y `horario_celda`: resultados, publicación y edición manual.

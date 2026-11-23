@@ -12,9 +12,7 @@ class Profesor(BaseModel):
     nombre = db.Column(db.Text, nullable=False)
     documento = db.Column(db.Text)
     contacto = db.Column(db.Text)
-    horas_min_semana = db.Column(db.Integer)
     horas_max_semana = db.Column(db.Integer)
-    horas_max_dia = db.Column(db.Integer)
     activo = db.Column(db.Boolean, nullable=False, default=True, server_default='true')
 
     colegio = db.relationship('Colegio', back_populates='profesores')
@@ -25,9 +23,31 @@ class Profesor(BaseModel):
         'ProfesorDisponibilidad', back_populates='profesor',
         cascade='all, delete-orphan'
     )
+    horas_anio = db.relationship(
+        'ProfesorHorasAnio', back_populates='profesor',
+        cascade='all, delete-orphan'
+    )
 
     def __repr__(self):
         return f'<Profesor {self.nombre}>'
+
+
+class ProfesorHorasAnio(db.Model):
+    __tablename__ = 'profesor_horas_anio'
+
+    profesor_id = db.Column(db.Integer,
+                            db.ForeignKey('profesor.id', ondelete='CASCADE'),
+                            primary_key=True)
+    anio_lectivo_id = db.Column(db.Integer,
+                                db.ForeignKey('anio_lectivo.id', ondelete='CASCADE'),
+                                primary_key=True)
+    horas_max_semana = db.Column(db.Integer, nullable=False)
+
+    profesor = db.relationship('Profesor', back_populates='horas_anio')
+    anio_lectivo = db.relationship('AnioLectivo')
+
+    def __repr__(self):
+        return f'<ProfesorHorasAnio {self.profesor_id} {self.anio_lectivo_id}>'
 
 
 class ProfesorMateria(db.Model):

@@ -3,7 +3,9 @@ from flask_login import login_required
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
-from app.models import AnioLectivo, Aula, Colegio, Grado, Materia, Nivel, Turno
+from app.models import (
+    AnioLectivo, AreaConocimiento, Aula, Colegio, Grado, Materia, Nivel, Turno,
+)
 from app.utils.helpers import (
     TIPOS_AULA, TIPOS_AULA_LABEL, colegio_actual, parse_date, parse_int,
 )
@@ -271,12 +273,24 @@ def register_academic_routes(app):
         colegio = _colegio_o_none()
         if not colegio:
             return redirect(url_for('colegios'))
+
+        nivel = None
+        nivel_id = request.args.get('nivel_id', type=int)
+        if nivel_id:
+            nivel = db.session.get(Nivel, nivel_id)
+            if nivel and nivel.colegio_id != colegio.id:
+                nivel = None
+
+        consulta = Grado.query.join(Nivel).filter(Nivel.colegio_id == colegio.id)
+        if nivel:
+            consulta = consulta.filter(Grado.nivel_id == nivel.id)
+
         return render_template(
             'academic/grados.html', crumb='Grados',
-            items=Grado.query.join(Nivel).filter(Nivel.colegio_id == colegio.id)
-                             .order_by(Nivel.nombre, Grado.orden, Grado.nombre).all(),
+            items=consulta.order_by(Nivel.nombre, Grado.orden, Grado.nombre).all(),
             niveles=Nivel.query.filter_by(colegio_id=colegio.id)
                                .order_by(Nivel.nombre).all(),
+            nivel=nivel,
             edit=_get(Grado), form={}, errors=[],
         )
 
@@ -499,12 +513,29 @@ def register_academic_routes(app):
         colegio = _colegio_o_none()
         if not colegio:
             return redirect(url_for('colegios'))
+
+        area = None
+        area_id = request.args.get('area_id', type=int)
+        if area_id:
+            area = db.session.get(AreaConocimiento, area_id)
+            if area and area.colegio_id != colegio.id:
+                area = None
+
+        consulta = Materia.query.filter_by(colegio_id=colegio.id)
+        if area:
+            consulta = consulta.filter(Materia.area_id == area.id)
+
+        edit = _get(Materia)
+        areas = AreaConocimiento.query.filter_by(
+            colegio_id=colegio.id
+        ).order_by(AreaConocimiento.orden, AreaConocimiento.nombre).all()
         return render_template(
             'academic/materias.html', crumb='Materias',
-            items=Materia.query.filter_by(colegio_id=colegio.id)
-                               .order_by(Materia.nombre).all(),
+            items=consulta.order_by(Materia.nombre).all(),
+            area=area,
+            areas=areas,
             tipos=TIPOS_AULA, tipos_label=TIPOS_AULA_LABEL,
-            edit=_get(Materia), form={}, errors=[],
+            edit=edit, form={}, errors=[],
         )
 
     @app.route('/materias/guardar', methods=['POST'])
@@ -519,18 +550,33 @@ def register_academic_routes(app):
 
         nombre = (request.form.get('nombre') or '').strip()
         tipo_aula = request.form.get('tipo_aula_requerida') or None
+        area_id = parse_int(request.form.get('area_id'))
+        area = db.session.get(AreaConocimiento, area_id) if area_id else None
+        if area and area.colegio_id != colegio.id:
+            area = None
 
         errors = []
         if not nombre:
             errors.append('El nombre de la materia es obligatorio.')
+        if not area:
+            errors.append('Seleccioná un área válida.')
         if tipo_aula and tipo_aula not in TIPOS_AULA:
             errors.append('El tipo de aula requerida no es válido.')
+        if area and nombre:
+            duplicada = Materia.query.filter_by(
+                colegio_id=colegio.id, nombre=nombre, area_id=area.id
+            ).first()
+            if duplicada and (item is None or duplicada.id != item.id):
+                errors.append('Ya existe una materia con ese nombre en esa área.')
 
         if errors:
             return render_template(
                 'academic/materias.html', crumb='Materias',
                 items=Materia.query.filter_by(colegio_id=colegio.id)
                                    .order_by(Materia.nombre).all(),
+                areas=AreaConocimiento.query.filter_by(
+                    colegio_id=colegio.id
+                ).order_by(AreaConocimiento.orden, AreaConocimiento.nombre).all(),
                 tipos=TIPOS_AULA, tipos_label=TIPOS_AULA_LABEL,
                 edit=item, form=request.form, errors=errors,
             )
@@ -538,9 +584,10 @@ def register_academic_routes(app):
         if item:
             item.nombre = nombre
             item.tipo_aula_requerida = tipo_aula
+            item.area_id = area.id
         else:
             item = Materia(colegio_id=colegio.id, nombre=nombre,
-                           tipo_aula_requerida=tipo_aula)
+                           area_id=area.id, tipo_aula_requerida=tipo_aula)
             db.session.add(item)
 
         try:

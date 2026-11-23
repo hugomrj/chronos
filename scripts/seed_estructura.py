@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.extensions import db
 from app.factory import create_app
 from app.models import (
-    AnioLectivo, Aula, Bloque, Colegio, Grado, GradoMateria, Materia, Nivel,
+    AnioLectivo, AreaConocimiento, Aula, Bloque, Colegio, Grado, GradoMateria, Materia, Nivel,
     PlantillaHorario, Profesor, ProfesorDisponibilidad, Regla, Seccion,
     SeccionMateria, Turno,
 )
@@ -115,9 +115,7 @@ PROFESORES = [
         'nombre': 'Ana Benítez',
         'documento': '4001001',
         'contacto': '0981 111 222',
-        'horas_min_semana': 12,
         'horas_max_semana': 25,
-        'horas_max_dia': 5,
         'materias': ['Matemática', 'Ciencias Naturales'],
         'disponibilidad': [
             (1, '07:00', '12:00'), (2, '07:00', '12:00'), (3, '07:00', '12:00'),
@@ -128,9 +126,7 @@ PROFESORES = [
         'nombre': 'Carlos Méndez',
         'documento': '4001002',
         'contacto': '0982 333 444',
-        'horas_min_semana': 8,
         'horas_max_semana': 20,
-        'horas_max_dia': 4,
         'materias': ['Educación Física', 'Informática'],
         'disponibilidad': [
             (1, '07:00', '12:00'), (2, '07:00', '12:00'), (3, '07:00', '12:00'),
@@ -143,9 +139,7 @@ PROFESORES = [
         'nombre': 'Diego Ramírez',
         'documento': '4001004',
         'contacto': '0984 777 888',
-        'horas_min_semana': 10,
         'horas_max_semana': 25,
-        'horas_max_dia': 5,
         'materias': ['Matemática', 'Ciencias Naturales'],
         'disponibilidad': [
             (1, '13:00', '18:00'), (2, '13:00', '18:00'), (3, '13:00', '18:00'),
@@ -156,9 +150,7 @@ PROFESORES = [
         'nombre': 'Lucía Fernández',
         'documento': '4001003',
         'contacto': '0983 555 666',
-        'horas_min_semana': 10,
         'horas_max_semana': 22,
-        'horas_max_dia': 5,
         'materias': ['Lengua y Literatura', 'Inglés', 'Ciencias Sociales'],
         'disponibilidad': [],
     },
@@ -207,10 +199,15 @@ def seed():
             defaults={'tipo': tipo, 'capacidad': capacidad, 'activa': True},
         )
 
+    area_general, _ = get_or_create(
+        AreaConocimiento, colegio_id=colegio.id, nombre='General',
+        defaults={'orden': 0, 'activa': True},
+    )
     for nombre, tipo_aula in MATERIAS:
         get_or_create(
             Materia, colegio_id=colegio.id, nombre=nombre,
-            defaults={'tipo_aula_requerida': tipo_aula},
+            defaults={'tipo_aula_requerida': tipo_aula,
+                      'area_id': area_general.id},
         )
 
     materias_por_nombre = {
@@ -222,9 +219,7 @@ def seed():
             defaults={
                 'documento': datos['documento'],
                 'contacto': datos['contacto'],
-                'horas_min_semana': datos['horas_min_semana'],
                 'horas_max_semana': datos['horas_max_semana'],
-                'horas_max_dia': datos['horas_max_dia'],
                 'activo': True,
             },
         )

@@ -27,8 +27,9 @@ El cliente trabaja con:
 
 4. **Áreas**
    - `area_conocimiento` es por colegio.
-   - `grado_materia_area` es muchos-a-muchos: una materia puede estar en varias áreas.
-   - El área se define a nivel **grado + materia**, no globalmente, porque una misma materia puede cambiar de área según el plan.
+   - `materia.area_id` es la relación directa: cada materia pertenece a un área.
+   - Si se necesita la misma materia en otra área, se crea otro registro de materia.
+   - El área se hereda en el plan del grado.
 
 5. **Tipo de plan**
    - `grado_materia.tipo_plan`: `comun`, `especifico` u `optativo`.

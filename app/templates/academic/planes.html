@@ -70,6 +70,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -118,4 +119,5 @@
   {{ empty_state('Todavía no hay planes', 'Creá planes como E.E.B. 7°-9° o BATIN y asignales sus grados.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

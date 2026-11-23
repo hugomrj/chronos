@@ -32,6 +32,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -51,7 +52,7 @@
       {% for n in items %}
       <tr>
         <td><b>{{ n.nombre }}</b></td>
-        <td class="c-state">{{ n.grados|length }}</td>
+        <td class="c-state"><a href="{{ url_for('grados', nivel_id=n.id) }}" title="Ver los grados de {{ n.nombre }}">{{ n.grados|length }}</a></td>
         <td>{{ row_actions(url_for('niveles', editar=n.id), url_for('nivel_eliminar', item_id=n.id), n.nombre) }}</td>
       </tr>
       {% endfor %}
@@ -61,4 +62,5 @@
   {{ empty_state('Todavía no hay niveles', 'Creá los niveles del colegio (Inicial, Primaria, Secundaria) para después cargar sus grados.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

@@ -5,8 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.extensions import db
 from app.models import (
     AnioLectivo, AreaConocimiento, Aula, Bloque, Grado, GradoMateria,
-    GradoMateriaArea, Materia, PlantillaHorario, Profesor, Seccion,
-    SeccionMateria, Turno,
+    Materia, PlantillaHorario, Profesor, Seccion, SeccionMateria, Turno,
 )
 from app.utils.helpers import (
     DIAS_SEMANA, TIPOS_PLAN, TIPOS_PLAN_LABEL, anio_activo, colegio_actual,
@@ -104,17 +103,14 @@ def register_schedule_routes(app):
         )
 
     def _grado_plan_ctx(grado, edit=None, form=None, errors=None):
+        items = GradoMateria.query.filter_by(grado_id=grado.id) \
+                                  .join(Materia).order_by(Materia.nombre).all()
         return dict(
             crumb=f'Plan · {grado.nombre}',
             grado=grado,
-            items=GradoMateria.query.filter_by(grado_id=grado.id)
-                                     .join(Materia)
-                                     .order_by(Materia.nombre).all(),
+            items=items,
             materias=Materia.query.filter_by(colegio_id=grado.nivel.colegio_id)
                                   .order_by(Materia.nombre).all(),
-            areas=AreaConocimiento.query.filter_by(
-                colegio_id=grado.nivel.colegio_id
-            ).order_by(AreaConocimiento.orden, AreaConocimiento.nombre).all(),
             tipos_plan=TIPOS_PLAN,
             tipos_plan_label=TIPOS_PLAN_LABEL,
             edit=edit,
@@ -389,7 +385,6 @@ def register_schedule_routes(app):
         max_dia = parse_int(request.form.get('max_bloques_por_dia'), 1) or 1
         doble = request.form.get('requiere_bloque_doble') == 'on'
         tipo_plan = request.form.get('tipo_plan') or 'comun'
-        area_ids = [int(x) for x in request.form.getlist('area_ids') if x.isdigit()]
 
         materia = db.session.get(Materia, materia_id) if materia_id else None
         if materia and materia.colegio_id != colegio.id:
@@ -408,12 +403,24 @@ def register_schedule_routes(app):
             errors.append('El máximo por día debe ser mayor a cero.')
         if tipo_plan not in TIPOS_PLAN:
             errors.append('El tipo de plan seleccionado no es válido.')
-        areas_sel = AreaConocimiento.query.filter(
-            AreaConocimiento.id.in_(area_ids),
-            AreaConocimiento.colegio_id == colegio.id,
-        ).all() if area_ids else []
-        if area_ids and len(areas_sel) != len(set(area_ids)):
-            errors.append('Alguna área seleccionada no es válida.')
+
+        # Validar el máximo de horas del área de la materia.
+        if materia and materia.area and horas is not None and horas >= 1:
+            area = materia.area
+            limite = area.horas_max_semana
+            if limite:
+                total = 0
+                for gm in GradoMateria.query.filter_by(grado_id=grado.id).all():
+                    if edit is not None and gm.materia_id == edit.materia_id:
+                        continue
+                    if gm.materia.area_id == area.id:
+                        total += gm.horas_semanales
+                total += horas
+                if total > limite:
+                    errors.append(
+                        f'El área {area.nombre} quedaría con {total} h y su máximo es {limite} h.'
+                    )
+
         if materia and not original_id:
             if db.session.get(GradoMateria, (grado.id, materia.id)):
                 errors.append('Esa materia ya está en el plan del grado.')
@@ -432,17 +439,6 @@ def register_schedule_routes(app):
         edit.max_bloques_por_dia = max_dia
         edit.requiere_bloque_doble = doble
         edit.tipo_plan = tipo_plan
-        db.session.flush()
-
-        GradoMateriaArea.query.filter_by(
-            grado_id=grado.id, materia_id=edit.materia_id
-        ).delete(synchronize_session=False)
-        for area in areas_sel:
-            db.session.add(GradoMateriaArea(
-                grado_id=grado.id,
-                materia_id=edit.materia_id,
-                area_id=area.id,
-            ))
 
         try:
             db.session.commit()
@@ -667,6 +663,21 @@ def register_schedule_routes(app):
             errors.append('Para fijar un profesor tenés que seleccionarlo.')
         if profesor and materia and materia not in profesor.materias:
             errors.append('El profesor seleccionado no tiene habilitada esa materia.')
+        if (materia and materia.area and materia.area.horas_max_semana
+                and horas is not None and horas >= 1):
+            area = materia.area
+            total_area = 0
+            for sm in SeccionMateria.query.filter_by(seccion_id=seccion.id).all():
+                if edit is not None and sm.id == edit.id:
+                    continue
+                if sm.materia.area_id == area.id:
+                    total_area += sm.horas_semanales
+            if total_area + horas > area.horas_max_semana:
+                errors.append(
+                    f'El área {area.nombre} quedaría con '
+                    f'{total_area + horas} h y su máximo es '
+                    f'{area.horas_max_semana} h.'
+                )
         if edit is None and materia and SeccionMateria.query.filter_by(
                 seccion_id=seccion.id, materia_id=materia.id).first():
             errors.append('Esa materia ya está en el plan de la sección.')

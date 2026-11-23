@@ -124,6 +124,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Reglas configuradas</h2>
@@ -187,4 +188,5 @@
   {{ empty_state('Todavía no hay reglas', 'Agregá reglas como “evitar última hora” o “distribuir en la semana” para que el motor las tenga en cuenta.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

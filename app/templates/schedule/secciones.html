@@ -89,6 +89,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Secciones {{ anio.nombre if anio else '' }}</h2>
@@ -143,4 +144,5 @@
   {{ empty_state('Todavía no hay secciones', 'Creá la primera sección: elegí grado, turno y plantilla. El plan del grado se copia automáticamente.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

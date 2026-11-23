@@ -79,7 +79,7 @@
           <td><b>{{ fila.gm.materia.nombre }}</b></td>
           <td class="c-state">{{ fila.horas }}</td>
           <td>
-            {% for a in fila.areas %}<span class="status">{{ a.nombre }}</span>{% else %}<span class="hint">—</span>{% endfor %}
+            {% if fila.area %}<span class="status">{{ fila.area.nombre }}</span>{% else %}<span class="hint">—</span>{% endif %}
           </td>
           {% for d in fila.docentes %}
           <td>

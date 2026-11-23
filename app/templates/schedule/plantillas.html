@@ -42,6 +42,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -92,4 +93,5 @@
   {{ empty_state('Todavía no hay plantillas', 'Creá una plantilla por turno y después cargá sus bloques de clase y recesos.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

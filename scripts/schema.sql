@@ -77,21 +77,27 @@ CREATE TABLE aula (
 CREATE TABLE materia (
   id                  serial PRIMARY KEY,
   colegio_id          int  NOT NULL REFERENCES colegio(id),
+  area_id             int  NOT NULL,
   nombre              text NOT NULL,
   tipo_aula_requerida text CHECK (tipo_aula_requerida IN
                         ('regular','laboratorio','informatica','gimnasio','otro')),
-  UNIQUE (colegio_id, nombre)
+  UNIQUE (colegio_id, nombre, area_id)
 );
 
 -- Areas de conocimiento: agrupan materias y pueden solaparse.
 CREATE TABLE area_conocimiento (
-  id         serial PRIMARY KEY,
-  colegio_id int  NOT NULL REFERENCES colegio(id),
-  nombre     text NOT NULL,
-  orden      int  NOT NULL DEFAULT 0,
-  activa     boolean NOT NULL DEFAULT true,
+  id                 serial PRIMARY KEY,
+  colegio_id         int  NOT NULL REFERENCES colegio(id),
+  nombre             text NOT NULL,
+  orden              int  NOT NULL DEFAULT 0,
+  activa             boolean NOT NULL DEFAULT true,
+  horas_max_semana   int CHECK (horas_max_semana IS NULL OR horas_max_semana >= 0),
   UNIQUE (colegio_id, nombre)
 );
+
+ALTER TABLE materia
+  ADD CONSTRAINT fk_materia_area FOREIGN KEY (area_id)
+  REFERENCES area_conocimiento(id);
 
 -- ---------------------------------------------------------------------
 -- TIEMPO: plantillas de horario y bloques
@@ -142,16 +148,6 @@ CREATE TABLE grado_materia (
   PRIMARY KEY (grado_id, materia_id)
 );
 
--- Una materia puede pertenecer a varias areas dentro del mismo plan/grado.
-CREATE TABLE grado_materia_area (
-  grado_id    int NOT NULL,
-  materia_id  int NOT NULL,
-  area_id     int NOT NULL REFERENCES area_conocimiento(id) ON DELETE CASCADE,
-  PRIMARY KEY (grado_id, materia_id, area_id),
-  FOREIGN KEY (grado_id, materia_id)
-    REFERENCES grado_materia(grado_id, materia_id) ON DELETE CASCADE
-);
-
 -- Plan efectivo por seccion (se copia de grado_materia y se puede ajustar)
 CREATE TABLE seccion_materia (
   id                    serial PRIMARY KEY,
@@ -176,9 +172,7 @@ CREATE TABLE profesor (
   nombre             text NOT NULL,
   documento          text,
   contacto           text,
-  horas_min_semana   int,
   horas_max_semana   int,
-  horas_max_dia      int,
   activo             boolean NOT NULL DEFAULT true,
   UNIQUE (colegio_id, documento)
 );
@@ -190,6 +184,14 @@ CREATE TABLE profesor_materia (
   profesor_id int NOT NULL REFERENCES profesor(id) ON DELETE CASCADE,
   materia_id  int NOT NULL REFERENCES materia(id),
   PRIMARY KEY (profesor_id, materia_id)
+);
+
+-- Historico de horas semanales por profesor y año lectivo.
+CREATE TABLE profesor_horas_anio (
+  profesor_id       int NOT NULL REFERENCES profesor(id) ON DELETE CASCADE,
+  anio_lectivo_id   int NOT NULL REFERENCES anio_lectivo(id) ON DELETE CASCADE,
+  horas_max_semana  int NOT NULL CHECK (horas_max_semana >= 0),
+  PRIMARY KEY (profesor_id, anio_lectivo_id)
 );
 
 -- Disponibilidad y restricciones fijas (otro colegio, etc.)

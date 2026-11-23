@@ -50,6 +50,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -102,4 +103,5 @@
   {{ empty_state('Todavía no hay años lectivos', 'Creá el primer año (por ejemplo 2026) y activalo para empezar a generar horarios.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

@@ -222,17 +222,17 @@ def html_manual(fecha):
     </thead>
     <tbody>
       <tr><td><b>Estructura → Años lectivos</b></td><td>El año de trabajo (por ejemplo 2026). Solo uno puede estar activo.</td></tr>
-      <tr><td><b>Estructura → Niveles</b></td><td>Inicial, Primaria, Secundaria.</td></tr>
+      <tr><td><b>Estructura → Niveles</b></td><td>Inicial, Primaria, Secundaria. El número de grados abre el listado filtrado de ese nivel.</td></tr>
       <tr><td><b>Estructura → Grados</b></td><td>Los cursos de cada nivel: 1er grado, 2do grado…</td></tr>
       <tr><td><b>Estructura → Turnos</b></td><td>Mañana, Tarde.</td></tr>
       <tr><td><b>Estructura → Aulas</b></td><td>Aulas regulares, laboratorios, sala de informática, gimnasio.</td></tr>
       <tr><td><b>Estructura → Materias</b></td><td>Las asignaturas y, si corresponde, el tipo de aula que necesitan.</td></tr>
-      <tr><td><b>Estructura → Áreas</b></td><td>Agrupaciones de materias: Lengua, Ciencias Básicas, Técnicas, etc. Una materia puede estar en varias.</td></tr>
+      <tr><td><b>Estructura → Áreas</b></td><td>Agrupaciones de materias: Lengua, Ciencias Básicas, Técnicas, etc. Cada materia pertenece a un área.</td></tr>
       <tr><td><b>Estructura → Planes</b></td><td>Planes de estudio de cada ciclo y los grados que los componen.</td></tr>
       <tr><td><b>Profesores → Listado</b></td><td>Docentes, materias que pueden dictar y su carga máxima.</td></tr>
       <tr><td><b>Profesores → Disponibilidad</b></td><td>Días y horarios en que cada docente puede dar clases.</td></tr>
       <tr><td><b>Planificación → Plantillas y bloques</b></td><td>La grilla horaria de cada turno: horas de clase y recesos.</td></tr>
-      <tr><td><b>Grados → Plan</b></td><td>Materias, horas semanales, tipo de plan y áreas de cada grado.</td></tr>
+      <tr><td><b>Grados → Plan</b></td><td>Materias, horas semanales y tipo de plan de cada grado. Las áreas se heredan de la materia.</td></tr>
       <tr><td><b>Planificación → Secciones y plan</b></td><td>Los cursos concretos (A, B) con su profesor por materia.</td></tr>
       <tr><td><b>Planificación → Reglas</b></td><td>Preferencias pedagógicas opcionales.</td></tr>
       <tr><td><b>Planificación → Horarios</b></td><td>Generar, revisar y publicar el horario.</td></tr>
@@ -258,27 +258,52 @@ def html_manual(fecha):
     Si una materia necesita un espacio especial, elegilo en <b>Aula requerida</b>.
     Por ejemplo, Educación Física → Gimnasio. Así el sistema nunca la va a ubicar en un aula común.
   </p>
+  <p>
+    Cada materia pertenece a <b>un área de conocimiento</b>. Si necesitás la misma materia
+    en otra área, creá otro registro con el mismo nombre y esa área.
+    El área se hereda al agregar la materia al plan de un grado.
+  </p>
 
+  <h3>Áreas de conocimiento</h3>
+  <p>
+    Las áreas agrupan materias por campo del saber: Lengua, Ciencias Básicas, Técnicas, etc.
+    Cada materia pertenece a un área. Si necesitás la misma materia en otra área,
+    creá otro registro de materia con el mismo nombre y esa área.
+  </p>
+  <p>
+    En el listado, la columna <b>Materias</b> cuenta las materias distintas del área.
+    Si hacés clic en ese número, se abre el listado filtrado con esas materias.
+    El campo <b>Orden</b> solo define el orden de visualización; no afecta la generación del horario.
   <h2><span class="num">4</span>Cargar profesores</h2>
   <p>Para cada docente registrá:</p>
   <ul>
     <li><b>Nombre</b> y documento.</li>
     <li><b>Materias que puede dictar</b>: solo se le van a asignar esas.</li>
-    <li><b>Horas máximas semanales y por día</b>: el sistema nunca las va a superar.</li>
+    <li><b>Horas semanales</b>: único tope de carga del docente. El sistema no lo supera.</li>
+    <li><b>Historial por año</b>: se guarda el valor de cada año lectivo para futuros reportes; no se muestra en el formulario.</li>
   </ul>
+  <p>
+    Mientras el formulario de alta o edición está abierto, el listado de profesores se oculta.
+    Al guardar o cancelar, vuelve el listado. Desde la edición podés ir directo a
+    <b>Ver disponibilidad</b>.
+  </p>
   <div class="alerta">
     Si no cargás las horas máximas, el sistema no limitará la carga del docente.
     Recomendamos completarlas siempre.
   </div>
 
   <h2><span class="num">5</span>Disponibilidad de los profesores</h2>
-  <p>Cada docente tiene su grilla semanal con dos tipos de franjas:</p>
+  <p>
+    Elegí el docente en el selector: la disponibilidad se actualiza automáticamente,
+    sin necesidad de un botón. Cada docente tiene su grilla semanal con dos tipos de franjas:
+  </p>
   <ul>
     <li><b>Disponible</b> (verde): el docente solo podrá dar clases dentro de estas franjas.</li>
     <li><b>No disponible</b> (rojo): siempre se descartan, con el motivo que quieras dejar asentado.</li>
   </ul>
   <div class="nota"><b>Tranquilidad:</b> si un profesor no tiene franjas cargadas, se entiende que puede dar clase en cualquier horario.</div>
   <p>Las franjas no pueden superponerse entre sí; el sistema lo controla y avisa si hay conflicto.</p>
+  <div class="nota"><b>Formularios y listados:</b> en las pantallas de estructura, al abrir un formulario se oculta el listado para evitar confusiones. Al cerrar o guardar, vuelve.</div>
 
   <h2><span class="num">6</span>Plantillas de horario</h2>
   <p>
@@ -289,6 +314,8 @@ def html_manual(fecha):
     <li>Los bloques de tipo <b>clase</b> son los que se pueden asignar a materias.</li>
     <li>Los bloques de tipo <b>receso</b> quedan libres en la grilla.</li>
     <li>Los bloques no pueden solaparse dentro del mismo día.</li>
+    <li>Una plantilla puede tener días con distinta cantidad de bloques: por ejemplo, 9 bloques de lunes a viernes y un décimo bloque martes y jueves.</li>
+    <li>La duración de la hora cátedra se configura en <b>Configuración</b>, pero es informativa: manda la hora real de cada bloque.</li>
   </ul>
 
   <h2><span class="num">7</span>Plan de estudios</h2>
@@ -296,11 +323,12 @@ def html_manual(fecha):
   <table>
     <thead><tr><th style="width: 40%">Dónde</th><th>Para qué</th></tr></thead>
     <tbody>
-      <tr><td><b>Grados → Plan</b></td><td>Define las materias, horas semanales, tipo de plan (común, específico u optativo) y áreas de cada grado. Es el plan modelo.</td></tr>
+      <tr><td><b>Grados → Plan</b></td><td>Define las materias, horas semanales y tipo de plan (común, específico u optativo) de cada grado. Las áreas se heredan de la materia.</td></tr>
       <tr><td><b>Secciones → Plan</b></td><td>Cada curso concreto puede tener ajustes propios.</td></tr>
     </tbody>
   </table>
   <p>Al crear una sección, el plan del grado se copia automáticamente. Si después cambiás el plan del grado, podés actualizar la sección con el botón <b>Sincronizar desde el grado</b>.</p>
+  <p>En <b>Áreas de conocimiento</b> definís las <b>horas máximas por semana</b> del área. Ese máximo se aplica a cada grado: la suma de las materias de esa área no puede superarlo. Por ejemplo, Lengua 7 h puede estar formada por Castellano 5 h + Guaraní 2 h.</p>
   <div class="alerta">
     El sistema avisa si las horas del plan superan los bloques de clase disponibles en la plantilla.
     En ese caso no se puede generar el horario hasta que se ajuste.
@@ -403,6 +431,7 @@ def html_manual(fecha):
         Se imprime desde <i>Horarios docentes</i>.</li>
     <li><b>Distribución de materias</b>: materias por área y tipo de plan, horas semanales y docente
         asignado en cada sección. Se filtra por año, plan y grado.</li>
+    <li><b>Presentación para el cliente</b>: resumen visual de funcionalidades en <code>/presentacion</code>.</li>
     <li><b>Imprimir</b>: genera una versión limpia, sin menús, en horizontal, lista para entregar.</li>
   </ul>
   <div class="nota">

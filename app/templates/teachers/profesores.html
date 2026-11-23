@@ -39,25 +39,15 @@
       </div>
 
       <div class="field fw-1">
-        <label for="horas_min_semana">Mínimo semanal</label>
-        <input class="input" id="horas_min_semana" name="horas_min_semana" type="number" min="0"
-               value="{{ form.get('horas_min_semana') or (edit.horas_min_semana if edit and edit.horas_min_semana is not none else '') }}"
-               placeholder="Horas">
-      </div>
-      <div class="field fw-1">
-        <label for="horas_max_semana">Máximo semanal</label>
+        <label for="horas_max_semana">Horas semanales</label>
         <input class="input" id="horas_max_semana" name="horas_max_semana" type="number" min="0"
                value="{{ form.get('horas_max_semana') or (edit.horas_max_semana if edit and edit.horas_max_semana is not none else '') }}"
                placeholder="Horas">
+        <div class="hint">Máximo de horas semanales que puede dictar este año.</div>
       </div>
       <div class="field fw-1">
-        <label for="horas_max_dia">Máximo por día</label>
-        <input class="input" id="horas_max_dia" name="horas_max_dia" type="number" min="0"
-               value="{{ form.get('horas_max_dia') or (edit.horas_max_dia if edit and edit.horas_max_dia is not none else '') }}"
-               placeholder="Horas">
-      </div>
-      <div class="field fw-1">
-        <label class="switch-row">
+        <label>Estado</label>
+        <label class="switch-row" style="min-height: 42px;">
           <input type="checkbox" class="switch" name="activo" {{ 'checked' if v_activo }}>
           <span class="switch-state"></span>
         </label>
@@ -90,12 +80,16 @@
 
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear profesor' }}</button>
+      {% if edit %}
+      <a class="btn btn-ghost" href="{{ url_for('disponibilidad', profesor_id=edit.id) }}">Ver disponibilidad</a>
+      {% endif %}
       <a class="btn btn-ghost" href="{{ url_for('profesores') }}">Cancelar</a>
     </div>
   </form>
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -130,8 +124,8 @@
           {% endif %}
         </td>
         <td class="c-state">
-          {% if p.horas_min_semana is not none or p.horas_max_semana is not none %}
-            {{ p.horas_min_semana if p.horas_min_semana is not none else '—' }}–{{ p.horas_max_semana if p.horas_max_semana is not none else '—' }} h
+          {% if p.horas_max_semana is not none %}
+            {{ p.horas_max_semana }} h
           {% else %}
             —
           {% endif %}
@@ -143,7 +137,34 @@
             <span class="status off">Inactivo</span>
           {% endif %}
         </td>
-        <td>{{ row_actions(url_for('profesores', editar=p.id), url_for('profesor_eliminar', item_id=p.id), p.nombre) }}</td>
+        <td>
+          <div class="actions-cell">
+            <a href="{{ url_for('disponibilidad', profesor_id=p.id) }}" class="icon-btn"
+               data-tip="Disponibilidad" aria-label="Disponibilidad de {{ p.nombre }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="17" rx="3"></rect>
+                <path d="M8 2v4M16 2v4M3 10h18"></path>
+                <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"></path>
+              </svg>
+            </a>
+            <a href="{{ url_for('profesores', editar=p.id) }}" class="icon-btn" data-tip="Editar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+              </svg>
+            </a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('profesor_eliminar', item_id=p.id) }}"
+                    data-del-name="{{ p.nombre }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"></path>
+              </svg>
+            </button>
+          </div>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -152,4 +173,5 @@
   {{ empty_state('Todavía no hay profesores', 'Cargá los docentes del colegio, sus materias y su carga horaria para poder asignarles clases.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

@@ -150,15 +150,12 @@ def register_report_routes(app):
             orden_tipo = {'comun': 1, 'especifico': 2, 'optativo': 3}
             filas = []
             for gm in items:
-                areas = sorted([ga.area for ga in gm.areas],
-                               key=lambda a: (a.orden, a.nombre))
-                area_principal = areas[0] if areas else None
+                area_principal = gm.materia.area
                 filas.append({
                     'gm': gm,
                     'tipo_plan': gm.tipo_plan,
                     'tipo_label': TIPOS_PLAN_LABEL.get(gm.tipo_plan, gm.tipo_plan),
                     'area': area_principal,
-                    'areas': areas,
                     'horas': gm.horas_semanales,
                     'docentes': [
                         {

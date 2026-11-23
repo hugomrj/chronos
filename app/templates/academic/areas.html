@@ -8,6 +8,7 @@
 
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_activa = (form.get('activa') == 'on') if form else (edit.activa if edit else true) %}
+{% set v_horas = form.get('horas_max_semana') if form else (edit.horas_max_semana if edit and edit.horas_max_semana is not none else '') %}
 <section class="panel glass" style="margin-bottom: 1rem;">
   <div class="panel-head">
     <h2>{{ 'Editar área' if edit else 'Nueva área' }}</h2>
@@ -25,9 +26,17 @@
                placeholder="Ej. Lengua y Literatura">
       </div>
       <div class="field fw-1">
+        <label for="horas_max_semana">Horas máximas por semana</label>
+        <input class="input" id="horas_max_semana" name="horas_max_semana" type="number" min="1"
+               value="{{ v_horas }}" placeholder="Sin límite">
+        <div class="hint">Máximo de horas que puede sumar esta área en un grado.</div>
+      </div>
+
+      <div class="field fw-full" style="max-width: 14rem;">
         <label for="orden">Orden</label>
         <input class="input" id="orden" name="orden" type="number" min="0"
                value="{{ form.get('orden') or (edit.orden if edit else 0) }}">
+        <div class="hint">Solo define el orden de visualización.</div>
       </div>
       <div class="field fw-full">
         <label class="switch-row">
@@ -45,6 +54,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -56,6 +66,7 @@
       <tr>
         <th>Área</th>
         <th class="c-state">Orden</th>
+        <th class="c-state">Horas máx.</th>
         <th class="c-state">Materias</th>
         <th class="c-state">Estado</th>
         <th style="width: 110px; text-align: right;">Acciones</th>
@@ -66,7 +77,12 @@
       <tr>
         <td><b>{{ a.nombre }}</b></td>
         <td class="c-state">{{ a.orden }}</td>
-        <td class="c-state">{{ a.grado_materia_areas|length }}</td>
+        <td class="c-state">{{ a.horas_max_semana if a.horas_max_semana is not none else '—' }}</td>
+        <td class="c-state">
+          {% set total_materias = a.materias|length %}
+          <a href="{{ url_for('materias', area_id=a.id) }}"
+             title="Ver las materias de {{ a.nombre }}">{{ total_materias }}</a>
+        </td>
         <td class="c-state">
           {% if a.activa %}<span class="status ok">Activa</span>
           {% else %}<span class="status off">Inactiva</span>{% endif %}
@@ -87,4 +103,5 @@
   {{ empty_state('Todavía no hay áreas', 'Creá áreas como Lengua, Ciencias Básicas o Técnicas para agrupar las materias del plan.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

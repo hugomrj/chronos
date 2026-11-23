@@ -25,9 +25,9 @@ from sqlalchemy import delete
 from app.extensions import db
 from app.factory import create_app
 from app.models import (
-    AnioLectivo, AreaConocimiento, Aula, Bloque, Colegio, Grado, GradoMateria,
-    GradoMateriaArea, HorarioCelda, HorarioVersion, Materia, Nivel,
-    PlanEstudio, PlantillaHorario, Profesor, ProfesorDisponibilidad,
+    AnioLectivo, AreaConocimiento, Aula, Bloque, Colegio, Grado,
+    GradoMateria, HorarioCelda, HorarioVersion, Materia, ProfesorHorasAnio,
+    Nivel, PlanEstudio, PlantillaHorario, Profesor, ProfesorDisponibilidad,
     ProfesorMateria, Regla, Seccion, SeccionMateria, Turno, Usuario,
 )
 from app.services.scheduler.engine import generar_horario
@@ -104,21 +104,21 @@ PLAN_CONTA = [
     ('Administración', 4),
 ]
 
-AREAS_POR_MATERIA = {
-    'Matemática': ['Matemática y sus Tecnologías'],
-    'Lengua y Literatura': ['Lengua y Literatura'],
-    'Ciencias Naturales': ['Ciencias Básicas'],
-    'Ciencias Sociales': ['Ciencias Sociales'],
-    'Inglés': ['Lengua y Literatura', 'S.I.L.'],
-    'Educación Física': ['Educación Física'],
-    'Informática': ['Técnicas y Tecnológicas', 'S.I.L.'],
-    'Contabilidad': ['Técnicas y Tecnológicas'],
-    'Administración': ['Técnicas y Tecnológicas'],
-    'Orientación': ['Desarrollo Personal y Social'],
-    'Guaraní': ['Lengua y Literatura'],
-    'Expresión Artística': ['Expresión Artística'],
-    'Formación Ética': ['Ciencias Sociales'],
-    'Historia y Geografía': ['Ciencias Sociales'],
+AREA_POR_MATERIA = {
+    'Matemática': 'Matemática y sus Tecnologías',
+    'Lengua y Literatura': 'Lengua y Literatura',
+    'Ciencias Naturales': 'Ciencias Básicas',
+    'Ciencias Sociales': 'Ciencias Sociales',
+    'Inglés': 'Lengua y Literatura',
+    'Educación Física': 'Educación Física',
+    'Informática': 'Técnicas y Tecnológicas',
+    'Contabilidad': 'Técnicas y Tecnológicas',
+    'Administración': 'Técnicas y Tecnológicas',
+    'Orientación': 'Desarrollo Personal y Social',
+    'Guaraní': 'Lengua y Literatura',
+    'Expresión Artística': 'Expresión Artística',
+    'Formación Ética': 'Ciencias Sociales',
+    'Historia y Geografía': 'Ciencias Sociales',
 }
 
 # (nombre, documento, materias, max semanal, max diario, referencia)
@@ -196,7 +196,7 @@ def limpiar_datos():
     orden = [
         HorarioCelda, HorarioVersion,
         SeccionMateria, Seccion,
-        GradoMateriaArea, GradoMateria, Grado,
+        GradoMateria, Grado,
         PlanEstudio, AreaConocimiento,
         Regla,
         ProfesorDisponibilidad, ProfesorMateria,
@@ -241,6 +241,16 @@ def crear_estructura(colegio):
         activo=True,
     )
     db.session.add(anio)
+    db.session.flush()
+
+    anio_anterior = AnioLectivo(
+        colegio_id=colegio.id,
+        nombre='2025',
+        fecha_inicio=date(2025, 2, 1),
+        fecha_fin=date(2025, 11, 30),
+        activo=False,
+    )
+    db.session.add(anio_anterior)
     db.session.flush()
 
     nivel_tercero = Nivel(colegio_id=colegio.id, nombre='Tercer Ciclo')
@@ -297,14 +307,6 @@ def crear_estructura(colegio):
         aulas[nombre] = aula
     db.session.flush()
 
-    materias = {}
-    for nombre, tipo in MATERIAS:
-        materia = Materia(colegio_id=colegio.id, nombre=nombre,
-                          tipo_aula_requerida=tipo)
-        db.session.add(materia)
-        materias[nombre] = materia
-    db.session.flush()
-
     areas = {}
     for orden, nombre in enumerate([
         'Lengua y Literatura',
@@ -318,13 +320,36 @@ def crear_estructura(colegio):
         'S.I.L.',
         'Plan Optativo',
     ], start=1):
+        horas = {
+            'Lengua y Literatura': 20,
+            'Expresión Artística': 10,
+            'Ciencias Básicas': 10,
+            'Matemática y sus Tecnologías': 10,
+            'Ciencias Sociales': 15,
+            'Educación Física': 6,
+            'Desarrollo Personal y Social': 5,
+            'Técnicas y Tecnológicas': 15,
+            'S.I.L.': 15,
+            'Plan Optativo': 10,
+        }.get(nombre)
         area = AreaConocimiento(
-            colegio_id=colegio.id, nombre=nombre, orden=orden, activa=True)
+            colegio_id=colegio.id, nombre=nombre, orden=orden, activa=True,
+            horas_max_semana=horas)
         db.session.add(area)
         areas[nombre] = area
     db.session.flush()
 
-    return anio, grados, turnos, aulas, materias, planes, areas
+    materias = {}
+    for nombre, tipo in MATERIAS:
+        area_nombre = AREA_POR_MATERIA[nombre]
+        materia = Materia(colegio_id=colegio.id, nombre=nombre,
+                          area_id=areas[area_nombre].id,
+                          tipo_aula_requerida=tipo)
+        db.session.add(materia)
+        materias[nombre] = materia
+    db.session.flush()
+
+    return anio, anio_anterior, grados, turnos, aulas, materias, planes, areas
 
 
 def crear_plantillas(colegio, turnos):
@@ -369,9 +394,7 @@ def crear_profesores(colegio, materias):
             nombre=nombre,
             documento=documento,
             contacto='0981 000 000',
-            horas_min_semana=5,
             horas_max_semana=max_sem,
-            horas_max_dia=max_dia,
             activo=True,
         )
         profe.materias = [materias[m] for m in nombres_materias]
@@ -416,15 +439,8 @@ def crear_planes(grados, materias, areas):
                 tipo_plan=tipo,
             )
             db.session.add(gm)
-            db.session.flush()
-
-            for area_nombre in AREAS_POR_MATERIA.get(materia_nombre, []):
-                db.session.add(GradoMateriaArea(
-                    grado_id=grado.id,
-                    materia_id=materia.id,
-                    area_id=areas[area_nombre].id,
-                ))
     db.session.flush()
+
 
 
 def crear_secciones(anio, grados, turnos, aulas, plantillas):
@@ -552,9 +568,21 @@ def main():
         print(f'Limpiando datos académicos de {colegio.nombre}...')
         limpiar_datos()
 
-        anio, grados, turnos, aulas, materias, planes, areas = crear_estructura(colegio)
+        anio, anio_anterior, grados, turnos, aulas, materias, planes, areas = crear_estructura(colegio)
         plantillas = crear_plantillas(colegio, turnos)
         profesores = crear_profesores(colegio, materias)
+        for profe in profesores.values():
+            profe.horas_anio = [
+                ProfesorHorasAnio(
+                    anio_lectivo_id=anio.id,
+                    horas_max_semana=profe.horas_max_semana,
+                ),
+                ProfesorHorasAnio(
+                    anio_lectivo_id=anio_anterior.id,
+                    horas_max_semana=20,
+                ),
+            ]
+        db.session.flush()
         crear_planes(grados, materias, areas)
         crear_secciones(anio, grados, turnos, aulas, plantillas)
         crear_reglas(colegio, materias)

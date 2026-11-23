@@ -6,8 +6,21 @@
 {{ page_head('Materias', 'Asignaturas del colegio y el tipo de espacio que necesitan.',
              url_for('materias', nuevo=1), 'Nueva materia') }}
 
+{% if area is defined and area %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <div>
+      <h2>Área: {{ area.nombre }}</h2>
+      <span class="hint">Materias relacionadas directamente con esta área.</span>
+    </div>
+    <a href="{{ url_for('materias') }}" class="btn btn-ghost btn-sm">Ver todas</a>
+  </div>
+</section>
+{% endif %}
+
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_tipo = (form.get('tipo_aula_requerida') if form else (edit.tipo_aula_requerida if edit else '')) or '' %}
+{% set v_area = (form.get('area_id') if form else (edit.area_id if edit else '')) or '' %}
 <section class="panel glass" style="margin-bottom: 1rem;">
   <div class="panel-head">
     <h2>{{ 'Editar materia' if edit else 'Nueva materia' }}</h2>
@@ -34,6 +47,19 @@
         </select>
         <div class="hint">Si la materia necesita laboratorio, informática o gimnasio, elegilo acá.</div>
       </div>
+      <div class="field fw-full">
+        <label for="area_id">Área de conocimiento</label>
+        <select class="input vanilla-select" id="area_id" name="area_id" required>
+          <option value="">Seleccioná un área</option>
+          {% for a in areas %}
+          <option value="{{ a.id }}" {{ 'selected' if (v_area|string) == (a.id|string) }}>
+            {{ a.nombre }}{% if not a.activa %} (inactiva){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+        <div class="hint">La materia pertenece a esta área. Si necesitás la misma materia en otra área, creá otro registro con el mismo nombre y esa área.</div>
+      </div>
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear materia' }}</button>
@@ -43,6 +69,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -54,6 +81,7 @@
     <thead>
       <tr>
         <th>Materia</th>
+        <th style="width: 34%;">Áreas</th>
         <th class="c-state">Aula requerida</th>
         <th style="width: 110px; text-align: right;">Acciones</th>
       </tr>
@@ -62,6 +90,14 @@
       {% for m in items %}
       <tr>
         <td><b>{{ m.nombre }}</b></td>
+        <td>
+          {% if m.area %}
+            <a href="{{ url_for('materias', area_id=m.area.id) }}"
+               title="Ver materias de {{ m.area.nombre }}">{{ m.area.nombre }}</a>
+          {% else %}
+            <span class="hint">Sin área</span>
+          {% endif %}
+        </td>
         <td class="c-state">
           {% if m.tipo_aula_requerida %}
             <span class="status">{{ tipos_label.get(m.tipo_aula_requerida, m.tipo_aula_requerida) }}</span>
@@ -78,4 +114,5 @@
   {{ empty_state('Todavía no hay materias', 'Cargá las asignaturas del colegio para después armar el plan de estudios de cada grado.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

@@ -69,6 +69,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Usuarios del colegio</h2>
@@ -120,4 +121,5 @@
   {{ empty_state('Todavía no hay usuarios', 'Creá el primer usuario para que pueda acceder al sistema.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

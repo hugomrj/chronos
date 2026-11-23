@@ -45,35 +45,11 @@ class GradoMateria(db.Model):
 
     grado = db.relationship('Grado', back_populates='grado_materias')
     materia = db.relationship('Materia', back_populates='grado_materias')
-    areas = db.relationship(
-        'GradoMateriaArea', back_populates='grado_materia',
-        cascade='all, delete-orphan',
-    )
 
     __table_args__ = (
         db.CheckConstraint("tipo_plan IN ('comun','especifico','optativo')",
                            name='ck_grado_materia_tipo_plan'),
     )
-
-
-class GradoMateriaArea(db.Model):
-    __tablename__ = 'grado_materia_area'
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            ['grado_id', 'materia_id'],
-            ['grado_materia.grado_id', 'grado_materia.materia_id'],
-            ondelete='CASCADE',
-        ),
-    )
-
-    grado_id = db.Column(db.Integer, primary_key=True)
-    materia_id = db.Column(db.Integer, primary_key=True)
-    area_id = db.Column(db.Integer,
-                        db.ForeignKey('area_conocimiento.id', ondelete='CASCADE'),
-                        primary_key=True)
-
-    grado_materia = db.relationship('GradoMateria', back_populates='areas')
-    area = db.relationship('AreaConocimiento', backref='grado_materia_areas')
 
 
 class SeccionMateria(BaseModel):

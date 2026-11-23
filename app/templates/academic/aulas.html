@@ -55,6 +55,7 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) %}
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -94,4 +95,5 @@
   {{ empty_state('Todavía no hay aulas', 'Cargá las aulas y espacios especiales del colegio para poder asignarlos en los horarios.') }}
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

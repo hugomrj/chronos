@@ -451,7 +451,7 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fi
             prob.addConstraint(total <= prof.horas_max_semana,
                                name=f"maxsem_{prof.id}")
 
-        limite_dia = prof.horas_max_dia
+        limite_dia = None
         for regla in reglas:
             if (regla.activa and regla.codigo == 'MAX_HORAS_DIA_PROFESOR'
                     and (regla.profesor_id in (None, prof.id))):
