@@ -40,11 +40,12 @@
         {% if edit %}
         <input class="input readonly" type="text" value="{{ edit.materia.nombre }}" readonly>
         {% else %}
-        <select class="input vanilla-select" id="materia_id" name="materia_id" required>
+        <select class="input vanilla-select" id="materia_id" name="materia_id" required
+                {% if not edit %}onchange="var o=this.options[this.selectedIndex]; document.getElementById('horas_semanales').value=o.dataset.horas||''"{% endif %}>
           <option value="">Seleccioná una materia</option>
           {% for m in materias %}
           {% if m.id not in items|map(attribute='materia_id')|list %}
-          <option value="{{ m.id }}" {{ 'selected' if (v_materia|string) == (m.id|string) }}>{{ m.nombre }}{% if m.area %} · {{ m.area.nombre }}{% endif %}</option>
+          <option value="{{ m.id }}" data-horas="{{ m.horas_semanales }}" {{ 'selected' if (v_materia|string) == (m.id|string) }}>{{ m.nombre }}{% if m.area %} · {{ m.area.nombre }}{% endif %}</option>
           {% endif %}
           {% endfor %}
         </select>
@@ -53,7 +54,8 @@
       <div class="field fw-1">
         <label for="horas_semanales">Horas semanales</label>
         <input class="input" id="horas_semanales" name="horas_semanales" type="number" min="1"
-               value="{{ form.get('horas_semanales') or (edit.horas_semanales if edit else 4) }}" required>
+               value="{{ form.get('horas_semanales') or (edit.horas_semanales if edit else '') }}"
+               placeholder="Horas" required>
       </div>
       <div class="field fw-1">
         <label for="max_bloques_por_dia">Máx. bloques por día</label>

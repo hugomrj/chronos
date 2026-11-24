@@ -16,12 +16,18 @@ def register_teachers_routes(app):
     """CRUD de profesores y su disponibilidad horaria."""
 
     def _ctx_profesores(colegio, edit=None, form=None, errors=None, seleccionadas=None):
+        materias = Materia.query.filter_by(colegio_id=colegio.id) \
+                                 .join(Materia.nivel) \
+                                 .order_by(Materia.nivel_id, Materia.nombre).all()
+        por_nivel = {}
+        for materia in materias:
+            por_nivel.setdefault(materia.nivel, []).append(materia)
         return dict(
             crumb='Profesores',
             items=Profesor.query.filter_by(colegio_id=colegio.id)
                                 .order_by(Profesor.nombre).all(),
-            materias=Materia.query.filter_by(colegio_id=colegio.id)
-                                  .order_by(Materia.nombre).all(),
+            materias=materias,
+            materias_por_nivel=por_nivel,
             edit=edit,
             form=form or {},
             errors=errors or [],

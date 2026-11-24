@@ -21,6 +21,8 @@
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_tipo = (form.get('tipo_aula_requerida') if form else (edit.tipo_aula_requerida if edit else '')) or '' %}
 {% set v_area = (form.get('area_id') if form else (edit.area_id if edit else '')) or '' %}
+{% set v_nivel = (form.get('nivel_id') if form else (edit.nivel_id if edit else '')) or '' %}
+{% set v_horas = (form.get('horas_semanales') if form else (edit.horas_semanales if edit and edit.horas_semanales is not none else 6)) %}
 <section class="panel glass" style="margin-bottom: 1rem;">
   <div class="panel-head">
     <h2>{{ 'Editar materia' if edit else 'Nueva materia' }}</h2>
@@ -48,6 +50,21 @@
           {% endfor %}
         </select>
         
+      </div>
+      <div class="field fw-full materia-field">
+        <label for="nivel_id">Nivel</label>
+        <select class="input vanilla-select" id="nivel_id" name="nivel_id" required>
+          <option value="">Seleccioná un nivel</option>
+          {% for n in niveles %}
+          <option value="{{ n.id }}" {{ 'selected' if (v_nivel|string) == (n.id|string) }}>{{ n.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-full materia-field">
+        <label for="horas_semanales">Horas semanales</label>
+        <input class="input" id="horas_semanales" name="horas_semanales" type="number" min="0"
+               value="{{ v_horas }}" placeholder="Ej. 6" required>
+        <div class="hint">Valor por defecto al agregar la materia al plan de un grado.</div>
       </div>
       <div class="field fw-full materia-field">
         <label for="tipo_aula_requerida">Aula requerida <span class="opt">(opcional)</span></label>
@@ -80,7 +97,9 @@
     <thead>
       <tr>
         <th>Materia</th>
-        <th style="width: 34%;">Áreas</th>
+        <th style="width: 26%;">Áreas</th>
+        <th class="c-state">Nivel</th>
+        <th class="c-state">Horas</th>
         <th class="c-state">Aula requerida</th>
         <th style="width: 110px; text-align: right;">Acciones</th>
       </tr>
@@ -97,6 +116,8 @@
             <span class="hint">Sin área</span>
           {% endif %}
         </td>
+        <td class="c-state">{{ m.nivel.nombre }}</td>
+        <td class="c-state">{{ m.horas_semanales }} h</td>
         <td class="c-state">
           {% if m.tipo_aula_requerida %}
             <span class="status">{{ tipos_label.get(m.tipo_aula_requerida, m.tipo_aula_requerida) }}</span>

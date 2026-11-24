@@ -529,11 +529,14 @@ def register_academic_routes(app):
         areas = AreaConocimiento.query.filter_by(
             colegio_id=colegio.id
         ).order_by(AreaConocimiento.orden, AreaConocimiento.nombre).all()
+        niveles = Nivel.query.filter_by(colegio_id=colegio.id) \
+                             .order_by(Nivel.nombre).all()
         return render_template(
             'academic/materias.html', crumb='Materias',
             items=consulta.order_by(Materia.nombre).all(),
             area=area,
             areas=areas,
+            niveles=niveles,
             tipos=TIPOS_AULA, tipos_label=TIPOS_AULA_LABEL,
             edit=edit, form={}, errors=[],
         )
@@ -554,17 +557,27 @@ def register_academic_routes(app):
         area = db.session.get(AreaConocimiento, area_id) if area_id else None
         if area and area.colegio_id != colegio.id:
             area = None
+        nivel_id = parse_int(request.form.get('nivel_id'))
+        nivel = db.session.get(Nivel, nivel_id) if nivel_id else None
+        if nivel and nivel.colegio_id != colegio.id:
+            nivel = None
+        horas = parse_int(request.form.get('horas_semanales'))
 
         errors = []
         if not nombre:
             errors.append('El nombre de la materia es obligatorio.')
         if not area:
             errors.append('Seleccioná un área válida.')
+        if not nivel:
+            errors.append('Seleccioná un nivel válido.')
+        if horas is None or horas < 0:
+            errors.append('Las horas semanales deben ser iguales o mayores a cero.')
         if tipo_aula and tipo_aula not in TIPOS_AULA:
             errors.append('El tipo de aula requerida no es válido.')
-        if area and nombre:
+        if area and nivel and nombre:
             duplicada = Materia.query.filter_by(
-                colegio_id=colegio.id, nombre=nombre, area_id=area.id
+                colegio_id=colegio.id, nivel_id=nivel.id,
+                nombre=nombre, area_id=area.id
             ).first()
             if duplicada and (item is None or duplicada.id != item.id):
                 errors.append('Ya existe una materia con ese nombre en esa área.')
@@ -577,6 +590,8 @@ def register_academic_routes(app):
                 areas=AreaConocimiento.query.filter_by(
                     colegio_id=colegio.id
                 ).order_by(AreaConocimiento.orden, AreaConocimiento.nombre).all(),
+                niveles=Nivel.query.filter_by(colegio_id=colegio.id)
+                                   .order_by(Nivel.nombre).all(),
                 tipos=TIPOS_AULA, tipos_label=TIPOS_AULA_LABEL,
                 edit=item, form=request.form, errors=errors,
             )
@@ -585,9 +600,13 @@ def register_academic_routes(app):
             item.nombre = nombre
             item.tipo_aula_requerida = tipo_aula
             item.area_id = area.id
+            item.nivel_id = nivel.id
+            item.horas_semanales = horas
         else:
             item = Materia(colegio_id=colegio.id, nombre=nombre,
-                           area_id=area.id, tipo_aula_requerida=tipo_aula)
+                           area_id=area.id, nivel_id=nivel.id,
+                           horas_semanales=horas,
+                           tipo_aula_requerida=tipo_aula)
             db.session.add(item)
 
         try:

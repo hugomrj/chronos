@@ -1268,3 +1268,15 @@
   grid-column: 1 / -1;
   max-width: 42rem;
 }
+
+
+/* Materias del profesor agrupadas por nivel */
+.materias-nivel { margin-bottom: 1rem; }
+.materias-nivel:last-child { margin-bottom: 0; }
+.materias-nivel-title {
+  margin: 0 0 .5rem;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-2);
+}

@@ -203,11 +203,14 @@ def seed():
         AreaConocimiento, colegio_id=colegio.id, nombre='General',
         defaults={'orden': 0, 'activa': True},
     )
+    nivel_base = Nivel.query.filter_by(colegio_id=colegio.id).first()
     for nombre, tipo_aula in MATERIAS:
         get_or_create(
             Materia, colegio_id=colegio.id, nombre=nombre,
             defaults={'tipo_aula_requerida': tipo_aula,
-                      'area_id': area_general.id},
+                      'area_id': area_general.id,
+                      'nivel_id': nivel_base.id,
+                      'horas_semanales': 4},
         )
 
     materias_por_nombre = {

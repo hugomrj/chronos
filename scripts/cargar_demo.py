@@ -3,7 +3,7 @@
 - BORRA todos los datos académicos (colegios, años, niveles, grados, secciones,
   profesores, materias, aulas, reglas y horarios).
 - NO borra usuarios ni roles: el login sigue funcionando.
-- Carga un colegio demo con Tercer Ciclo y Nivel Medio, incluyendo BATAN.
+- Carga un colegio demo con E.E.B. y Nivel Medio, incluyendo BATAN.
 - Genera y publica un horario de doble escolaridad para ambos ciclos.
 
 Uso:
@@ -39,20 +39,30 @@ COLEGIO_DEMO = 'Colegio Demo'
 # Catálogos
 # ---------------------------------------------------------------------
 MATERIAS = [
-    ('Matemática', None),
-    ('Lengua y Literatura', None),
-    ('Ciencias Naturales', None),
-    ('Ciencias Sociales', None),
-    ('Inglés', None),
-    ('Educación Física', 'gimnasio'),
-    ('Informática', 'informatica'),
-    ('Contabilidad', None),
-    ('Administración', None),
-    ('Orientación', None),
-    ('Guaraní', None),
-    ('Expresión Artística', None),
-    ('Formación Ética', None),
-    ('Historia y Geografía', None),
+    # (nombre, área, nivel, horas por defecto, tipo de aula)
+    ('Matemática', 'Matemática y sus Tecnologías', 'E.E.B.', 6, None),
+    ('Lengua y Literatura', 'Lengua y Literatura', 'E.E.B.', 6, None),
+    ('Ciencias Naturales', 'Ciencias Básicas', 'E.E.B.', 5, None),
+    ('Ciencias Sociales', 'Ciencias Sociales', 'E.E.B.', 5, None),
+    ('Inglés', 'Lengua y Literatura', 'E.E.B.', 4, None),
+    ('Educación Física', 'Educación Física', 'E.E.B.', 3, 'gimnasio'),
+    ('Informática', 'Técnicas y Tecnológicas', 'E.E.B.', 4, 'informatica'),
+    ('Orientación', 'Desarrollo Personal y Social', 'E.E.B.', 2, None),
+    ('Expresión Artística', 'Expresión Artística', 'E.E.B.', 4, None),
+    ('Formación Ética', 'Ciencias Sociales', 'E.E.B.', 3, None),
+    ('Historia y Geografía', 'Ciencias Sociales', 'E.E.B.', 2, None),
+    ('Guaraní', 'Lengua y Literatura', 'E.E.B.', 3, None),
+
+    ('Matemática', 'Matemática y sus Tecnologías', 'Nivel Medio', 5, None),
+    ('Lengua y Literatura', 'Lengua y Literatura', 'Nivel Medio', 4, None),
+    ('Ciencias Naturales', 'Ciencias Básicas', 'Nivel Medio', 4, None),
+    ('Ciencias Sociales', 'Ciencias Sociales', 'Nivel Medio', 4, None),
+    ('Inglés', 'Lengua y Literatura', 'Nivel Medio', 3, None),
+    ('Educación Física', 'Educación Física', 'Nivel Medio', 2, 'gimnasio'),
+    ('Informática', 'Técnicas y Tecnológicas', 'Nivel Medio', 5, 'informatica'),
+    ('Orientación', 'Desarrollo Personal y Social', 'Nivel Medio', 1, None),
+    ('Contabilidad', 'Técnicas y Tecnológicas', 'Nivel Medio', 5, None),
+    ('Administración', 'Técnicas y Tecnológicas', 'Nivel Medio', 4, None),
 ]
 
 AULAS = [
@@ -104,48 +114,31 @@ PLAN_CONTA = [
     ('Administración', 4),
 ]
 
-AREA_POR_MATERIA = {
-    'Matemática': 'Matemática y sus Tecnologías',
-    'Lengua y Literatura': 'Lengua y Literatura',
-    'Ciencias Naturales': 'Ciencias Básicas',
-    'Ciencias Sociales': 'Ciencias Sociales',
-    'Inglés': 'Lengua y Literatura',
-    'Educación Física': 'Educación Física',
-    'Informática': 'Técnicas y Tecnológicas',
-    'Contabilidad': 'Técnicas y Tecnológicas',
-    'Administración': 'Técnicas y Tecnológicas',
-    'Orientación': 'Desarrollo Personal y Social',
-    'Guaraní': 'Lengua y Literatura',
-    'Expresión Artística': 'Expresión Artística',
-    'Formación Ética': 'Ciencias Sociales',
-    'Historia y Geografía': 'Ciencias Sociales',
-}
-
 # (nombre, documento, materias, max semanal, max diario, referencia)
 PROFESORES = [
     # Tercer Ciclo
-    ('Cynthia Rojas', '4002001', ['Matemática'], 25, 6, 'Mañana'),
-    ('Rossana Villalba', '4002002', ['Lengua y Literatura'], 25, 6, 'Mañana'),
-    ('Soledad Insfrán', '4002003', ['Ciencias Naturales'], 25, 6, 'Mañana'),
-    ('Alejandra Benítez', '4002004', ['Ciencias Sociales', 'Formación Ética', 'Historia y Geografía'], 35, 6, 'Mañana'),
-    ('Fernando Acosta', '4002005', ['Inglés'], 25, 6, 'Mañana'),
-    ('José Giménez', '4002006', ['Educación Física'], 25, 6, 'Mañana'),
-    ('Marcos Duarte', '4002007', ['Informática'], 25, 6, 'Mañana'),
-    ('Marta Ayala', '4002008', ['Guaraní'], 25, 6, 'Mañana'),
-    ('Rocío Benítez', '4002009', ['Orientación'], 25, 6, 'Mañana'),
-    ('Hugo Villalba', '4002010', ['Expresión Artística'], 25, 6, 'Mañana'),
+    ('Cynthia Rojas', '4002001', ['Matemática'], 25, 6, 'E.E.B.'),
+    ('Rossana Villalba', '4002002', ['Lengua y Literatura'], 25, 6, 'E.E.B.'),
+    ('Soledad Insfrán', '4002003', ['Ciencias Naturales'], 25, 6, 'E.E.B.'),
+    ('Alejandra Benítez', '4002004', ['Ciencias Sociales', 'Formación Ética', 'Historia y Geografía'], 35, 6, 'E.E.B.'),
+    ('Fernando Acosta', '4002005', ['Inglés'], 25, 6, 'E.E.B.'),
+    ('José Giménez', '4002006', ['Educación Física'], 25, 6, 'E.E.B.'),
+    ('Marcos Duarte', '4002007', ['Informática'], 25, 6, 'E.E.B.'),
+    ('Marta Ayala', '4002008', ['Guaraní'], 25, 6, 'E.E.B.'),
+    ('Rocío Benítez', '4002009', ['Orientación'], 25, 6, 'E.E.B.'),
+    ('Hugo Villalba', '4002010', ['Expresión Artística'], 25, 6, 'E.E.B.'),
 
     # Nivel Medio
-    ('Diego Ramírez', '4002011', ['Matemática'], 30, 7, 'Tarde'),
-    ('Laura Gómez', '4002012', ['Lengua y Literatura'], 30, 7, 'Tarde'),
-    ('Patricia Cáceres', '4002013', ['Ciencias Naturales'], 30, 7, 'Tarde'),
-    ('Nora Aquino', '4002014', ['Ciencias Sociales'], 30, 7, 'Tarde'),
-    ('Alma Benítez', '4002015', ['Inglés'], 30, 7, 'Tarde'),
-    ('Freddy López', '4002016', ['Educación Física'], 30, 7, 'Tarde'),
-    ('Emilio Rojas', '4002017', ['Informática'], 30, 7, 'Tarde'),
-    ('Lourdes Cáceres', '4002018', ['Contabilidad'], 30, 7, 'Tarde'),
-    ('Mabel Villalba', '4002019', ['Administración'], 30, 7, 'Tarde'),
-    ('Priscila Ayala', '4002020', ['Orientación'], 30, 7, 'Tarde'),
+    ('Diego Ramírez', '4002011', ['Matemática'], 30, 7, 'Nivel Medio'),
+    ('Laura Gómez', '4002012', ['Lengua y Literatura'], 30, 7, 'Nivel Medio'),
+    ('Patricia Cáceres', '4002013', ['Ciencias Naturales'], 30, 7, 'Nivel Medio'),
+    ('Nora Aquino', '4002014', ['Ciencias Sociales'], 30, 7, 'Nivel Medio'),
+    ('Alma Benítez', '4002015', ['Inglés'], 30, 7, 'Nivel Medio'),
+    ('Freddy López', '4002016', ['Educación Física'], 30, 7, 'Nivel Medio'),
+    ('Emilio Rojas', '4002017', ['Informática'], 30, 7, 'Nivel Medio'),
+    ('Lourdes Cáceres', '4002018', ['Contabilidad'], 30, 7, 'Nivel Medio'),
+    ('Mabel Villalba', '4002019', ['Administración'], 30, 7, 'Nivel Medio'),
+    ('Priscila Ayala', '4002020', ['Orientación'], 30, 7, 'Nivel Medio'),
 ]
 
 BLOQUES_TERCER_CICLO = [
@@ -197,13 +190,14 @@ def limpiar_datos():
         HorarioCelda, HorarioVersion,
         SeccionMateria, Seccion,
         GradoMateria, Grado,
-        PlanEstudio, AreaConocimiento,
+        PlanEstudio,
         Regla,
         ProfesorDisponibilidad, ProfesorMateria,
         Bloque, PlantillaHorario,
         Profesor,
         Aula,
         Materia,
+        AreaConocimiento,
         Nivel,
         Turno,
         AnioLectivo,
@@ -253,7 +247,7 @@ def crear_estructura(colegio):
     db.session.add(anio_anterior)
     db.session.flush()
 
-    nivel_tercero = Nivel(colegio_id=colegio.id, nombre='Tercer Ciclo')
+    nivel_tercero = Nivel(colegio_id=colegio.id, nombre='E.E.B.')
     nivel_medio = Nivel(colegio_id=colegio.id, nombre='Nivel Medio')
     db.session.add_all([nivel_tercero, nivel_medio])
     db.session.flush()
@@ -340,13 +334,18 @@ def crear_estructura(colegio):
     db.session.flush()
 
     materias = {}
-    for nombre, tipo in MATERIAS:
-        area_nombre = AREA_POR_MATERIA[nombre]
-        materia = Materia(colegio_id=colegio.id, nombre=nombre,
-                          area_id=areas[area_nombre].id,
-                          tipo_aula_requerida=tipo)
+    for nombre, area_nombre, nivel_nombre, horas, tipo in MATERIAS:
+        nivel = nivel_tercero if nivel_nombre == 'E.E.B.' else nivel_medio
+        materia = Materia(
+            colegio_id=colegio.id,
+            nivel_id=nivel.id,
+            nombre=nombre,
+            area_id=areas[area_nombre].id,
+            horas_semanales=horas,
+            tipo_aula_requerida=tipo,
+        )
         db.session.add(materia)
-        materias[nombre] = materia
+        materias[(nombre, nivel_nombre)] = materia
     db.session.flush()
 
     return anio, anio_anterior, grados, turnos, aulas, materias, planes, areas
@@ -370,7 +369,7 @@ def crear_plantillas(colegio, turnos):
             bloques_dia = list(bloques)
             # El esqueleto de Tercer Ciclo suma 47 bloques semanales:
             # 9 bloques de lunes a viernes y un décimo bloque martes y jueves.
-            if nombre == 'Tercer Ciclo' and dia in (2, 4):
+            if nombre == 'Tercer Ciclo' and dia in (2, 4, 5):
                 bloques_dia.append(('clase', '15:00', '15:40'))
             for numero, (tipo, desde, hasta) in enumerate(bloques_dia, start=1):
                 db.session.add(Bloque(
@@ -388,7 +387,7 @@ def crear_plantillas(colegio, turnos):
 
 def crear_profesores(colegio, materias):
     profesores = {}
-    for nombre, documento, nombres_materias, max_sem, max_dia, _referencia in PROFESORES:
+    for nombre, documento, nombres_materias, max_sem, _max_dia, nivel_nombre in PROFESORES:
         profe = Profesor(
             colegio_id=colegio.id,
             nombre=nombre,
@@ -397,7 +396,10 @@ def crear_profesores(colegio, materias):
             horas_max_semana=max_sem,
             activo=True,
         )
-        profe.materias = [materias[m] for m in nombres_materias]
+        profe.materias = [
+            materias[(m, nivel_nombre)] for m in nombres_materias
+            if (m, nivel_nombre) in materias
+        ]
         db.session.add(profe)
         db.session.flush()
 
@@ -427,7 +429,7 @@ def crear_planes(grados, materias, areas):
     for grado_nombre, plan in planes.items():
         grado = grados[grado_nombre]
         for materia_nombre, horas in plan:
-            materia = materias[materia_nombre]
+            materia = materias[(materia_nombre, grado.nivel.nombre)]
             tipo = 'especifico' if materia_nombre in (
                 'Informática', 'Contabilidad', 'Administración') else 'comun'
             gm = GradoMateria(
@@ -447,10 +449,8 @@ def crear_secciones(anio, grados, turnos, aulas, plantillas):
     datos = [
         ('7°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 1'),
         ('8°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 2'),
-        ('9°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 3'),
         ('1° BATIN Informática', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 1'),
         ('1° BATIN Informática', 'B', 'Doble escolaridad', 'Nivel Medio', 'Aula 2'),
-        ('2° BATIN Informática', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 3'),
         ('1° BATAN Contabilidad', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 4'),
     ]
 
@@ -481,9 +481,9 @@ def crear_secciones(anio, grados, turnos, aulas, plantillas):
 def crear_reglas(colegio, materias):
     reglas = [
         ('ANTES_DE_RECESO', 'Educación Física antes del receso', False, 50,
-         materias['Educación Física'], {}),
+         materias[('Educación Física', 'E.E.B.')], {}),
         ('NO_ULTIMA_HORA', 'Matemática no en la última hora', False, 40,
-         materias['Matemática'], {}),
+         materias[('Matemática', 'E.E.B.')], {}),
         ('DISTRIBUIR_SEMANA', 'Repartir las horas en la semana', True, 10,
          None, {'max_por_dia': 1}),
         ('EVITAR_HUECOS_PROFESOR', 'Evitar huecos de los profesores', False, 30,
@@ -517,7 +517,7 @@ def generar_horarios(colegio, anio):
 
         print(f'Generando horario de {turno.nombre}...')
         resultado = generar_horario(secciones, profesores, aulas, reglas,
-                                    limite_segundos=60)
+                                    limite_segundos=180)
         if not resultado.ok:
             print(f'  ⚠ No se pudo generar: {resultado.mensaje}')
             for linea in resultado.detalle:

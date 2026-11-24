@@ -238,9 +238,10 @@
     Por ejemplo, Educación Física → Gimnasio. Así el sistema nunca la va a ubicar en un aula común.
   </p>
   <p>
-    Cada materia pertenece a <b>un área de conocimiento</b>. Si necesitás la misma materia
-    en otra área, creá otro registro con el mismo nombre y esa área.
-    El área se hereda al agregar la materia al plan de un grado.
+    Cada materia pertenece a <b>un área de conocimiento</b> y a <b>un nivel</b>.
+    También tiene una <b>carga semanal por defecto</b>, que se usa para precargar
+    el plan del grado; el plan puede ajustar ese valor.
+    Si necesitás la misma materia en otra área o nivel, creá otro registro.
   </p>
 
   <h3>Áreas de conocimiento</h3>
@@ -257,7 +258,7 @@
   <p>Para cada docente registrá:</p>
   <ul>
     <li><b>Nombre</b> y documento.</li>
-    <li><b>Materias que puede dictar</b>: solo se le van a asignar esas.</li>
+    <li><b>Materias que puede dictar</b>: agrupadas por nivel; solo se le asignarán esas.</li>
     <li><b>Horas semanales</b>: único tope de carga del docente. El sistema no lo supera.</li>
     <li><b>Historial por año</b>: se guarda el valor de cada año lectivo para futuros reportes; no se muestra en el formulario.</li>
   </ul>
@@ -457,7 +458,7 @@
 
   <footer>
     <span>Chronos — Guía de usuario</span>
-    <span>Generada el 23/11/2026</span>
+    <span>Generada el 24/11/2026</span>
   </footer>
 </div>
 </body>

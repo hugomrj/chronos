@@ -77,11 +77,13 @@ CREATE TABLE aula (
 CREATE TABLE materia (
   id                  serial PRIMARY KEY,
   colegio_id          int  NOT NULL REFERENCES colegio(id),
+  nivel_id            int  NOT NULL REFERENCES nivel(id),
   area_id             int  NOT NULL,
   nombre              text NOT NULL,
+  horas_semanales     int  NOT NULL DEFAULT 6 CHECK (horas_semanales >= 0),
   tipo_aula_requerida text CHECK (tipo_aula_requerida IN
                         ('regular','laboratorio','informatica','gimnasio','otro')),
-  UNIQUE (colegio_id, nombre, area_id)
+  UNIQUE (colegio_id, nivel_id, nombre, area_id)
 );
 
 -- Areas de conocimiento: agrupan materias y pueden solaparse.

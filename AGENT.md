@@ -133,10 +133,10 @@ Los cambios de esquema deben reflejarse en **tres lugares**:
 
 - Base local recreada y demo cargada.
 - Demo: **Doble escolaridad**.
-- Tercer Ciclo: **47 bloques semanales** (9, 10, 9, 10, 9).
+- E.E.B.: **47 bloques semanales** (9, 10, 9, 10, 9).
 - Nivel Medio: 12 bloques diarios, 60 semanales.
-- 7 secciones, 20 profesores, 14 materias, 10 áreas, 3 planes.
-- Versión publicada: **Demo Doble escolaridad**, 249 bloques, sin choques.
+- 5 secciones, 20 profesores, 22 materias, 10 áreas, 3 planes.
+- Versión publicada: **Demo Doble escolaridad**, 175 bloques, sin choques.
 - Tests: 6 OK.
 
 ## Limitaciones conocidas

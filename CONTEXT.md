@@ -6,7 +6,7 @@ Chronos genera y administra horarios escolares. El objetivo es que un colegio pu
 
 El cliente trabaja con:
 
-- **Ciclos educativos**: Tercer Ciclo (7°, 8°, 9°) y Nivel Medio (1°, 2°, 3°).
+- **Ciclos educativos**: E.E.B. (7°, 8°, 9°) y Nivel Medio (1°, 2°, 3°).
 - **Planes**: E.E.B. 7°–9°, BATIN (Bachillerato Técnico en Informática) y BATAN (Bachillerato Técnico en Administración de Negocios).
 - **Doble escolaridad**: un mismo curso puede tener clases en la mañana y en la tarde. No se modela como dos turnos separados: se usa un turno “Doble escolaridad” y una plantilla full-day por ciclo.
 - **Hora cátedra**: nominalmente 40 minutos, configurable por institución. En la práctica hay bloques de 30, 35 y 40 minutos; manda la hora real del bloque.
@@ -57,15 +57,15 @@ Hora cátedra:         40 min
 Turno:                Doble escolaridad
 Planes:               3
 Áreas:                10
-Materias:             14
+Materias:             22
 Profesores:           20
 Aulas:                10
-Secciones:            7
+Secciones:            5
 Versión publicada:    Demo Doble escolaridad
-Bloques:              249
+Bloques:              175
 ```
 
-### Tercer Ciclo
+### E.E.B.
 
 - Plan de **47 horas semanales**.
 - Esqueleto: 9 bloques lunes, miércoles y viernes; 10 bloques martes y jueves.
@@ -76,12 +76,12 @@ Bloques:              249
 
 - Plan de **27 horas**.
 - Esqueleto de 12 bloques diarios (60 semanales).
-- BATIN: 1° A, 1° B y 2° A.
+- BATIN: 1° A y 1° B.
 - BATAN: 1° A.
 
 ### Resultado
 
-- 249 bloques generados.
+- 175 bloques generados.
 - 0 choques de profesor, aula o sección.
 - 0 problemas de disponibilidad.
 - Horas del plan exactas.
@@ -131,7 +131,7 @@ Bloques:              249
 ## Pendientes / decisiones abiertas
 
 1. Cargar el **plan real definitivo** del cliente. La demo usa un plan de 47 h construido para probar la capacidad.
-2. Confirmar si el plan real de Tercer Ciclo tiene 45 o 47 horas y qué materias incluye.
+2. Confirmar si el plan real de E.E.B. tiene 45 o 47 horas y qué materias incluye.
 3. Roles de solo lectura para docentes.
 4. UAT con el colegio.
 5. Deploy con gunicorn/systemd/HTTPS y backups probados.

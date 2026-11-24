@@ -60,14 +60,20 @@
     <div class="field">
       <label>Materias que puede dictar</label>
       {% if materias %}
-      <div class="check-grid">
-        {% for m in materias %}
-        <label class="check-item">
-          <input type="checkbox" name="materias" value="{{ m.id }}"
-                 {{ 'checked' if (m.id|string) in seleccionadas }}>
-          <span>{{ m.nombre }}</span>
-        </label>
-        {% endfor %}
+      {% for nivel, lista in materias_por_nivel.items() %}
+      <div class="materias-nivel">
+        <h4 class="materias-nivel-title">{{ nivel.nombre }}</h4>
+        <div class="check-grid">
+          {% for m in lista %}
+          <label class="check-item">
+            <input type="checkbox" name="materias" value="{{ m.id }}"
+                   {{ 'checked' if (m.id|string) in seleccionadas }}>
+            <span>{{ m.nombre }}{% if m.area %} · {{ m.area.nombre }}{% endif %}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
       </div>
       <div class="hint">Podés seleccionar varias. El motor solo asignará materias de esta lista.</div>
       {% else %}

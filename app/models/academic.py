@@ -15,6 +15,7 @@ class Nivel(BaseModel):
     grados = db.relationship(
         'Grado', back_populates='nivel', order_by='Grado.orden, Grado.nombre'
     )
+    materias = db.relationship('Materia', back_populates='nivel')
 
     def __repr__(self):
         return f'<Nivel {self.nombre}>'
@@ -130,12 +131,16 @@ class Materia(BaseModel):
     )
 
     colegio_id = db.Column(db.Integer, db.ForeignKey('colegio.id'), nullable=False)
+    nivel_id = db.Column(db.Integer, db.ForeignKey('nivel.id'), nullable=False)
     area_id = db.Column(db.Integer, db.ForeignKey('area_conocimiento.id'),
                         nullable=False)
     nombre = db.Column(db.Text, nullable=False)
+    horas_semanales = db.Column(db.Integer, nullable=False, default=6,
+                                server_default='6')
     tipo_aula_requerida = db.Column(db.Text)
 
     colegio = db.relationship('Colegio', back_populates='materias')
+    nivel = db.relationship('Nivel', back_populates='materias')
     area = db.relationship('AreaConocimiento', back_populates='materias')
     grado_materias = db.relationship(
         'GradoMateria', back_populates='materia', cascade='all, delete-orphan'

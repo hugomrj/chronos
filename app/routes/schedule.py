@@ -109,8 +109,9 @@ def register_schedule_routes(app):
             crumb=f'Plan · {grado.nombre}',
             grado=grado,
             items=items,
-            materias=Materia.query.filter_by(colegio_id=grado.nivel.colegio_id)
-                                  .order_by(Materia.nombre).all(),
+            materias=Materia.query.filter_by(
+                colegio_id=grado.nivel.colegio_id, nivel_id=grado.nivel_id
+            ).order_by(Materia.nombre).all(),
             tipos_plan=TIPOS_PLAN,
             tipos_plan_label=TIPOS_PLAN_LABEL,
             edit=edit,
@@ -133,7 +134,8 @@ def register_schedule_routes(app):
             total_horas=total,
             disponible=disponible,
             materias=Materia.query.filter_by(
-                colegio_id=seccion.anio_lectivo.colegio_id
+                colegio_id=seccion.anio_lectivo.colegio_id,
+                nivel_id=seccion.grado.nivel_id,
             ).order_by(Materia.nombre).all(),
             profesores=Profesor.query.filter_by(
                 colegio_id=seccion.anio_lectivo.colegio_id, activo=True
@@ -397,6 +399,8 @@ def register_schedule_routes(app):
         errors = []
         if not materia:
             errors.append('Seleccioná una materia válida.')
+        elif materia.nivel_id != grado.nivel_id:
+            errors.append('La materia pertenece a otro nivel.')
         if horas is None or horas < 1:
             errors.append('Las horas semanales deben ser mayores a cero.')
         if max_dia < 1:
@@ -655,6 +659,8 @@ def register_schedule_routes(app):
         errors = []
         if not materia:
             errors.append('Seleccioná una materia válida.')
+        elif materia.nivel_id != grado.nivel_id:
+            errors.append('La materia pertenece a otro nivel.')
         if horas is None or horas < 1:
             errors.append('Las horas semanales deben ser mayores a cero.')
         if max_dia < 1:
