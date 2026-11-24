@@ -1261,3 +1261,10 @@
   cursor: pointer;
 }
 .area-check span { min-width: 0; }
+
+
+/* Campos apilados del formulario de Materias */
+.materia-field {
+  grid-column: 1 / -1;
+  max-width: 42rem;
+}

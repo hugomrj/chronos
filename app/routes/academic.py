@@ -286,7 +286,7 @@ def register_academic_routes(app):
             consulta = consulta.filter(Grado.nivel_id == nivel.id)
 
         return render_template(
-            'academic/grados.html', crumb='Grados',
+            'academic/grados.html', crumb='Grados / Cursos',
             items=consulta.order_by(Nivel.nombre, Grado.orden, Grado.nombre).all(),
             niveles=Nivel.query.filter_by(colegio_id=colegio.id)
                                .order_by(Nivel.nombre).all(),
@@ -322,7 +322,7 @@ def register_academic_routes(app):
 
         if errors:
             return render_template(
-                'academic/grados.html', crumb='Grados',
+                'academic/grados.html', crumb='Grados / Cursos',
                 items=Grado.query.join(Nivel).filter(Nivel.colegio_id == colegio.id)
                                  .order_by(Nivel.nombre, Grado.orden, Grado.nombre).all(),
                 niveles=Nivel.query.filter_by(colegio_id=colegio.id)

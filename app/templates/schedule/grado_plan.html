@@ -7,7 +7,7 @@
   <div>
     <a href="{{ url_for('grados') }}" class="btn-back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-      Grados
+      Grados / Cursos
     </a>
     <h1>Plan de estudios · {{ grado.nombre }}</h1>
     <p>{{ grado.nivel.nombre }} · {{ items|length }} materia(s) · {{ items|sum(attribute='horas_semanales') }} horas semanales</p>

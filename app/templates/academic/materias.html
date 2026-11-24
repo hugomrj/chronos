@@ -31,23 +31,13 @@
     {{ form_errors(errors) }}
     {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
     <div class="form-grid">
-      <div class="field fw-2">
+      <div class="field fw-full materia-field">
         <label for="nombre">Nombre de la materia</label>
         <input class="input" id="nombre" name="nombre" type="text"
                value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
                placeholder="Ej. Matemática" required autofocus>
       </div>
-      <div class="field fw-2">
-        <label for="tipo_aula_requerida">Aula requerida <span class="opt">(opcional)</span></label>
-        <select class="input vanilla-select" id="tipo_aula_requerida" name="tipo_aula_requerida">
-          <option value="">No requiere un tipo especial</option>
-          {% for t in tipos %}
-          <option value="{{ t }}" {{ 'selected' if v_tipo == t }}>{{ tipos_label[t] }}</option>
-          {% endfor %}
-        </select>
-        <div class="hint">Si la materia necesita laboratorio, informática o gimnasio, elegilo acá.</div>
-      </div>
-      <div class="field fw-full">
+      <div class="field fw-full materia-field">
         <label for="area_id">Área de conocimiento</label>
         <select class="input vanilla-select" id="area_id" name="area_id" required>
           <option value="">Seleccioná un área</option>
@@ -57,8 +47,17 @@
           </option>
           {% endfor %}
         </select>
-        <div class="hint">La materia pertenece a esta área. Si necesitás la misma materia en otra área, creá otro registro con el mismo nombre y esa área.</div>
+        
       </div>
+      <div class="field fw-full materia-field">
+        <label for="tipo_aula_requerida">Aula requerida <span class="opt">(opcional)</span></label>
+        <select class="input vanilla-select" id="tipo_aula_requerida" name="tipo_aula_requerida">
+          <option value="">No requiere un tipo especial</option>
+          {% for t in tipos %}
+          <option value="{{ t }}" {{ 'selected' if v_tipo == t }}>{{ tipos_label[t] }}</option>
+          {% endfor %}
+        </select>
+        <div class="hint">Si la materia necesita laboratorio, informática o gimnasio, elegilo acá.</div>
       </div>
     </div>
     <div class="form-actions">

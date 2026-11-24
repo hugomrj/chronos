@@ -1,10 +1,10 @@
 {% extends 'layout/base.html' %}
 {% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
-{% block title %}Grados{% endblock %}
+{% block title %}Grados / Cursos{% endblock %}
 
 {% block content %}
-{{ page_head('Grados', 'Cursos que pertenecen a cada nivel: 1er grado, 2do grado, etc.',
-             url_for('grados', nuevo=1, nivel_id=nivel.id if nivel is defined and nivel else none), 'Nuevo grado') }}
+{{ page_head('Grados / Cursos', 'Cursos que pertenecen a cada nivel: grado en primaria, curso en media.',
+             url_for('grados', nuevo=1, nivel_id=nivel.id if nivel is defined and nivel else none), 'Nuevo grado / curso') }}
 
 {% if nivel is defined and nivel %}
 <section class="panel glass" style="margin-bottom: 1rem;">
@@ -28,7 +28,7 @@
     {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
     <div class="form-grid">
       <div class="field fw-2">
-        <label for="nombre">Nombre del grado</label>
+        <label for="nombre">Nombre del grado / curso</label>
         <input class="input" id="nombre" name="nombre" type="text"
                value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
                placeholder="Ej. 1er grado" required autofocus>
@@ -49,7 +49,7 @@
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear grado' }}</button>
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear grado / curso' }}</button>
       <a class="btn btn-ghost" href="{{ url_for('grados') }}">Cancelar</a>
     </div>
   </form>
@@ -67,7 +67,7 @@
   <table>
     <thead>
       <tr>
-        <th>Grado</th>
+        <th>Grado / Curso</th>
         <th class="c-state">Nivel</th>
         <th class="c-state">Orden</th>
         <th style="width: 110px; text-align: right;">Acciones</th>
