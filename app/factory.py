@@ -55,20 +55,27 @@ def create_app(config_name=None):
 
     @app.context_processor
     def inject_globals():
+        from flask_login import current_user
         from app.models import Colegio
+        from app.services.notifications import obtener_avisos
         from app.utils.helpers import colegio_actual
 
+        actual, colegios, avisos = None, [], []
         try:
             actual = colegio_actual()
             colegios = Colegio.query.order_by(Colegio.nombre).all()
+            if actual and current_user.is_authenticated:
+                avisos = obtener_avisos(actual)
         except Exception:
-            actual, colegios = None, []
+            actual, colegios, avisos = None, [], []
 
         return {
             'csrf_token': csrf_token,
             'colegio_actual': actual,
             'colegios_disponibles': colegios,
             'es_superadmin': bool(app.config.get('SUPERADMIN')),
+            'notificaciones': avisos,
+            'notificaciones_count': len(avisos),
         }
 
     @app.errorhandler(400)

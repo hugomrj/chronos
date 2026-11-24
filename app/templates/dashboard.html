@@ -37,12 +37,12 @@
 
 {% if avisos %}
 <div class="avisos-row">
-  {% for tipo, titulo, texto, enlace in avisos %}
-  <a class="aviso-card glass {{ tipo }}" href="{{ enlace }}">
+  {% for aviso in avisos %}
+  <a class="aviso-card glass {{ aviso.tipo }}" href="{{ aviso.url }}">
     <span class="aviso-dot"></span>
     <div>
-      <b>{{ titulo }}</b>
-      <p>{{ texto }}</p>
+      <b>{{ aviso.titulo }}</b>
+      <p>{{ aviso.texto }}</p>
     </div>
   </a>
   {% endfor %}

@@ -8,6 +8,7 @@ from app.extensions import db
 from app.models import (
     HorarioCelda, HorarioVersion, Profesor, Seccion, SeccionMateria, Turno,
 )
+from app.services.notifications import obtener_avisos
 from app.utils.helpers import DIAS_SEMANA, anio_activo, colegio_actual
 
 DIAS_ESCOLARES = [d for d in DIAS_SEMANA if d <= 5]
@@ -195,25 +196,7 @@ def register_dashboard_routes(app):
                                             .order_by(HorarioVersion.creado_en.desc()) \
                                             .limit(5).all()
 
-        avisos = []
-        if not anio:
-            avisos.append(('warn', 'Sin año lectivo activo',
-                           'Activá un año lectivo para empezar a planificar.',
-                           url_for('anios')))
-        else:
-            if metricas['sin_plan']:
-                avisos.append(('warn', 'Secciones sin plan',
-                               f"{metricas['sin_plan']} sección(es) no tienen materias cargadas.",
-                               url_for('secciones')))
-            if metricas['profesores_sin_disponibilidad']:
-                avisos.append(('info', 'Profesores sin disponibilidad',
-                               f"{metricas['profesores_sin_disponibilidad']} profesor(es) no tienen franjas cargadas.",
-                               url_for('disponibilidad')))
-            sin_publicar = [p for p in publicaciones if not p['version']]
-            if sin_publicar:
-                avisos.append(('info', 'Horarios sin publicar',
-                               'Turnos pendientes: ' + ', '.join(p['turno'].nombre for p in sin_publicar),
-                               url_for('horarios')))
+        avisos = obtener_avisos(colegio)
 
         return render_template(
             'dashboard.html',
