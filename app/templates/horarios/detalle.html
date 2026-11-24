@@ -242,7 +242,7 @@
 <section class="panel glass" style="margin-bottom: 1rem;">
   <div class="panel-head">
     <h2>{{ 'Editar celda' if edit_celda else 'Agregar clase' }}</h2>
-    <a href="{{ url_for('horario_detalle', version_id=version.id, seccion_id=seleccionada.id) }}" class="btn btn-ghost btn-sm">Cerrar</a>
+    
   </div>
   <form method="post" action="{{ url_for('celda_guardar', version_id=version.id) }}" class="form-panel" autocomplete="off">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

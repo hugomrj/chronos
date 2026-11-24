@@ -11,7 +11,7 @@
 <section class="panel glass" style="margin-bottom: 1rem;">
   <div class="panel-head">
     <h2>{{ 'Editar plantilla' if edit else 'Nueva plantilla' }}</h2>
-    <a href="{{ url_for('plantillas') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+    
   </div>
   <form method="post" action="{{ url_for('plantilla_guardar') }}" class="form-panel" autocomplete="off">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

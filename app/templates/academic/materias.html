@@ -26,7 +26,7 @@
 <section class="panel glass" style="margin-bottom: 1rem;">
   <div class="panel-head">
     <h2>{{ 'Editar materia' if edit else 'Nueva materia' }}</h2>
-    <a href="{{ url_for('materias') }}" class="btn btn-ghost btn-sm">Cerrar</a>
+    
   </div>
   <form method="post" action="{{ url_for('materia_guardar') }}" class="form-panel" autocomplete="off">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
