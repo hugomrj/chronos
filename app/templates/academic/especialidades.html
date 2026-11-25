@@ -1,0 +1,102 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
+{% block title %}Especialidades{% endblock %}
+
+{% block content %}
+{{ page_head('Especialidades', 'Bachilleratos técnicos y su plan de estudios.',
+             url_for('especialidades', nuevo=1), 'Nueva especialidad') }}
+
+{% if edit or form or request.args.get('nuevo') %}
+{% set v_nivel = (form.get('nivel_id') or '') if form else (edit.nivel_id if edit else '') %}
+{% set v_activa = (form.get('activa') == 'on') if form else (edit.activa if edit else true) %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar especialidad' if edit else 'Nueva especialidad' }}</h2>
+  </div>
+  <form method="post" action="{{ url_for('especialidad_guardar') }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-2">
+        <label for="nombre">Nombre</label>
+        <input class="input" id="nombre" name="nombre" type="text" required autofocus
+               value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
+               placeholder="Ej. BATIN">
+      </div>
+      <div class="field fw-1">
+        <label for="codigo">Código <span class="opt">(opcional)</span></label>
+        <input class="input" id="codigo" name="codigo" type="text"
+               value="{{ form.get('codigo') or (edit.codigo if edit else '') }}"
+               placeholder="Ej. BATIN">
+      </div>
+      <div class="field fw-1">
+        <label for="nivel_id">Nivel</label>
+        <select class="input vanilla-select" id="nivel_id" name="nivel_id" required>
+          <option value="">Seleccioná un nivel</option>
+          {% for n in niveles %}
+          <option value="{{ n.id }}" {{ 'selected' if (v_nivel|string) == (n.id|string) }}>{{ n.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-full">
+        <label class="switch-row">
+          <input type="checkbox" class="switch" name="activa" {{ 'checked' if v_activa }}>
+          <span class="switch-state"></span>
+        </label>
+        <div class="hint">Solo las especialidades activas aparecen al crear planes.</div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear especialidad' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('especialidades') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+{% if not (edit or form or request.args.get('nuevo')) %}
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Listado</h2>
+    <span class="hint">{{ items|length }} especialidad(es)</span>
+  </div>
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Especialidad</th>
+        <th class="c-state">Nivel</th>
+        <th class="c-state">Código</th>
+        <th class="c-state">Estado</th>
+        <th style="width: 110px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in items %}
+      <tr>
+        <td><b>{{ e.nombre }}</b></td>
+        <td class="c-state">{{ e.nivel.nombre }}</td>
+        <td class="c-state">{{ e.codigo or '—' }}</td>
+        <td class="c-state">
+          {% if e.activa %}<span class="status ok">Activa</span>
+          {% else %}<span class="status off">Inactiva</span>{% endif %}
+        </td>
+        <td>
+          <div class="actions-cell">
+            <a href="{{ url_for('especialidades', editar=e.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('especialidad_eliminar', item_id=e.id) }}"
+                    data-del-name="{{ e.nombre }}">{{ icon_eliminar() }}</button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('Todavía no hay especialidades', 'Creá BATIN o BATAN para los bachilleratos técnicos.') }}
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

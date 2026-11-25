@@ -84,6 +84,22 @@
       {% endif %}
     </div>
 
+    <div class="field fw-full">
+      <label>Especialidades <span class="opt">(opcional)</span></label>
+      <div class="check-grid">
+        {% for e in especialidades %}
+        <label class="check-item">
+          <input type="checkbox" name="especialidades" value="{{ e.id }}"
+                 {{ 'checked' if e.id in especialidades_sel }}>
+          <span>{{ e.nombre }}</span>
+        </label>
+        {% else %}
+        <span class="hint">No hay especialidades cargadas.</span>
+        {% endfor %}
+      </div>
+      <div class="hint">Un profesor puede tener varias especialidades.</div>
+    </div>
+
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear profesor' }}</button>
       {% if edit %}
@@ -109,6 +125,7 @@
         <th>Profesor</th>
         <th class="c-state">Contacto</th>
         <th class="c-state">Materias</th>
+        <th class="c-state">Especialidades</th>
         <th class="c-state">Carga semanal</th>
         <th>Estado</th>
         <th style="width: 110px; text-align: right;">Acciones</th>
@@ -128,6 +145,11 @@
           {% else %}
             <span class="status off">Sin materias</span>
           {% endif %}
+        </td>
+        <td class="c-state">
+          {% if p.especialidades %}
+            {{ p.especialidades|map(attribute='nombre')|join(', ') }}
+          {% else %}—{% endif %}
         </td>
         <td class="c-state">
           {% if p.horas_max_semana is not none %}

@@ -19,6 +19,10 @@ class Profesor(BaseModel):
     materias = db.relationship(
         'Materia', secondary='profesor_materia', backref='profesores'
     )
+    especialidades = db.relationship(
+        'Especialidad', secondary='profesor_especialidad',
+        backref='profesores'
+    )
     disponibilidad = db.relationship(
         'ProfesorDisponibilidad', back_populates='profesor',
         cascade='all, delete-orphan'
@@ -56,6 +60,17 @@ class ProfesorMateria(db.Model):
     profesor_id = db.Column(db.Integer, db.ForeignKey('profesor.id', ondelete='CASCADE'),
                             primary_key=True)
     materia_id = db.Column(db.Integer, db.ForeignKey('materia.id'), primary_key=True)
+
+
+class ProfesorEspecialidad(db.Model):
+    __tablename__ = 'profesor_especialidad'
+
+    profesor_id = db.Column(db.Integer,
+                            db.ForeignKey('profesor.id', ondelete='CASCADE'),
+                            primary_key=True)
+    especialidad_id = db.Column(db.Integer,
+                                db.ForeignKey('especialidad.id', ondelete='CASCADE'),
+                                primary_key=True)
 
 
 class ProfesorDisponibilidad(BaseModel):

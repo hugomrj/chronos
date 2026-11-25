@@ -93,13 +93,18 @@ tests/test_smoke.py
 - `colegio`: `minutos_hora_catedra`.
 - `nivel` = ciclo educativo.
 - `plan_estudio`: un ciclo puede tener varios planes.
-- `grado.plan_id`: cada grado pertenece a un plan.
-- `materia`: asignatura.
-- `grado_materia`: plan por grado; incluye horas, máximo por día, bloque doble y `tipo_plan` (`comun`, `especifico`, `optativo`).
+- `grado`: curso o grado; 1°-3° de Nivel Medio son genéricos.
+- `plan_estudio`: plan de estudios; puede tener `especialidad_id`.
+- `plan_grado`: cursos que cubre un plan.
+- `plan_materia`: materias/horas del plan por curso; incluye `tipo_plan`.
+- `seccion.plan_id`: plan concreto de la sección; `especialidad_id` se deriva del plan.
+- `especialidad`: BATIN/BATAN, asociada a Nivel Medio.
+- `materia`: asignatura; puede tener varias especialidades.
+- `profesor`: puede tener varias especialidades.
 - `area_conocimiento`: áreas del colegio.
 - `materia.area_id`: cada materia pertenece a un área. Si se necesita el mismo nombre en otra área, se crea otra materia.
 - `seccion`: curso concreto (`7° A`), año, grado, turno y plantilla.
-- `seccion_materia`: copia del plan del grado; el motor la usa.
+- `seccion_materia`: copia del plan de la sección; el motor la usa.
 - `horario_version` y `horario_celda`: resultados, publicación y edición manual.
 - `profesor_disponibilidad`: ventanas permitidas.
 
@@ -135,7 +140,7 @@ Los cambios de esquema deben reflejarse en **tres lugares**:
 - Demo: **Doble escolaridad**.
 - E.E.B.: **47 bloques semanales** (9, 10, 9, 10, 9).
 - Nivel Medio: 12 bloques diarios, 60 semanales.
-- 5 secciones, 20 profesores, 22 materias, 10 áreas, 3 planes.
+- 5 secciones, 20 profesores, 22 materias, 10 áreas, 4 planes.
 - Versión publicada: **Demo Doble escolaridad**, 175 bloques, sin choques.
 - Tests: 6 OK.
 

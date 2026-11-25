@@ -1,0 +1,45 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, empty_state %}
+{% block title %}{{ plan.nombre }}{% endblock %}
+
+{% block content %}
+{{ page_head(plan.nombre,
+             (plan.nivel.nombre ~ ((' · ' ~ plan.especialidad.nombre) if plan.especialidad else ' · Plan común')),
+             url_for('planes'), 'Volver a planes') }}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Materias por curso</h2>
+    <span class="hint">{{ grados|length }} curso(s)</span>
+  </div>
+  {% if grados %}
+  <table>
+    <thead>
+      <tr>
+        <th>Curso</th>
+        <th class="c-state">Materias</th>
+        <th style="width: 120px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for dato in grados %}
+      <tr>
+        <td><b>{{ dato.grado.nombre }}</b>
+          <div class="hint">{{ dato.grado.nivel.nombre }}</div>
+        </td>
+        <td class="c-state">{{ dato.materias }}</td>
+        <td>
+          <a class="btn btn-ghost btn-sm"
+             href="{{ url_for('grado_plan', grado_id=dato.grado.id, plan_id=plan.id) }}">
+            Ver materias
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('El plan no tiene cursos', 'Editá el plan y asignale al menos un curso.') }}
+  {% endif %}
+</section>
+{% endblock %}

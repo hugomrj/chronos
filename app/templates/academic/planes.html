@@ -3,11 +3,12 @@
 {% block title %}Planes de estudio{% endblock %}
 
 {% block content %}
-{{ page_head('Planes de estudio', 'Un ciclo puede tener varios planes. Cada plan agrupa los grados que comparten una organización curricular.',
+{{ page_head('Planes de estudio', 'Un ciclo puede tener varios planes. Cada plan define las materias por curso y puede tener una especialidad.',
              url_for('planes', nuevo=1), 'Nuevo plan') }}
 
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_nivel = (form.get('nivel_id') or '') if form else (edit.nivel_id if edit else '') %}
+{% set v_especialidad = (form.get('especialidad_id') or '') if form else (edit.especialidad_id if edit else '') %}
 {% set v_activo = (form.get('activo') == 'on') if form else (edit.activo if edit else true) %}
 {% set seleccionados = (form.getlist('grado_ids') if form else (edit.grados|map(attribute='id')|list if edit else [])) %}
 {% set seleccionados_str = seleccionados|map('string')|list %}
@@ -37,6 +38,16 @@
         </select>
       </div>
       <div class="field fw-1">
+        <label for="especialidad_id">Especialidad</label>
+        <select class="input vanilla-select" id="especialidad_id" name="especialidad_id">
+          <option value="">Plan común / sin especialidad</option>
+          {% for e in especialidades %}
+          <option value="{{ e.id }}" {{ 'selected' if (v_especialidad|string) == (e.id|string) }}>{{ e.nombre }}</option>
+          {% endfor %}
+        </select>
+        <div class="hint">Opcional. Si tiene especialidad, la sección la hereda.</div>
+      </div>
+      <div class="field fw-1">
         <label for="orden">Orden</label>
         <input class="input" id="orden" name="orden" type="number" min="0"
                value="{{ form.get('orden') or (edit.orden if edit else 0) }}">
@@ -52,7 +63,7 @@
           </label>
           {% endfor %}
         </div>
-        <div class="hint">Un grado puede pertenecer a un solo plan. Al asignarlo acá se quita de otro plan.</div>
+        <div class="hint">Un curso puede pertenecer a más de un plan; cada sección elige el suyo.</div>
       </div>
       <div class="field fw-full">
         <label class="switch-row">
@@ -82,7 +93,8 @@
       <tr>
         <th>Plan</th>
         <th class="c-state">Ciclo</th>
-        <th>Grados</th>
+        <th class="c-state">Especialidad</th>
+        <th>Cursos</th>
         <th class="c-state">Estado</th>
         <th style="width: 110px; text-align: right;">Acciones</th>
       </tr>
@@ -92,6 +104,7 @@
       <tr>
         <td><b>{{ p.nombre }}</b></td>
         <td class="c-state">{{ p.nivel.nombre }}</td>
+        <td class="c-state">{{ p.especialidad.nombre if p.especialidad else 'Común' }}</td>
         <td>
           {% for g in p.grados|sort(attribute='orden') %}
           <span class="status">{{ g.nombre }}</span>
@@ -105,6 +118,7 @@
         </td>
         <td>
           <div class="actions-cell">
+            <a href="{{ url_for('plan_detalle', item_id=p.id) }}" class="icon-btn" data-tip="Materias">Materias</a>
             <a href="{{ url_for('planes', editar=p.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
             <button type="button" class="icon-btn danger" data-tip="Eliminar"
                     data-del-url="{{ url_for('plan_eliminar', item_id=p.id) }}"

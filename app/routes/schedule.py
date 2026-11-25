@@ -4,8 +4,8 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import (
-    AnioLectivo, AreaConocimiento, Aula, Bloque, Grado, GradoMateria,
-    Materia, PlantillaHorario, Profesor, Seccion, SeccionMateria, Turno,
+    AnioLectivo, AreaConocimiento, Aula, Bloque, Grado, Materia, PlanEstudio,
+    PlanMateria, PlantillaHorario, Profesor, Seccion, SeccionMateria, Turno,
 )
 from app.utils.helpers import (
     DIAS_SEMANA, TIPOS_PLAN, TIPOS_PLAN_LABEL, anio_activo, colegio_actual,
@@ -91,6 +91,9 @@ def register_schedule_routes(app):
             grados=Grado.query.join(Grado.nivel)
                               .filter_by(colegio_id=colegio.id)
                               .order_by(Grado.orden, Grado.nombre).all(),
+            planes=PlanEstudio.query.filter_by(
+                colegio_id=colegio.id, activo=True
+            ).order_by(PlanEstudio.orden, PlanEstudio.nombre).all(),
             turnos=Turno.query.filter_by(colegio_id=colegio.id)
                                .order_by(Turno.nombre).all(),
             aulas=Aula.query.filter_by(colegio_id=colegio.id, activa=True)
@@ -102,16 +105,23 @@ def register_schedule_routes(app):
             errors=errors or [],
         )
 
-    def _grado_plan_ctx(grado, edit=None, form=None, errors=None):
-        items = GradoMateria.query.filter_by(grado_id=grado.id) \
-                                  .join(Materia).order_by(Materia.nombre).all()
+    def _grado_plan_ctx(grado, plan, edit=None, form=None, errors=None):
+        items = PlanMateria.query.filter_by(
+            plan_id=plan.id, grado_id=grado.id
+        ).join(Materia).order_by(Materia.nombre).all()
         return dict(
-            crumb=f'Plan · {grado.nombre}',
+            crumb=f'Plan · {plan.nombre} · {grado.nombre}',
             grado=grado,
+            plan=plan,
             items=items,
-            materias=Materia.query.filter_by(
-                colegio_id=grado.nivel.colegio_id, nivel_id=grado.nivel_id
-            ).order_by(Materia.nombre).all(),
+            materias=[
+                m for m in Materia.query.filter_by(
+                    colegio_id=grado.nivel.colegio_id, nivel_id=grado.nivel_id
+                ).order_by(Materia.nombre).all()
+                if (plan.especialidad and (
+                        not m.especialidades or plan.especialidad in m.especialidades))
+                or (not plan.especialidad and not m.especialidades)
+            ],
             tipos_plan=TIPOS_PLAN,
             tipos_plan_label=TIPOS_PLAN_LABEL,
             edit=edit,
@@ -124,8 +134,8 @@ def register_schedule_routes(app):
                                     .join(Materia).order_by(Materia.nombre).all()
         total = sum(sm.horas_semanales for sm in items)
         disponible = _clase_count(seccion.plantilla)
-        gm_map = {gm.materia_id: gm for gm in GradoMateria.query.filter_by(
-            grado_id=seccion.grado_id).all()}
+        gm_map = {gm.materia_id: gm for gm in PlanMateria.query.filter_by(
+            plan_id=seccion.plan_id, grado_id=seccion.grado_id).all()}
         return dict(
             crumb=f'Plan · {seccion.grado.nombre} {seccion.nombre}',
             seccion=seccion,
@@ -133,10 +143,14 @@ def register_schedule_routes(app):
             gm_map=gm_map,
             total_horas=total,
             disponible=disponible,
-            materias=Materia.query.filter_by(
-                colegio_id=seccion.anio_lectivo.colegio_id,
-                nivel_id=seccion.grado.nivel_id,
-            ).order_by(Materia.nombre).all(),
+            materias=[
+                m for m in Materia.query.filter_by(
+                    colegio_id=seccion.anio_lectivo.colegio_id,
+                    nivel_id=seccion.grado.nivel_id,
+                ).order_by(Materia.nombre).all()
+                if not m.especialidades or (
+                    seccion.especialidad and seccion.especialidad in m.especialidades)
+            ],
             profesores=Profesor.query.filter_by(
                 colegio_id=seccion.anio_lectivo.colegio_id, activo=True
             ).order_by(Profesor.nombre).all(),
@@ -182,6 +196,9 @@ def register_schedule_routes(app):
 
         nombre = (request.form.get('nombre') or '').strip()
         turno_id = parse_int(request.form.get('turno_id'))
+        plan = db.session.get(PlanEstudio, plan_id) if plan_id else None
+        if plan and plan.colegio_id != colegio.id:
+            plan = None
         turno = db.session.get(Turno, turno_id) if turno_id else None
         if turno and turno.colegio_id != colegio.id:
             turno = None
@@ -365,13 +382,22 @@ def register_schedule_routes(app):
             return redirect(url_for('colegios'))
         grado = _grado(grado_id, colegio)
 
+        plan_id = request.args.get('plan_id', type=int)
+        plan = db.session.get(PlanEstudio, plan_id) if plan_id else None
+        if plan is None or plan.colegio_id != colegio.id or grado not in plan.grados:
+            plan = next((p for p in grado.planes
+                         if p.colegio_id == colegio.id), None)
+        if plan is None:
+            flash('El curso no tiene un plan asignado.', 'warning')
+            return redirect(url_for('planes'))
+
         edit = None
         materia_id = request.args.get('editar', type=int)
         if materia_id:
-            edit = db.session.get(GradoMateria, (grado.id, materia_id))
+            edit = db.session.get(PlanMateria, (plan.id, grado.id, materia_id))
 
         return render_template('schedule/grado_plan.html',
-                               **_grado_plan_ctx(grado, edit=edit))
+                               **_grado_plan_ctx(grado, plan, edit=edit))
 
     @app.route('/grados/<int:grado_id>/plan/guardar', methods=['POST'])
     @login_required
@@ -380,6 +406,11 @@ def register_schedule_routes(app):
         if not colegio:
             return redirect(url_for('colegios'))
         grado = _grado(grado_id, colegio)
+
+        plan_id = parse_int(request.form.get('plan_id'))
+        plan = db.session.get(PlanEstudio, plan_id) if plan_id else None
+        if not plan or plan.colegio_id != colegio.id or grado not in plan.grados:
+            abort(404)
 
         materia_id = parse_int(request.form.get('materia_id'))
         original_id = parse_int(request.form.get('materia_original'))
@@ -392,7 +423,7 @@ def register_schedule_routes(app):
         if materia and materia.colegio_id != colegio.id:
             materia = None
 
-        edit = db.session.get(GradoMateria, (grado.id, original_id)) if original_id else None
+        edit = db.session.get(PlanMateria, (plan.id, grado.id, original_id)) if original_id else None
         if edit is not None:
             materia = edit.materia
 
@@ -401,6 +432,9 @@ def register_schedule_routes(app):
             errors.append('Seleccioná una materia válida.')
         elif materia.nivel_id != grado.nivel_id:
             errors.append('La materia pertenece a otro nivel.')
+        elif materia.especialidades and (
+                not plan.especialidad or plan.especialidad not in materia.especialidades):
+            errors.append('La materia no pertenece a la especialidad del plan.')
         if horas is None or horas < 1:
             errors.append('Las horas semanales deben ser mayores a cero.')
         if max_dia < 1:
@@ -414,7 +448,7 @@ def register_schedule_routes(app):
             limite = area.horas_max_semana
             if limite:
                 total = 0
-                for gm in GradoMateria.query.filter_by(grado_id=grado.id).all():
+                for gm in PlanMateria.query.filter_by(plan_id=plan.id, grado_id=grado.id).all():
                     if edit is not None and gm.materia_id == edit.materia_id:
                         continue
                     if gm.materia.area_id == area.id:
@@ -426,17 +460,17 @@ def register_schedule_routes(app):
                     )
 
         if materia and not original_id:
-            if db.session.get(GradoMateria, (grado.id, materia.id)):
+            if db.session.get(PlanMateria, (plan.id, grado.id, materia.id)):
                 errors.append('Esa materia ya está en el plan del grado.')
 
         if errors:
             return render_template('schedule/grado_plan.html',
-                                   **_grado_plan_ctx(grado, edit=edit,
+                                   **_grado_plan_ctx(grado, plan, edit=edit,
                                                      form=request.form,
                                                      errors=errors))
 
         if edit is None:
-            edit = GradoMateria(grado_id=grado.id, materia_id=materia.id)
+            edit = PlanMateria(plan_id=plan.id, grado_id=grado.id, materia_id=materia.id)
             db.session.add(edit)
 
         edit.horas_semanales = horas
@@ -450,7 +484,7 @@ def register_schedule_routes(app):
         except IntegrityError:
             db.session.rollback()
             flash('No se pudo guardar el plan. Revisá la materia y las horas.', 'error')
-        return redirect(url_for('grado_plan', grado_id=grado.id))
+        return redirect(url_for('grado_plan', grado_id=grado.id, plan_id=plan.id))
 
     @app.route('/grados/<int:grado_id>/plan/<int:materia_id>/eliminar', methods=['POST'])
     @login_required
@@ -459,14 +493,18 @@ def register_schedule_routes(app):
         if not colegio:
             return redirect(url_for('colegios'))
         grado = _grado(grado_id, colegio)
-        item = db.session.get(GradoMateria, (grado.id, materia_id))
+        plan_id = request.args.get('plan_id', type=int) or request.form.get('plan_id', type=int)
+        plan = db.session.get(PlanEstudio, plan_id) if plan_id else None
+        if not plan or plan.colegio_id != colegio.id:
+            abort(404)
+        item = db.session.get(PlanMateria, (plan.id, grado.id, materia_id))
         if not item:
             abort(404)
 
         db.session.delete(item)
         db.session.commit()
         flash('Materia quitada del plan del grado.', 'success')
-        return redirect(url_for('grado_plan', grado_id=grado.id))
+        return redirect(url_for('grado_plan', grado_id=grado.id, plan_id=plan.id))
 
     # ------------------------------------------------------------------
     # SECCIONES
@@ -507,6 +545,7 @@ def register_schedule_routes(app):
 
         nombre = (request.form.get('nombre') or '').strip()
         grado_id = parse_int(request.form.get('grado_id'))
+        plan_id = parse_int(request.form.get('plan_id'))
         turno_id = parse_int(request.form.get('turno_id'))
         plantilla_id = parse_int(request.form.get('plantilla_id'))
         aula_id = parse_int(request.form.get('aula_base_id'))
@@ -514,6 +553,9 @@ def register_schedule_routes(app):
         grado = db.session.get(Grado, grado_id) if grado_id else None
         if grado and grado.nivel.colegio_id != colegio.id:
             grado = None
+        plan = db.session.get(PlanEstudio, plan_id) if plan_id else None
+        if plan and plan.colegio_id != colegio.id:
+            plan = None
         turno = db.session.get(Turno, turno_id) if turno_id else None
         if turno and turno.colegio_id != colegio.id:
             turno = None
@@ -528,7 +570,11 @@ def register_schedule_routes(app):
         if not nombre:
             errors.append('El nombre de la sección es obligatorio (por ejemplo A).')
         if not grado:
-            errors.append('Seleccioná un grado válido.')
+            errors.append('Seleccioná un grado o curso válido.')
+        if not plan:
+            errors.append('Seleccioná un plan válido.')
+        elif grado and plan not in grado.planes:
+            errors.append('El plan no pertenece al curso elegido.')
         if not turno:
             errors.append('Seleccioná un turno válido.')
         if not plantilla:
@@ -545,12 +591,16 @@ def register_schedule_routes(app):
         creada = item is None
         if item is None:
             item = Seccion(anio_lectivo_id=anio.id, grado_id=grado.id,
+                           plan_id=plan.id,
+                           especialidad_id=plan.especialidad_id,
                            turno_id=turno.id, nombre=nombre,
                            aula_base_id=aula.id if aula else None,
                            plantilla_id=plantilla.id)
             db.session.add(item)
         else:
             item.grado_id = grado.id
+            item.plan_id = plan.id
+            item.especialidad_id = plan.especialidad_id
             item.turno_id = turno.id
             item.nombre = nombre
             item.aula_base_id = aula.id if aula else None
@@ -559,7 +609,8 @@ def register_schedule_routes(app):
         db.session.flush()
 
         if creada:
-            for gm in grado.grado_materias:
+            for gm in PlanMateria.query.filter_by(
+                    plan_id=plan.id, grado_id=grado.id).all():
                 db.session.add(SeccionMateria(
                     seccion_id=item.id,
                     materia_id=gm.materia_id,
@@ -659,8 +710,12 @@ def register_schedule_routes(app):
         errors = []
         if not materia:
             errors.append('Seleccioná una materia válida.')
-        elif materia.nivel_id != grado.nivel_id:
+        elif materia.nivel_id != seccion.grado.nivel_id:
             errors.append('La materia pertenece a otro nivel.')
+        elif materia.especialidades and (
+                not seccion.especialidad or
+                seccion.especialidad not in materia.especialidades):
+            errors.append('La materia no pertenece a la especialidad de la sección.')
         if horas is None or horas < 1:
             errors.append('Las horas semanales deben ser mayores a cero.')
         if max_dia < 1:
@@ -669,6 +724,12 @@ def register_schedule_routes(app):
             errors.append('Para fijar un profesor tenés que seleccionarlo.')
         if profesor and materia and materia not in profesor.materias:
             errors.append('El profesor seleccionado no tiene habilitada esa materia.')
+        if (profesor and materia and materia.especialidades and
+                seccion.especialidad and
+                seccion.especialidad not in profesor.especialidades):
+            errors.append(
+                'El profesor seleccionado no tiene la especialidad de la materia.'
+            )
         if (materia and materia.area and materia.area.horas_max_semana
                 and horas is not None and horas >= 1):
             area = materia.area
@@ -754,7 +815,8 @@ def register_schedule_routes(app):
         seccion = _seccion(seccion_id, colegio)
 
         creados = actualizados = 0
-        for gm in seccion.grado.grado_materias:
+        for gm in PlanMateria.query.filter_by(
+                plan_id=seccion.plan_id, grado_id=seccion.grado_id).all():
             sm = SeccionMateria.query.filter_by(
                 seccion_id=seccion.id, materia_id=gm.materia_id
             ).first()

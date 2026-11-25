@@ -4,7 +4,8 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import (
-    AnioLectivo, AreaConocimiento, Aula, Colegio, Grado, Materia, Nivel, Turno,
+    AnioLectivo, AreaConocimiento, Aula, Colegio, Especialidad, Grado, Materia,
+    Nivel, Turno,
 )
 from app.utils.helpers import (
     TIPOS_AULA, TIPOS_AULA_LABEL, colegio_actual, parse_date, parse_int,
@@ -537,6 +538,8 @@ def register_academic_routes(app):
             area=area,
             areas=areas,
             niveles=niveles,
+            especialidades=Especialidad.query.filter_by(
+                colegio_id=colegio.id, activa=True).order_by(Especialidad.nombre).all(),
             tipos=TIPOS_AULA, tipos_label=TIPOS_AULA_LABEL,
             edit=edit, form={}, errors=[],
         )
@@ -562,6 +565,12 @@ def register_academic_routes(app):
         if nivel and nivel.colegio_id != colegio.id:
             nivel = None
         horas = parse_int(request.form.get('horas_semanales'))
+        especialidad_ids = [int(x) for x in request.form.getlist('especialidades')
+                            if x.isdigit()]
+        especialidades = Especialidad.query.filter(
+            Especialidad.id.in_(especialidad_ids),
+            Especialidad.colegio_id == colegio.id,
+        ).all() if especialidad_ids else []
 
         errors = []
         if not nombre:
@@ -572,6 +581,8 @@ def register_academic_routes(app):
             errors.append('Seleccioná un nivel válido.')
         if horas is None or horas < 0:
             errors.append('Las horas semanales deben ser iguales o mayores a cero.')
+        if nivel and any(e.nivel_id != nivel.id for e in especialidades):
+            errors.append('Alguna especialidad no pertenece al nivel de la materia.')
         if tipo_aula and tipo_aula not in TIPOS_AULA:
             errors.append('El tipo de aula requerida no es válido.')
         if area and nivel and nombre:
@@ -592,6 +603,8 @@ def register_academic_routes(app):
                 ).order_by(AreaConocimiento.orden, AreaConocimiento.nombre).all(),
                 niveles=Nivel.query.filter_by(colegio_id=colegio.id)
                                    .order_by(Nivel.nombre).all(),
+                especialidades=Especialidad.query.filter_by(
+                    colegio_id=colegio.id, activa=True).order_by(Especialidad.nombre).all(),
                 tipos=TIPOS_AULA, tipos_label=TIPOS_AULA_LABEL,
                 edit=item, form=request.form, errors=errors,
             )
@@ -608,6 +621,7 @@ def register_academic_routes(app):
                            horas_semanales=horas,
                            tipo_aula_requerida=tipo_aula)
             db.session.add(item)
+        item.especialidades = especialidades
 
         try:
             db.session.commit()

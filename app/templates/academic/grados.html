@@ -81,7 +81,7 @@
         <td class="c-state">{{ g.orden }}</td>
         <td>
           <div class="actions-cell">
-            <a href="{{ url_for('grado_plan', grado_id=g.id) }}" class="btn btn-ghost btn-sm">Plan</a>
+            <a href="{{ url_for('planes') }}" class="btn btn-ghost btn-sm">Planes</a>
             <a href="{{ url_for('grados', editar=g.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
             <button type="button" class="icon-btn danger" data-tip="Eliminar"
                     data-del-url="{{ url_for('grado_eliminar', item_id=g.id) }}"

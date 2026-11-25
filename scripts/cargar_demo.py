@@ -26,7 +26,8 @@ from app.extensions import db
 from app.factory import create_app
 from app.models import (
     AnioLectivo, AreaConocimiento, Aula, Bloque, Colegio, Grado,
-    GradoMateria, HorarioCelda, HorarioVersion, Materia, ProfesorHorasAnio,
+    Especialidad, HorarioCelda, HorarioVersion, Materia, MateriaEspecialidad,
+    PlanGrado, PlanMateria, ProfesorEspecialidad, ProfesorHorasAnio,
     Nivel, PlanEstudio, PlantillaHorario, Profesor, ProfesorDisponibilidad,
     ProfesorMateria, Regla, Seccion, SeccionMateria, Turno, Usuario,
 )
@@ -102,6 +103,16 @@ PLAN_INFO = [
     ('Educación Física', 2),
     ('Informática', 5),
     ('Orientación', 1),
+]
+
+PLAN_COMUN = [
+    ('Matemática', 5),
+    ('Lengua y Literatura', 4),
+    ('Ciencias Naturales', 4),
+    ('Ciencias Sociales', 4),
+    ('Inglés', 3),
+    ('Educación Física', 2),
+    ('Orientación', 2),
 ]
 
 PLAN_CONTA = [
@@ -189,13 +200,16 @@ def limpiar_datos():
     orden = [
         HorarioCelda, HorarioVersion,
         SeccionMateria, Seccion,
-        GradoMateria, Grado,
+        PlanMateria, PlanGrado,
+        Grado,
         PlanEstudio,
+        Especialidad,
         Regla,
-        ProfesorDisponibilidad, ProfesorMateria,
+        ProfesorEspecialidad, ProfesorDisponibilidad, ProfesorMateria,
         Bloque, PlantillaHorario,
         Profesor,
         Aula,
+        MateriaEspecialidad,
         Materia,
         AreaConocimiento,
         Nivel,
@@ -252,15 +266,27 @@ def crear_estructura(colegio):
     db.session.add_all([nivel_tercero, nivel_medio])
     db.session.flush()
 
+    especialidades = {}
+    for nombre, codigo in [('BATIN', 'BATIN'), ('BATAN', 'BATAN')]:
+        esp = Especialidad(
+            colegio_id=colegio.id, nivel_id=nivel_medio.id,
+            nombre=nombre, codigo=codigo, activa=True,
+        )
+        db.session.add(esp)
+        especialidades[nombre] = esp
+    db.session.flush()
+
     planes = {}
-    for nivel, nombre, orden in [
-        (nivel_tercero, 'E.E.B. 7°-9°', 1),
-        (nivel_medio, 'BATIN', 1),
-        (nivel_medio, 'BATAN', 2),
+    for nivel, nombre, orden, esp_nombre in [
+        (nivel_tercero, 'E.E.B. 7°-9°', 1, None),
+        (nivel_medio, 'Nivel Medio Común', 1, None),
+        (nivel_medio, 'BATIN', 2, 'BATIN'),
+        (nivel_medio, 'BATAN', 3, 'BATAN'),
     ]:
         plan = PlanEstudio(
             colegio_id=colegio.id,
             nivel_id=nivel.id,
+            especialidad_id=(especialidades[esp_nombre].id if esp_nombre else None),
             nombre=nombre,
             orden=orden,
             activo=True,
@@ -271,20 +297,22 @@ def crear_estructura(colegio):
 
     grados = {}
     for orden, nombre in enumerate(['7°', '8°', '9°'], start=1):
-        grado = Grado(nivel_id=nivel_tercero.id,
-                      plan_id=planes['E.E.B. 7°-9°'].id,
-                      nombre=nombre, orden=orden)
+        grado = Grado(nivel_id=nivel_tercero.id, nombre=nombre, orden=orden)
         db.session.add(grado)
         grados[nombre] = grado
-    for orden, (nombre, plan_nombre) in enumerate([
-            ('1° BATIN Informática', 'BATIN'),
-            ('2° BATIN Informática', 'BATIN'),
-            ('1° BATAN Contabilidad', 'BATAN')], start=1):
-        grado = Grado(nivel_id=nivel_medio.id,
-                      plan_id=planes[plan_nombre].id,
-                      nombre=nombre, orden=orden)
+    for orden, nombre in enumerate(['1°', '2°', '3°'], start=1):
+        grado = Grado(nivel_id=nivel_medio.id, nombre=nombre, orden=orden)
         db.session.add(grado)
         grados[nombre] = grado
+    db.session.flush()
+
+    for plan_nombre, plan in planes.items():
+        if plan_nombre == 'E.E.B. 7°-9°':
+            cursos = ['7°', '8°', '9°']
+        else:
+            cursos = ['1°', '2°', '3°']
+        for curso in cursos:
+            db.session.add(PlanGrado(plan_id=plan.id, grado_id=grados[curso].id))
     db.session.flush()
 
     turnos = {}
@@ -348,7 +376,12 @@ def crear_estructura(colegio):
         materias[(nombre, nivel_nombre)] = materia
     db.session.flush()
 
-    return anio, anio_anterior, grados, turnos, aulas, materias, planes, areas
+    materias[('Informática', 'Nivel Medio')].especialidades = [especialidades['BATIN']]
+    materias[('Contabilidad', 'Nivel Medio')].especialidades = [especialidades['BATAN']]
+    materias[('Administración', 'Nivel Medio')].especialidades = [especialidades['BATAN']]
+
+    return (anio, anio_anterior, grados, turnos, aulas, materias, planes,
+            areas, especialidades)
 
 
 def crear_plantillas(colegio, turnos):
@@ -396,13 +429,22 @@ def crear_profesores(colegio, materias):
             horas_max_semana=max_sem,
             activo=True,
         )
+        db.session.add(profe)
+        db.session.flush()
         profe.materias = [
             materias[(m, nivel_nombre)] for m in nombres_materias
             if (m, nivel_nombre) in materias
         ]
-        db.session.add(profe)
-        db.session.flush()
-
+        especialidad = {
+            'Lourdes Cáceres': 'BATAN',
+            'Mabel Villalba': 'BATAN',
+            'Emilio Rojas': 'BATIN',
+            'Marcos Duarte': 'BATIN',
+        }.get(nombre)
+        if especialidad:
+            plan = PlanEstudio.query.filter_by(nombre=especialidad).first()
+            if plan and plan.especialidad:
+                profe.especialidades = [plan.especialidad]
         desde, hasta = time(7, 30), time(18, 0)
         for dia in range(1, 6):
             db.session.add(ProfesorDisponibilidad(
@@ -419,46 +461,49 @@ def crear_profesores(colegio, materias):
 
 def crear_planes(grados, materias, areas):
     planes = {
-        '7°': PLAN_TERCER_CICLO,
-        '8°': PLAN_TERCER_CICLO,
-        '9°': PLAN_TERCER_CICLO,
-        '1° BATIN Informática': PLAN_INFO,
-        '2° BATIN Informática': PLAN_INFO,
-        '1° BATAN Contabilidad': PLAN_CONTA,
+        'E.E.B. 7°-9°': PLAN_TERCER_CICLO,
+        'Nivel Medio Común': PLAN_COMUN,
+        'BATIN': PLAN_INFO,
+        'BATAN': PLAN_CONTA,
     }
-    for grado_nombre, plan in planes.items():
-        grado = grados[grado_nombre]
-        for materia_nombre, horas in plan:
-            materia = materias[(materia_nombre, grado.nivel.nombre)]
-            tipo = 'especifico' if materia_nombre in (
-                'Informática', 'Contabilidad', 'Administración') else 'comun'
-            gm = GradoMateria(
-                grado_id=grado.id,
-                materia_id=materia.id,
-                horas_semanales=horas,
-                max_bloques_por_dia=(2 if horas > 5 else 1),
-                requiere_bloque_doble=False,
-                tipo_plan=tipo,
-            )
-            db.session.add(gm)
+    for plan_nombre, plan in planes.items():
+        plan_db = PlanEstudio.query.filter_by(nombre=plan_nombre).first()
+        if not plan_db:
+            continue
+        for grado in plan_db.grados:
+            for materia_nombre, horas in plan:
+                materia = materias[(materia_nombre, grado.nivel.nombre)]
+                tipo = 'especifico' if materia_nombre in (
+                    'Informática', 'Contabilidad', 'Administración') else 'comun'
+                db.session.add(PlanMateria(
+                    plan_id=plan_db.id,
+                    grado_id=grado.id,
+                    materia_id=materia.id,
+                    horas_semanales=horas,
+                    max_bloques_por_dia=(2 if horas > 5 else 1),
+                    requiere_bloque_doble=False,
+                    tipo_plan=tipo,
+                ))
     db.session.flush()
-
 
 
 def crear_secciones(anio, grados, turnos, aulas, plantillas):
     datos = [
-        ('7°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 1'),
-        ('8°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 2'),
-        ('1° BATIN Informática', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 1'),
-        ('1° BATIN Informática', 'B', 'Doble escolaridad', 'Nivel Medio', 'Aula 2'),
-        ('1° BATAN Contabilidad', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 4'),
+        ('7°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 1', 'E.E.B. 7°-9°'),
+        ('8°', 'A', 'Doble escolaridad', 'Tercer Ciclo', 'Aula 2', 'E.E.B. 7°-9°'),
+        ('1°', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 1', 'BATIN'),
+        ('1°', 'B', 'Doble escolaridad', 'Nivel Medio', 'Aula 2', 'BATIN'),
+        ('1°', 'A', 'Doble escolaridad', 'Nivel Medio', 'Aula 4', 'BATAN'),
     ]
 
-    for grado_nombre, nombre, turno_nombre, plantilla_nombre, aula_nombre in datos:
+    for grado_nombre, nombre, turno_nombre, plantilla_nombre, aula_nombre, plan_nombre in datos:
         grado = grados[grado_nombre]
+        plan = PlanEstudio.query.filter_by(nombre=plan_nombre).first()
         seccion = Seccion(
             anio_lectivo_id=anio.id,
             grado_id=grado.id,
+            plan_id=plan.id,
+            especialidad_id=plan.especialidad_id,
             turno_id=turnos[turno_nombre].id,
             nombre=nombre,
             aula_base_id=aulas[aula_nombre].id,
@@ -467,7 +512,8 @@ def crear_secciones(anio, grados, turnos, aulas, plantillas):
         db.session.add(seccion)
         db.session.flush()
 
-        for gm in grado.grado_materias:
+        for gm in PlanMateria.query.filter_by(
+                plan_id=plan.id, grado_id=grado.id).all():
             db.session.add(SeccionMateria(
                 seccion_id=seccion.id,
                 materia_id=gm.materia_id,
@@ -568,7 +614,7 @@ def main():
         print(f'Limpiando datos académicos de {colegio.nombre}...')
         limpiar_datos()
 
-        anio, anio_anterior, grados, turnos, aulas, materias, planes, areas = crear_estructura(colegio)
+        anio, anio_anterior, grados, turnos, aulas, materias, planes, areas, especialidades = crear_estructura(colegio)
         plantillas = crear_plantillas(colegio, turnos)
         profesores = crear_profesores(colegio, materias)
         for profe in profesores.values():
@@ -595,11 +641,12 @@ def main():
         print('Demo cargada en:', colegio.nombre)
         print('  Año:', anio.nombre)
         print('  Niveles:', Nivel.query.filter_by(colegio_id=colegio.id).count())
-        print('  Grados:', Grado.query.count())
+        print('  Cursos y grados:', Grado.query.count())
         print('  Secciones:', Seccion.query.count())
         print('  Profesores:', Profesor.query.count())
         print('  Materias:', Materia.query.count())
         print('  Aulas:', Aula.query.count())
+        print('  Especialidades:', Especialidad.query.filter_by(colegio_id=colegio.id).count())
         print('  Planes:', PlanEstudio.query.filter_by(colegio_id=colegio.id).count())
         print('  Áreas:', AreaConocimiento.query.filter_by(colegio_id=colegio.id).count())
         print('  Usuarios preservados:', total_usuarios)

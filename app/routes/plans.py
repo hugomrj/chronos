@@ -4,14 +4,13 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import (
-    AreaConocimiento, Grado, GradoMateria, Nivel, PlanEstudio, Seccion,
+    AreaConocimiento, Especialidad, Grado, Nivel, PlanEstudio, PlanGrado,
+    PlanMateria, Seccion,
 )
 from app.utils.helpers import colegio_actual, parse_int
 
 
 def register_plan_routes(app):
-    """Áreas de conocimiento y planes de estudio."""
-
     def _colegio():
         colegio = colegio_actual()
         if not colegio:
@@ -24,30 +23,38 @@ def register_plan_routes(app):
             items=AreaConocimiento.query.filter_by(colegio_id=colegio.id)
                                         .order_by(AreaConocimiento.orden,
                                                   AreaConocimiento.nombre).all(),
-            edit=edit,
-            form=form or {},
-            errors=errors or [],
+            edit=edit, form=form or {}, errors=errors or [],
+        )
+
+    def _especialidades_ctx(colegio, edit=None, form=None, errors=None):
+        return dict(
+            crumb='Especialidades',
+            items=Especialidad.query.filter_by(colegio_id=colegio.id)
+                                    .order_by(Especialidad.nombre).all(),
+            niveles=Nivel.query.filter_by(colegio_id=colegio.id)
+                               .order_by(Nivel.nombre).all(),
+            edit=edit, form=form or {}, errors=errors or [],
         )
 
     def _planes_ctx(colegio, edit=None, form=None, errors=None):
-        niveles = Nivel.query.filter_by(colegio_id=colegio.id) \
-                              .order_by(Nivel.nombre).all()
-        grados = Grado.query.join(Nivel).filter(Nivel.colegio_id == colegio.id) \
-                            .order_by(Nivel.nombre, Grado.orden, Grado.nombre).all()
         return dict(
             crumb='Planes de estudio',
             items=PlanEstudio.query.filter_by(colegio_id=colegio.id)
-                                    .order_by(PlanEstudio.orden,
-                                              PlanEstudio.nombre).all(),
-            niveles=niveles,
-            grados=grados,
-            edit=edit,
-            form=form or {},
-            errors=errors or [],
+                                   .order_by(PlanEstudio.orden,
+                                             PlanEstudio.nombre).all(),
+            niveles=Nivel.query.filter_by(colegio_id=colegio.id)
+                               .order_by(Nivel.nombre).all(),
+            especialidades=Especialidad.query.filter_by(
+                colegio_id=colegio.id, activa=True
+            ).order_by(Especialidad.nombre).all(),
+            grados=Grado.query.join(Nivel).filter(
+                Nivel.colegio_id == colegio.id
+            ).order_by(Nivel.nombre, Grado.orden, Grado.nombre).all(),
+            edit=edit, form=form or {}, errors=errors or [],
         )
 
     # ------------------------------------------------------------------
-    # ÁREAS DE CONOCIMIENTO
+    # ÁREAS
     # ------------------------------------------------------------------
     @app.route('/areas')
     @login_required
@@ -68,7 +75,6 @@ def register_plan_routes(app):
         colegio = _colegio()
         if not colegio:
             return redirect(url_for('colegios'))
-
         item_id = request.form.get('id', type=int)
         item = db.session.get(AreaConocimiento, item_id) if item_id else None
         if item and item.colegio_id != colegio.id:
@@ -87,19 +93,17 @@ def register_plan_routes(app):
             errors.append('El orden no puede ser negativo.')
         if horas_max is not None and horas_max < 1:
             errors.append('El máximo de horas debe ser mayor a cero.')
-        if item is not None and horas_max is not None:
-            totales_grado = {}
-            if item.materias:
-                for gm in GradoMateria.query.filter(
-                        GradoMateria.materia_id.in_(
-                            [m.id for m in item.materias])).all():
-                    totales_grado[gm.grado_id] = (
-                        totales_grado.get(gm.grado_id, 0) + gm.horas_semanales
-                    )
-            if any(total > horas_max for total in totales_grado.values()):
+        if item is not None and horas_max is not None and item.materias:
+            totales = {}
+            for pm in PlanMateria.query.filter(
+                    PlanMateria.materia_id.in_([m.id for m in item.materias])).all():
+                totales[(pm.plan_id, pm.grado_id)] = (
+                    totales.get((pm.plan_id, pm.grado_id), 0) + pm.horas_semanales
+                )
+            if any(total > horas_max for total in totales.values()):
                 errors.append(
                     'El máximo no puede ser menor a las horas ya asignadas '
-                    'en alguno de los grados.'
+                    'en algún plan/curso.'
                 )
         existente = AreaConocimiento.query.filter_by(
             colegio_id=colegio.id, nombre=nombre
@@ -119,7 +123,6 @@ def register_plan_routes(app):
         item.orden = orden
         item.activa = activa
         item.horas_max_semana = horas_max
-
         try:
             db.session.commit()
             flash('Área de conocimiento guardada.', 'success')
@@ -150,7 +153,94 @@ def register_plan_routes(app):
         return redirect(url_for('areas'))
 
     # ------------------------------------------------------------------
-    # PLANES DE ESTUDIO
+    # ESPECIALIDADES
+    # ------------------------------------------------------------------
+    @app.route('/especialidades')
+    @login_required
+    def especialidades():
+        colegio = _colegio()
+        if not colegio:
+            return redirect(url_for('colegios'))
+        edit_id = request.args.get('editar', type=int)
+        return render_template(
+            'academic/especialidades.html',
+            **_especialidades_ctx(colegio,
+                                  edit=db.session.get(Especialidad, edit_id)
+                                  if edit_id else None),
+        )
+
+    @app.route('/especialidades/guardar', methods=['POST'])
+    @login_required
+    def especialidad_guardar():
+        colegio = _colegio()
+        if not colegio:
+            return redirect(url_for('colegios'))
+        item_id = request.form.get('id', type=int)
+        item = db.session.get(Especialidad, item_id) if item_id else None
+        if item and item.colegio_id != colegio.id:
+            abort(404)
+
+        nombre = (request.form.get('nombre') or '').strip()
+        nivel_id = parse_int(request.form.get('nivel_id'))
+        nivel = db.session.get(Nivel, nivel_id) if nivel_id else None
+        if nivel and nivel.colegio_id != colegio.id:
+            nivel = None
+        codigo = (request.form.get('codigo') or '').strip() or None
+        activa = request.form.get('activa') == 'on'
+
+        errors = []
+        if not nombre:
+            errors.append('El nombre es obligatorio.')
+        if not nivel:
+            errors.append('Seleccioná un nivel.')
+        existente = Especialidad.query.filter_by(
+            colegio_id=colegio.id, nombre=nombre).first()
+        if existente and (item is None or existente.id != item.id):
+            errors.append('Ya existe una especialidad con ese nombre.')
+
+        if errors:
+            return render_template('academic/especialidades.html',
+                                   **_especialidades_ctx(colegio, edit=item,
+                                                         form=request.form,
+                                                         errors=errors))
+        if item is None:
+            item = Especialidad(colegio_id=colegio.id)
+            db.session.add(item)
+        item.nombre = nombre
+        item.nivel_id = nivel.id
+        item.codigo = codigo
+        item.activa = activa
+        try:
+            db.session.commit()
+            flash('Especialidad guardada.', 'success')
+        except IntegrityError:
+            db.session.rollback()
+            flash('No se pudo guardar la especialidad.', 'error')
+        return redirect(url_for('especialidades'))
+
+    @app.route('/especialidades/<int:item_id>/eliminar', methods=['POST'])
+    @login_required
+    def especialidad_eliminar(item_id):
+        colegio = _colegio()
+        if not colegio:
+            return redirect(url_for('colegios'))
+        item = db.get_or_404(Especialidad, item_id)
+        if item.colegio_id != colegio.id:
+            abort(404)
+        if item.planes or item.secciones:
+            flash('No se puede eliminar: está asignada a planes o secciones.', 'error')
+            return redirect(url_for('especialidades'))
+        try:
+            db.session.delete(item)
+            db.session.commit()
+            flash('Especialidad eliminada.', 'success')
+        except IntegrityError:
+            db.session.rollback()
+            flash('No se puede eliminar la especialidad.', 'error')
+        return redirect(url_for('especialidades'))
+
+    # ------------------------------------------------------------------
+    # PLANES
     # ------------------------------------------------------------------
     @app.route('/planes')
     @login_required
@@ -171,7 +261,6 @@ def register_plan_routes(app):
         colegio = _colegio()
         if not colegio:
             return redirect(url_for('colegios'))
-
         item_id = request.form.get('id', type=int)
         item = db.session.get(PlanEstudio, item_id) if item_id else None
         if item and item.colegio_id != colegio.id:
@@ -182,6 +271,11 @@ def register_plan_routes(app):
         nivel = db.session.get(Nivel, nivel_id) if nivel_id else None
         if nivel and nivel.colegio_id != colegio.id:
             nivel = None
+        especialidad_id = parse_int(request.form.get('especialidad_id'))
+        especialidad = db.session.get(Especialidad, especialidad_id) \
+            if especialidad_id else None
+        if especialidad and especialidad.colegio_id != colegio.id:
+            especialidad = None
         orden = parse_int(request.form.get('orden'), 0) or 0
         activo = request.form.get('activo') == 'on'
         grado_ids = [int(x) for x in request.form.getlist('grado_ids') if x.isdigit()]
@@ -190,44 +284,41 @@ def register_plan_routes(app):
         if not nombre:
             errors.append('El nombre del plan es obligatorio.')
         if not nivel:
-            errors.append('Seleccioná un ciclo/nivel válido.')
+            errors.append('Seleccioná un nivel válido.')
+        if especialidad and (not nivel or especialidad.nivel_id != nivel.id):
+            errors.append('La especialidad no pertenece al nivel elegido.')
         if orden < 0:
             errors.append('El orden no puede ser negativo.')
         existente = PlanEstudio.query.filter_by(
-            colegio_id=colegio.id, nombre=nombre
-        ).first()
+            colegio_id=colegio.id, nombre=nombre).first()
         if existente and (item is None or existente.id != item.id):
-            errors.append('Ya existe un plan con ese nombre en el colegio.')
+            errors.append('Ya existe un plan con ese nombre.')
 
         grados = []
-        if nivel:
-            grados = Grado.query.filter(Grado.id.in_(grado_ids),
-                                        Grado.nivel_id == nivel.id).all() \
-                                if grado_ids else []
-            if grado_ids and len(grados) != len(set(grado_ids)):
-                errors.append('Algún grado seleccionado no pertenece al ciclo elegido.')
+        if nivel and grado_ids:
+            grados = Grado.query.filter(
+                Grado.id.in_(grado_ids), Grado.nivel_id == nivel.id).all()
+            if len(grados) != len(set(grado_ids)):
+                errors.append('Algún curso no pertenece al nivel elegido.')
 
         if errors:
             return render_template('academic/planes.html',
                                    **_planes_ctx(colegio, edit=item,
                                                  form=request.form, errors=errors))
-
         if item is None:
             item = PlanEstudio(colegio_id=colegio.id)
             db.session.add(item)
         item.nombre = nombre
         item.nivel_id = nivel.id
+        item.especialidad_id = especialidad.id if especialidad else None
         item.orden = orden
         item.activo = activo
         db.session.flush()
 
-        seleccionados = {g.id for g in grados}
-        for grado in Grado.query.filter_by(plan_id=item.id).all():
-            if grado.id not in seleccionados:
-                grado.plan_id = None
+        PlanGrado.query.filter_by(plan_id=item.id).delete(
+            synchronize_session=False)
         for grado in grados:
-            grado.plan_id = item.id
-
+            db.session.add(PlanGrado(plan_id=item.id, grado_id=grado.id))
         try:
             db.session.commit()
             flash('Plan de estudios guardado.', 'success')
@@ -235,6 +326,24 @@ def register_plan_routes(app):
             db.session.rollback()
             flash('No se pudo guardar el plan.', 'error')
         return redirect(url_for('planes'))
+
+    @app.route('/planes/<int:item_id>')
+    @login_required
+    def plan_detalle(item_id):
+        colegio = _colegio()
+        plan = db.get_or_404(PlanEstudio, item_id)
+        if plan.colegio_id != colegio.id:
+            abort(404)
+        grados = sorted(plan.grados, key=lambda g: (g.orden, g.nombre))
+        datos = []
+        for grado in grados:
+            datos.append({
+                'grado': grado,
+                'materias': PlanMateria.query.filter_by(
+                    plan_id=plan.id, grado_id=grado.id).count(),
+            })
+        return render_template('academic/plan_detalle.html',
+                               crumb=plan.nombre, plan=plan, grados=datos)
 
     @app.route('/planes/<int:item_id>/eliminar', methods=['POST'])
     @login_required
@@ -245,13 +354,9 @@ def register_plan_routes(app):
         item = db.get_or_404(PlanEstudio, item_id)
         if item.colegio_id != colegio.id:
             abort(404)
-        secciones = Seccion.query.join(Grado).filter(Grado.plan_id == item.id).count()
-        if secciones:
+        if Seccion.query.filter_by(plan_id=item.id).first():
             flash('No se puede eliminar: hay secciones asociadas a este plan.', 'error')
             return redirect(url_for('planes'))
-        Grado.query.filter_by(plan_id=item.id).update(
-            {'plan_id': None}, synchronize_session=False
-        )
         try:
             db.session.delete(item)
             db.session.commit()

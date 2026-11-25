@@ -21,9 +21,9 @@ El cliente trabaja con:
 
 3. **Planes**
    - `plan_estudio` pertenece a un ciclo.
-   - `grado.plan_id` indica a qué plan pertenece cada grado.
+   - El plan ahora vive en `seccion.plan_id`; un curso puede tener varios planes/secciones.
    - Un plan puede abarcar varios grados.
-   - BATIN y BATAN se manejan con grados separados (`1° BATIN Informática`, `1° BATAN Contabilidad`), cada uno con su plan.
+   - BATIN y BATAN son especialidades de Nivel Medio; los cursos 1°, 2° y 3° son genéricos y la sección elige el plan.
 
 4. **Áreas**
    - `area_conocimiento` es por colegio.
@@ -32,12 +32,12 @@ El cliente trabaja con:
    - El área se hereda en el plan del grado.
 
 5. **Tipo de plan**
-   - `grado_materia.tipo_plan`: `comun`, `especifico` u `optativo`.
+   - `plan_materia.tipo_plan`: `comun`, `especifico` u `optativo`.
    - El reporte de distribución agrupa por tipo → área → materia.
 
 6. **Horas**
-   - `grado_materia.horas_semanales` define el plan base.
-   - `seccion_materia` copia el plan al crear la sección.
+   - `plan_materia.horas_semanales` define el plan por curso.
+   - `seccion_materia` copia el plan de la sección al crearla.
    - `max_bloques_por_dia` limita cuántas veces puede aparecer una materia en un día. Las materias de 6 horas usan 2 para poder entrar en 5 días.
 
 7. **Plantillas**
@@ -55,7 +55,7 @@ Colegio:              Colegio Demo
 Usuario:              admin@chronos.com / admin123
 Hora cátedra:         40 min
 Turno:                Doble escolaridad
-Planes:               3
+Planes:               4
 Áreas:                10
 Materias:             22
 Profesores:           20
@@ -90,10 +90,10 @@ Bloques:              175
 
 1. **Estructura**: años, ciclos, grados, turnos, aulas, materias.
 2. **Áreas y planes**: crear áreas, crear planes y asignar grados.
-3. **Plan del grado**: materias, horas, tipo de plan y áreas.
+3. **Plan de estudios**: especialidad, cursos, materias y horas.
 4. **Profesores**: materias habilitadas, carga máxima y disponibilidad.
 5. **Plantillas**: esqueleto de cada ciclo, con días y bloques distintos.
-6. **Secciones**: año, grado, turno, plantilla y aula base.
+6. **Secciones**: año, curso, plan/especialidad, turno, plantilla y aula base.
 7. **Plan de sección**: profesor por materia, aula requerida y ajustes.
 8. **Reglas**: restricciones pedagógicas.
 9. **Horarios**: generar, revisar, fijar celdas, publicar.
@@ -111,6 +111,7 @@ Bloques:              175
 | Profesores | `/profesores` |
 | Disponibilidad | `/disponibilidad` |
 | Plantillas | `/plantillas` |
+| Especialidades | `/especialidades` |
 | Secciones | `/secciones` |
 | Horarios | `/horarios` |
 | Horarios docentes | `/horarios/docentes` |
@@ -141,7 +142,7 @@ Bloques:              175
 
 - **Ciclo**: nivel educativo; agrupa grados.
 - **Plan**: organización curricular de uno o más grados.
-- **Grado**: 7°, 1° BATIN, etc.
+- **Curso**: 1°, 2°, 3°; **grado**: 7°, 8°, 9°.
 - **Sección**: curso concreto, por ejemplo 7° A.
 - **Área**: agrupación de materias.
 - **Tipo de plan**: común, específico u optativo.

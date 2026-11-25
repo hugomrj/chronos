@@ -12,7 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.extensions import db
 from app.factory import create_app
 from app.models import (
-    AnioLectivo, AreaConocimiento, Aula, Bloque, Colegio, Grado, GradoMateria, Materia, Nivel,
+    AnioLectivo, AreaConocimiento, Aula, Bloque, Colegio, Grado, Materia, Nivel,
+    PlanEstudio, PlanGrado, PlanMateria,
     PlantillaHorario, Profesor, ProfesorDisponibilidad, Regla, Seccion,
     SeccionMateria, Turno,
 )
@@ -271,16 +272,25 @@ def seed():
                         tipo=tipo,
                     ))
 
+    planes_por_grado = {}
     for grado_nombre, plan in PLANES_GRADO.items():
         grado = Grado.query.filter_by(nombre=grado_nombre).first()
         if not grado:
             continue
+        plan_db, _ = get_or_create(
+            PlanEstudio, colegio_id=colegio.id, nombre=f'Plan {grado.nombre}',
+            defaults={'nivel_id': grado.nivel_id, 'orden': grado.orden,
+                      'activo': True},
+        )
+        planes_por_grado[grado.id] = plan_db
+        get_or_create(PlanGrado, plan_id=plan_db.id, grado_id=grado.id)
         for materia_nombre, horas in plan:
             materia = materias_por_nombre.get(materia_nombre)
             if not materia:
                 continue
             get_or_create(
-                GradoMateria, grado_id=grado.id, materia_id=materia.id,
+                PlanMateria, plan_id=plan_db.id, grado_id=grado.id,
+                materia_id=materia.id,
                 defaults={'horas_semanales': horas, 'max_bloques_por_dia': 1,
                           'requiere_bloque_doble': False},
             )
@@ -299,20 +309,24 @@ def seed():
         if not (grado and turno and plantilla):
             continue
 
+        plan_db = planes_por_grado.get(grado.id)
+        if not plan_db:
+            continue
         seccion = Seccion.query.filter_by(
             anio_lectivo_id=anio.id, grado_id=grado.id,
-            turno_id=turno.id, nombre=seccion_nombre,
+            plan_id=plan_db.id, turno_id=turno.id, nombre=seccion_nombre,
         ).first()
         if not seccion:
             seccion = Seccion(
-                anio_lectivo_id=anio.id, grado_id=grado.id, turno_id=turno.id,
+                anio_lectivo_id=anio.id, grado_id=grado.id,
+                plan_id=plan_db.id, turno_id=turno.id,
                 nombre=seccion_nombre, aula_base_id=aula.id if aula else None,
                 plantilla_id=plantilla.id,
             )
             db.session.add(seccion)
             db.session.flush()
 
-        for gm in grado.grado_materias:
+        for gm in PlanMateria.query.filter_by(plan_id=plan_db.id, grado_id=grado.id).all():
             existe = SeccionMateria.query.filter_by(
                 seccion_id=seccion.id, materia_id=gm.materia_id
             ).first()

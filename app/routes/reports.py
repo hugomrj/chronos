@@ -5,8 +5,9 @@ from flask_login import login_required
 
 from app.extensions import db
 from app.models import (
-    AnioLectivo, AreaConocimiento, Grado, GradoMateria, HorarioCelda,
-    HorarioVersion, Materia, PlanEstudio, Profesor, Seccion, SeccionMateria,
+    AnioLectivo, AreaConocimiento, Grado, HorarioCelda,
+    HorarioVersion, Materia, PlanEstudio, PlanMateria, Profesor, Seccion,
+    SeccionMateria,
     Turno,
 )
 from app.utils.helpers import (
@@ -90,13 +91,12 @@ def register_report_routes(app):
 
         grados = []
         if plan:
-            grados = Grado.query.filter_by(plan_id=plan.id) \
-                                 .order_by(Grado.orden, Grado.nombre).all()
+            grados = sorted(plan.grados, key=lambda g: (g.orden, g.nombre))
         grado = None
         grado_id = request.args.get('grado_id', type=int)
         if grado_id:
             grado = db.session.get(Grado, grado_id)
-            if grado and (not plan or grado.plan_id != plan.id):
+            if grado and (not plan or grado not in plan.grados):
                 grado = None
         if grado is None and grados:
             grado = grados[0]
@@ -108,7 +108,8 @@ def register_report_routes(app):
         totales_seccion = {}
         if anio and grado:
             secciones = Seccion.query.filter_by(
-                anio_lectivo_id=anio.id, grado_id=grado.id
+                anio_lectivo_id=anio.id, grado_id=grado.id,
+                plan_id=plan.id if plan else None,
             ).order_by(Seccion.nombre).all()
             seccion_ids = [s.id for s in secciones]
             sms = SeccionMateria.query.filter(
@@ -144,8 +145,9 @@ def register_report_routes(app):
             for sm in sms:
                 totales_seccion[sm.seccion_id] = totales_seccion.get(sm.seccion_id, 0) + sm.horas_semanales
 
-            items = GradoMateria.query.filter_by(grado_id=grado.id) \
-                                       .join(Materia).order_by(Materia.nombre).all()
+            items = PlanMateria.query.filter_by(
+                plan_id=plan.id, grado_id=grado.id
+            ).join(Materia).order_by(Materia.nombre).all()
 
             orden_tipo = {'comun': 1, 'especifico': 2, 'optativo': 3}
             filas = []

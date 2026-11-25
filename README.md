@@ -30,9 +30,10 @@ de optimización que evita choques de profesores, aulas y secciones.
   (común / específico / optativo).
 - Duración de la hora cátedra configurable por institución (`minutos_hora_catedra`).
 - Límite semanal de horas por área y horas semanales por profesor con historial por año.
-- Profesores con materias habilitadas, carga horaria y disponibilidad semanal.
+- Profesores con materias y especialidades habilitadas, carga horaria y disponibilidad semanal.
+- Especialidades BATIN/BATAN, plan de estudios por curso y selección de plan por sección.
 - Plantillas de horario con bloques de clase y receso.
-- Secciones por año/grado/turno con plan de estudios por grado y por sección.
+- Secciones por año/curso/turno con plan de estudios y especialidad por sección.
 - Reglas obligatorias/deseables con alcance y parámetros JSON.
 - Motor MILP con restricciones duras y reglas ponderadas.
 - Versiones de horario: borrador, publicación, archivo, duplicado y regeneración

@@ -119,4 +119,5 @@ def etiqueta_bloque(bloque):
 
 def etiqueta_seccion(seccion):
     """Etiqueta corta para reportes: '1° BATIN A'."""
-    return f'{seccion.grado.nombre} {seccion.nombre}'.strip()
+    especialidad = f' {seccion.especialidad.nombre}' if seccion.especialidad else ''
+    return f'{seccion.grado.nombre}{especialidad} {seccion.nombre}'.strip()

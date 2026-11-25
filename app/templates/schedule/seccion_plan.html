@@ -12,13 +12,15 @@
     <h1>Plan · {{ seccion.grado.nombre }} {{ seccion.nombre }}</h1>
     <p>
       {{ seccion.anio_lectivo.nombre }} · {{ seccion.turno.nombre }} · {{ seccion.plantilla.nombre }}
+      {% if seccion.plan %} · Plan {{ seccion.plan.nombre }}{% endif %}
+      {% if seccion.especialidad %} · {{ seccion.especialidad.nombre }}{% endif %}
       {% if seccion.aula_base %} · Aula base {{ seccion.aula_base.nombre }}{% endif %}
     </p>
   </div>
   <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
     <form method="post" action="{{ url_for('seccion_plan_sincronizar', seccion_id=seccion.id) }}">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-      <button class="btn btn-ghost" type="submit">Sincronizar desde el grado</button>
+      <button class="btn btn-ghost" type="submit">Sincronizar desde el plan</button>
     </form>
     <a href="{{ url_for('seccion_plan', seccion_id=seccion.id, nuevo=1) }}" class="btn btn-primary">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -206,7 +208,7 @@
 
   <div class="panel-foot">
     <span>Total: {{ items|length }} materia(s) · {{ total_horas }} horas semanales.</span>
-    <a href="{{ url_for('grado_plan', grado_id=seccion.grado_id) }}" class="btn btn-ghost btn-sm">Editar plan del grado</a>
+    <a href="{{ url_for('grado_plan', grado_id=seccion.grado_id, plan_id=seccion.plan_id) }}" class="btn btn-ghost btn-sm">Editar plan del grado</a>
   </div>
 </section>
 {% endblock %}

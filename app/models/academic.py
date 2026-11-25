@@ -21,6 +21,29 @@ class Nivel(BaseModel):
         return f'<Nivel {self.nombre}>'
 
 
+class Especialidad(BaseModel):
+    __tablename__ = 'especialidad'
+    __table_args__ = (
+        db.UniqueConstraint('colegio_id', 'nombre',
+                            name='uq_especialidad_colegio_nombre'),
+    )
+
+    colegio_id = db.Column(db.Integer, db.ForeignKey('colegio.id'), nullable=False)
+    nivel_id = db.Column(db.Integer, db.ForeignKey('nivel.id'), nullable=False)
+    nombre = db.Column(db.Text, nullable=False)
+    codigo = db.Column(db.Text)
+    activa = db.Column(db.Boolean, nullable=False, default=True, server_default='true')
+
+    nivel = db.relationship('Nivel', backref='especialidades')
+    materias = db.relationship(
+        'Materia', secondary='materia_especialidad',
+        back_populates='especialidades'
+    )
+
+    def __repr__(self):
+        return f'<Especialidad {self.nombre}>'
+
+
 class PlanEstudio(BaseModel):
     __tablename__ = 'plan_estudio'
     __table_args__ = (
@@ -29,12 +52,17 @@ class PlanEstudio(BaseModel):
 
     colegio_id = db.Column(db.Integer, db.ForeignKey('colegio.id'), nullable=False)
     nivel_id = db.Column(db.Integer, db.ForeignKey('nivel.id'), nullable=False)
+    especialidad_id = db.Column(db.Integer,
+                                db.ForeignKey('especialidad.id', ondelete='SET NULL'))
     nombre = db.Column(db.Text, nullable=False)
     orden = db.Column(db.Integer, nullable=False, default=0, server_default='0')
     activo = db.Column(db.Boolean, nullable=False, default=True, server_default='true')
 
     nivel = db.relationship('Nivel', backref='planes_estudio')
-    grados = db.relationship('Grado', back_populates='plan')
+    especialidad = db.relationship('Especialidad', backref='planes')
+    grados = db.relationship(
+        'Grado', secondary='plan_grado', back_populates='planes'
+    )
 
     def __repr__(self):
         return f'<PlanEstudio {self.nombre}>'
@@ -66,19 +94,40 @@ class Grado(BaseModel):
     )
 
     nivel_id = db.Column(db.Integer, db.ForeignKey('nivel.id'), nullable=False)
-    plan_id = db.Column(db.Integer, db.ForeignKey('plan_estudio.id',
-                                                  ondelete='SET NULL'))
     nombre = db.Column(db.Text, nullable=False)
     orden = db.Column(db.Integer, nullable=False, default=0, server_default='0')
 
     nivel = db.relationship('Nivel', back_populates='grados')
-    plan = db.relationship('PlanEstudio', back_populates='grados')
-    grado_materias = db.relationship(
-        'GradoMateria', back_populates='grado', cascade='all, delete-orphan'
+    planes = db.relationship(
+        'PlanEstudio', secondary='plan_grado', back_populates='grados'
+    )
+    plan_materias = db.relationship(
+        'PlanMateria', back_populates='grado', cascade='all, delete-orphan'
     )
 
     def __repr__(self):
         return f'<Grado {self.nombre}>'
+
+
+class PlanGrado(db.Model):
+    __tablename__ = 'plan_grado'
+
+    plan_id = db.Column(db.Integer,
+                        db.ForeignKey('plan_estudio.id', ondelete='CASCADE'),
+                        primary_key=True)
+    grado_id = db.Column(db.Integer, db.ForeignKey('grado.id'),
+                         primary_key=True)
+
+
+class MateriaEspecialidad(db.Model):
+    __tablename__ = 'materia_especialidad'
+
+    materia_id = db.Column(db.Integer,
+                           db.ForeignKey('materia.id', ondelete='CASCADE'),
+                           primary_key=True)
+    especialidad_id = db.Column(db.Integer,
+                                db.ForeignKey('especialidad.id', ondelete='CASCADE'),
+                                primary_key=True)
 
 
 class Turno(BaseModel):
@@ -142,8 +191,9 @@ class Materia(BaseModel):
     colegio = db.relationship('Colegio', back_populates='materias')
     nivel = db.relationship('Nivel', back_populates='materias')
     area = db.relationship('AreaConocimiento', back_populates='materias')
-    grado_materias = db.relationship(
-        'GradoMateria', back_populates='materia', cascade='all, delete-orphan'
+    especialidades = db.relationship(
+        'Especialidad', secondary='materia_especialidad',
+        back_populates='materias'
     )
 
     def __repr__(self):

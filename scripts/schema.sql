@@ -44,23 +44,39 @@ CREATE TABLE turno (
 );
 
 -- Un ciclo educativo (nivel) puede tener varios planes.
-CREATE TABLE plan_estudio (
+CREATE TABLE especialidad (
   id         serial PRIMARY KEY,
   colegio_id int  NOT NULL REFERENCES colegio(id),
   nivel_id   int  NOT NULL REFERENCES nivel(id),
-  nombre     text NOT NULL,                -- 'E.E.B. 7-9', 'BATIN', 'BATAN'
-  orden      int  NOT NULL DEFAULT 0,
-  activo     boolean NOT NULL DEFAULT true,
+  nombre     text NOT NULL,
+  codigo     text,
+  activa     boolean NOT NULL DEFAULT true,
+  UNIQUE (colegio_id, nombre)
+);
+
+CREATE TABLE plan_estudio (
+  id              serial PRIMARY KEY,
+  colegio_id      int  NOT NULL REFERENCES colegio(id),
+  nivel_id        int  NOT NULL REFERENCES nivel(id),
+  especialidad_id int  REFERENCES especialidad(id) ON DELETE SET NULL,
+  nombre          text NOT NULL,           -- 'E.E.B. 7-9', 'BATIN', 'BATAN'
+  orden           int  NOT NULL DEFAULT 0,
+  activo          boolean NOT NULL DEFAULT true,
   UNIQUE (colegio_id, nombre)
 );
 
 CREATE TABLE grado (
   id       serial PRIMARY KEY,
   nivel_id int  NOT NULL REFERENCES nivel(id),
-  plan_id  int  REFERENCES plan_estudio(id) ON DELETE SET NULL,
-  nombre   text NOT NULL,                  -- '7mo grado'
+  nombre   text NOT NULL,                  -- '7mo grado', '1° curso'
   orden    int  NOT NULL DEFAULT 0,
   UNIQUE (nivel_id, nombre)
+);
+
+CREATE TABLE plan_grado (
+  plan_id  int NOT NULL REFERENCES plan_estudio(id) ON DELETE CASCADE,
+  grado_id int NOT NULL REFERENCES grado(id),
+  PRIMARY KEY (plan_id, grado_id)
 );
 
 CREATE TABLE aula (
@@ -84,6 +100,12 @@ CREATE TABLE materia (
   tipo_aula_requerida text CHECK (tipo_aula_requerida IN
                         ('regular','laboratorio','informatica','gimnasio','otro')),
   UNIQUE (colegio_id, nivel_id, nombre, area_id)
+);
+
+CREATE TABLE materia_especialidad (
+  materia_id      int NOT NULL REFERENCES materia(id) ON DELETE CASCADE,
+  especialidad_id int NOT NULL REFERENCES especialidad(id) ON DELETE CASCADE,
+  PRIMARY KEY (materia_id, especialidad_id)
 );
 
 -- Areas de conocimiento: agrupan materias y pueden solaparse.
@@ -131,15 +153,18 @@ CREATE TABLE seccion (
   id               serial PRIMARY KEY,
   anio_lectivo_id  int  NOT NULL REFERENCES anio_lectivo(id),
   grado_id         int  NOT NULL REFERENCES grado(id),
+  plan_id          int  NOT NULL REFERENCES plan_estudio(id),
+  especialidad_id  int  REFERENCES especialidad(id),
   turno_id         int  NOT NULL REFERENCES turno(id),
-  nombre           text NOT NULL,          -- 'A', 'B' (puede ser vacio si no hay secciones)
+  nombre           text NOT NULL,          -- 'A', 'B'
   aula_base_id     int  REFERENCES aula(id),
   plantilla_id     int  NOT NULL REFERENCES plantilla_horario(id),
-  UNIQUE (anio_lectivo_id, grado_id, turno_id, nombre)
+  UNIQUE (anio_lectivo_id, grado_id, turno_id, nombre, plan_id)
 );
 
--- Plan base por grado
-CREATE TABLE grado_materia (
+-- Plan de materias por plan y curso
+CREATE TABLE plan_materia (
+  plan_id              int NOT NULL REFERENCES plan_estudio(id) ON DELETE CASCADE,
   grado_id             int NOT NULL REFERENCES grado(id),
   materia_id           int NOT NULL REFERENCES materia(id),
   horas_semanales      int NOT NULL CHECK (horas_semanales > 0),
@@ -147,10 +172,10 @@ CREATE TABLE grado_materia (
   requiere_bloque_doble boolean NOT NULL DEFAULT false,
   tipo_plan            text NOT NULL DEFAULT 'comun'
                        CHECK (tipo_plan IN ('comun','especifico','optativo')),
-  PRIMARY KEY (grado_id, materia_id)
+  PRIMARY KEY (plan_id, grado_id, materia_id)
 );
 
--- Plan efectivo por seccion (se copia de grado_materia y se puede ajustar)
+-- Plan efectivo por seccion (se copia de plan_materia y se puede ajustar)
 CREATE TABLE seccion_materia (
   id                    serial PRIMARY KEY,
   seccion_id            int NOT NULL REFERENCES seccion(id) ON DELETE CASCADE,
@@ -186,6 +211,12 @@ CREATE TABLE profesor_materia (
   profesor_id int NOT NULL REFERENCES profesor(id) ON DELETE CASCADE,
   materia_id  int NOT NULL REFERENCES materia(id),
   PRIMARY KEY (profesor_id, materia_id)
+);
+
+CREATE TABLE profesor_especialidad (
+  profesor_id     int NOT NULL REFERENCES profesor(id) ON DELETE CASCADE,
+  especialidad_id int NOT NULL REFERENCES especialidad(id) ON DELETE CASCADE,
+  PRIMARY KEY (profesor_id, especialidad_id)
 );
 
 -- Historico de horas semanales por profesor y año lectivo.

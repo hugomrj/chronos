@@ -4,7 +4,7 @@
 
 {% block content %}
 {% if anio %}
-{{ page_head('Secciones', 'Cursos concretos del año lectivo: grado + turno + nombre (A, B, Única).',
+{{ page_head('Secciones', 'Cursos concretos del año lectivo: curso + plan + turno + sección.',
              url_for('secciones', nuevo=1), 'Nueva sección') }}
 {% else %}
 <div class="page-head">
@@ -18,6 +18,7 @@
 
 {% if anio and (edit or form or request.args.get('nuevo')) %}
 {% set v_grado = (form.get('grado_id') or '') if form else (edit.grado_id if edit else '') %}
+{% set v_plan = (form.get('plan_id') or '') if form else (edit.plan_id if edit else '') %}
 {% set v_turno = (form.get('turno_id') or '') if form else (edit.turno_id if edit else '') %}
 {% set v_plantilla = (form.get('plantilla_id') or '') if form else (edit.plantilla_id if edit else '') %}
 {% set v_aula = (form.get('aula_base_id') or '') if form else (edit.aula_base_id if edit else '') %}
@@ -32,13 +33,25 @@
     {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
     <div class="form-grid">
       <div class="field fw-1">
-        <label for="grado_id">Grado</label>
+        <label for="grado_id">Grado / curso</label>
         <select class="input vanilla-select" id="grado_id" name="grado_id" required>
-          <option value="">Seleccioná un grado</option>
+          <option value="">Seleccioná un grado o curso</option>
           {% for g in grados %}
           <option value="{{ g.id }}" {{ 'selected' if (v_grado|string) == (g.id|string) }}>{{ g.nivel.nombre }} · {{ g.nombre }}</option>
           {% endfor %}
         </select>
+      </div>
+      <div class="field fw-1">
+        <label for="plan_id">Especialidad / plan</label>
+        <select class="input vanilla-select" id="plan_id" name="plan_id" required>
+          <option value="">Seleccioná un plan</option>
+          {% for p in planes %}
+          <option value="{{ p.id }}" {{ 'selected' if (v_plan|string) == (p.id|string) }}>
+            {{ p.nombre }}{% if p.especialidad %} · {{ p.especialidad.nombre }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+        <div class="hint">La especialidad se toma del plan elegido.</div>
       </div>
       <div class="field fw-1">
         <label for="turno_id">Turno</label>
@@ -74,11 +87,7 @@
           </option>
           {% endfor %}
         </select>
-        <div class="hint">
-          La plantilla debe pertenecer al turno elegido.
-          Para planes distintos (por ejemplo BATIN y BATAN), podés crear grados separados
-          o nombrar la sección <b>A BATIN</b> / <b>A BATAN</b>.
-        </div>
+        <div class="hint">La plantilla debe pertenecer al turno elegido.</div>
       </div>
     </div>
     <div class="form-actions">
@@ -104,7 +113,7 @@
         <th class="c-state">Turno</th>
         <th class="c-state">Aula base</th>
         <th class="c-state">Plantilla</th>
-        <th>Plan</th>
+        <th>Plan / especialidad</th>
         <th style="width: 175px; text-align: right;">Acciones</th>
       </tr>
     </thead>
@@ -115,11 +124,13 @@
       <tr>
         <td>
           <b>{{ s.grado.nombre }} · {{ s.nombre }}</b>
-          <div class="hint" style="margin-top: 0.1rem;">{{ s.grado.nivel.nombre }}</div>
+          <div class="hint" style="margin-top: 0.1rem;">
+            {{ s.grado.nivel.nombre }}{% if s.especialidad %} · {{ s.especialidad.nombre }}{% endif %}
+          </div>
         </td>
         <td class="c-state">{{ s.turno.nombre }}</td>
         <td class="c-state">{{ s.aula_base.nombre if s.aula_base else '—' }}</td>
-        <td class="c-state">{{ s.plantilla.nombre }}</td>
+        <td class="c-state">{{ s.plan.nombre }}</td>
         <td>
           {% if total > disp %}
             <span class="status" style="color: var(--warn)">{{ total }}/{{ disp }} h</span>
@@ -141,7 +152,7 @@
     </tbody>
   </table>
   {% else %}
-  {{ empty_state('Todavía no hay secciones', 'Creá la primera sección: elegí grado, turno y plantilla. El plan del grado se copia automáticamente.') }}
+  {{ empty_state('Todavía no hay secciones', 'Creá la primera sección: elegí grado, turno y plantilla. El plan de estudios elegido se copia automáticamente.') }}
   {% endif %}
 </section>
 {% endif %}

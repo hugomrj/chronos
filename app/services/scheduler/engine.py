@@ -60,6 +60,19 @@ def _sanitizar(texto):
     return ''.join(c if c.isalnum() else '_' for c in str(texto))
 
 
+
+def _profesor_habilitado(profesor, seccion, materia):
+    """Materia habilitada y, si es técnica, especialidad compatible."""
+    if materia not in profesor.materias:
+        return False
+    if not materia.especialidades:
+        return True
+    if not seccion.especialidad:
+        return False
+    if seccion.especialidad not in materia.especialidades:
+        return False
+    return seccion.especialidad in profesor.especialidades
+
 def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fijados=None):
     """Genera un horario para las secciones recibidas (de un mismo turno)."""
     inicio = _time.perf_counter()
@@ -158,6 +171,12 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fi
 
         if sm.id in profesor_forzado:
             prof = profesor_forzado[sm.id]
+            if not _profesor_habilitado(prof, item.seccion, sm.materia):
+                sin_profesor.append(
+                    f'{prof.nombre} no está habilitado para {sm.materia.nombre} '
+                    f'en {item.seccion.grado.nombre} {item.seccion.nombre}.'
+                )
+                continue
             item.profesor = prof
             disponibles = sum(1 for b in item.bloques if profesor_disponible(prof, b))
             if disponibles == 0:
@@ -173,6 +192,12 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fi
                     f' el profesor asignado no está activo.'
                 )
                 continue
+            if not _profesor_habilitado(prof, item.seccion, sm.materia):
+                sin_profesor.append(
+                    f'{prof.nombre} no está habilitado para {sm.materia.nombre} '
+                    f'en {item.seccion.grado.nombre} {item.seccion.nombre}.'
+                )
+                continue
             item.profesor = prof
             disponibles = sum(1 for b in item.bloques if profesor_disponible(prof, b))
             if disponibles == 0:
@@ -182,7 +207,10 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fi
                 )
                 continue
         else:
-            candidatos = [p for p in profesores_activos if sm.materia in p.materias]
+            candidatos = [
+                p for p in profesores_activos
+                if _profesor_habilitado(p, item.seccion, sm.materia)
+            ]
             candidatos = [p for p in candidatos
                           if any(profesor_disponible(p, b) for b in item.bloques)]
             if not candidatos:

@@ -4,7 +4,8 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models import (
-    Materia, Profesor, ProfesorDisponibilidad, ProfesorHorasAnio, Seccion,
+    Especialidad, Materia, Profesor, ProfesorDisponibilidad, ProfesorHorasAnio,
+    Seccion,
     SeccionMateria,
 )
 from app.utils.helpers import (
@@ -28,6 +29,10 @@ def register_teachers_routes(app):
                                 .order_by(Profesor.nombre).all(),
             materias=materias,
             materias_por_nivel=por_nivel,
+            especialidades=Especialidad.query.filter_by(
+                colegio_id=colegio.id, activa=True
+            ).order_by(Especialidad.nombre).all(),
+            especialidades_sel=(set(edit.especialidades) if edit else set()),
             edit=edit,
             form=form or {},
             errors=errors or [],
@@ -115,6 +120,14 @@ def register_teachers_routes(app):
         h_max = parse_int(request.form.get('horas_max_semana')) if request.form.get('horas_max_semana') else None
         activo = request.form.get('activo') == 'on'
 
+        especialidades_ids = request.form.getlist('especialidades')
+        especialidades = []
+        if especialidades_ids:
+            especialidades = Especialidad.query.filter(
+                Especialidad.id.in_([int(x) for x in especialidades_ids if x.isdigit()]),
+                Especialidad.colegio_id == colegio.id,
+            ).all()
+
         materias_ids = request.form.getlist('materias')
         materias = []
         if materias_ids:
@@ -154,6 +167,7 @@ def register_teachers_routes(app):
         item.horas_max_semana = h_max
         item.activo = activo
         item.materias = materias
+        item.especialidades = especialidades
 
         anio = anio_activo(colegio.id)
         if anio and h_max is not None:

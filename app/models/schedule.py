@@ -6,11 +6,13 @@ class Seccion(BaseModel):
     __tablename__ = 'seccion'
     __table_args__ = (
         db.UniqueConstraint('anio_lectivo_id', 'grado_id', 'turno_id', 'nombre',
-                            name='uq_seccion_anio_grado_turno_nombre'),
+                            'plan_id', name='uq_seccion_anio_grado_turno_nombre'),
     )
 
     anio_lectivo_id = db.Column(db.Integer, db.ForeignKey('anio_lectivo.id'), nullable=False)
     grado_id = db.Column(db.Integer, db.ForeignKey('grado.id'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('plan_estudio.id'), nullable=False)
+    especialidad_id = db.Column(db.Integer, db.ForeignKey('especialidad.id'))
     turno_id = db.Column(db.Integer, db.ForeignKey('turno.id'), nullable=False)
     nombre = db.Column(db.Text, nullable=False)
     aula_base_id = db.Column(db.Integer, db.ForeignKey('aula.id'))
@@ -18,6 +20,8 @@ class Seccion(BaseModel):
 
     anio_lectivo = db.relationship('AnioLectivo', back_populates='secciones')
     grado = db.relationship('Grado', backref='secciones')
+    plan = db.relationship('PlanEstudio', backref='secciones')
+    especialidad = db.relationship('Especialidad', backref='secciones')
     turno = db.relationship('Turno', backref='secciones')
     aula_base = db.relationship('Aula', foreign_keys=[aula_base_id], backref='secciones_base')
     plantilla = db.relationship('PlantillaHorario', backref='secciones')
@@ -30,9 +34,12 @@ class Seccion(BaseModel):
         return f'<Seccion {self.nombre}>'
 
 
-class GradoMateria(db.Model):
-    __tablename__ = 'grado_materia'
+class PlanMateria(db.Model):
+    __tablename__ = 'plan_materia'
 
+    plan_id = db.Column(db.Integer,
+                        db.ForeignKey('plan_estudio.id', ondelete='CASCADE'),
+                        primary_key=True)
     grado_id = db.Column(db.Integer, db.ForeignKey('grado.id'), primary_key=True)
     materia_id = db.Column(db.Integer, db.ForeignKey('materia.id'), primary_key=True)
     horas_semanales = db.Column(db.Integer, nullable=False)
@@ -43,12 +50,13 @@ class GradoMateria(db.Model):
     tipo_plan = db.Column(db.Text, nullable=False, default='comun',
                           server_default='comun')
 
-    grado = db.relationship('Grado', back_populates='grado_materias')
-    materia = db.relationship('Materia', back_populates='grado_materias')
+    plan = db.relationship('PlanEstudio', backref='materias_plan')
+    grado = db.relationship('Grado', back_populates='plan_materias')
+    materia = db.relationship('Materia', backref='plan_materias')
 
     __table_args__ = (
         db.CheckConstraint("tipo_plan IN ('comun','especifico','optativo')",
-                           name='ck_grado_materia_tipo_plan'),
+                           name='ck_plan_materia_tipo_plan'),
     )
 
 
