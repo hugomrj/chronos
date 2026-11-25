@@ -25,7 +25,9 @@
        or request.path.startswith('/niveles') or request.path.startswith('/grados')
        or request.path.startswith('/turnos') or request.path.startswith('/aulas')
        or request.path.startswith('/materias')
-       or request.path.startswith('/areas') or request.path.startswith('/planes') %}
+       or request.path.startswith('/areas')
+       or request.path.startswith('/especialidades')
+       or request.path.startswith('/planes') %}
     <div class="group {{ 'open' if estructura_activa }}">
       <button class="group-btn" data-group>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9h.01M9 12h.01M9 15h.01M9 18h.01"/></svg>
