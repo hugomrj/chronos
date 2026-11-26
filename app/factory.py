@@ -58,12 +58,13 @@ def create_app(config_name=None):
         from flask_login import current_user
         from app.models import Colegio
         from app.services.notifications import obtener_avisos
-        from app.utils.helpers import colegio_actual
+        from app.utils.colegio import colegio_actual
+        from app.utils.menu import MENU_POR_CLAVE
 
         actual, colegios, avisos = None, [], []
         try:
             actual = colegio_actual()
-            colegios = Colegio.query.order_by(Colegio.nombre).all()
+            colegios = [actual] if actual else []
             if actual and current_user.is_authenticated:
                 avisos = obtener_avisos(actual)
         except Exception:
@@ -73,9 +74,10 @@ def create_app(config_name=None):
             'csrf_token': csrf_token,
             'colegio_actual': actual,
             'colegios_disponibles': colegios,
-            'es_superadmin': bool(app.config.get('SUPERADMIN')),
+            'colegio_multiple': len(colegios) > 1,
             'notificaciones': avisos,
             'notificaciones_count': len(avisos),
+            'menu_items': MENU_POR_CLAVE,
         }
 
     @app.errorhandler(400)
@@ -86,5 +88,9 @@ def create_app(config_name=None):
     # Registrar rutas
     from app.routes.registry import register_routes
     register_routes(app)
+
+    # Control de acceso al menú según el rol
+    from app.utils.decorators import registrar_control_menu
+    registrar_control_menu(app)
 
     return app

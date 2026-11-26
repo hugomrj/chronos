@@ -9,7 +9,8 @@ from app.models import (
     HorarioCelda, HorarioVersion, Profesor, Seccion, SeccionMateria, Turno,
 )
 from app.services.notifications import obtener_avisos
-from app.utils.helpers import DIAS_SEMANA, anio_activo, colegio_actual
+from app.utils.helpers import DIAS_SEMANA
+from app.utils.colegio import anio_activo, colegio_actual
 
 DIAS_ESCOLARES = [d for d in DIAS_SEMANA if d <= 5]
 
@@ -151,7 +152,7 @@ def register_dashboard_routes(app):
     def dashboard():
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         anio = anio_activo(colegio.id)
         params = {'cid': colegio.id}

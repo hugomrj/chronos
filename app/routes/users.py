@@ -1,13 +1,13 @@
 import re
 
-from flask import current_app, flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 
 from app.extensions import bcrypt, db
-from app.models import Colegio, Profesor, Rol, Usuario
-from app.utils.decorators import admin_required
-from app.utils.helpers import colegio_actual, parse_int
+from app.models import Profesor, Rol, Usuario
+from app.utils.helpers import parse_int
+from app.utils.colegio import colegio_actual
 
 EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 
@@ -21,7 +21,7 @@ def register_users_routes(app):
             colegio=colegio,
             items=Usuario.query.filter_by(colegio_id=colegio.id)
                                .order_by(Usuario.email).all(),
-            roles=Rol.query.order_by(Rol.nombre).all(),
+            roles=Rol.query.order_by(Rol.es_master.desc(), Rol.nombre).all(),
             profesores=Profesor.query.filter_by(colegio_id=colegio.id)
                                      .order_by(Profesor.nombre).all(),
             edit=edit,
@@ -34,11 +34,10 @@ def register_users_routes(app):
     # ------------------------------------------------------------------
     @app.route('/usuarios')
     @login_required
-    @admin_required
     def usuarios():
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         edit = None
         edit_id = request.args.get('editar', type=int)
@@ -52,11 +51,10 @@ def register_users_routes(app):
 
     @app.route('/usuarios/guardar', methods=['POST'])
     @login_required
-    @admin_required
     def usuario_guardar():
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(Usuario, item_id) if item_id else None
@@ -128,11 +126,10 @@ def register_users_routes(app):
 
     @app.route('/usuarios/<int:item_id>/eliminar', methods=['POST'])
     @login_required
-    @admin_required
     def usuario_eliminar(item_id):
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item = db.get_or_404(Usuario, item_id)
         if item.colegio_id != colegio.id:
@@ -208,29 +205,25 @@ def register_users_routes(app):
     # ------------------------------------------------------------------
     @app.route('/configuracion')
     @login_required
-    @admin_required
     def configuracion():
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         return render_template(
             'users/configuracion.html',
             crumb='Configuración',
             colegio=colegio,
-            es_superadmin=current_app.config.get('SUPERADMIN', False),
-            total_colegios=Colegio.query.count(),
             total_usuarios=Usuario.query.filter_by(colegio_id=colegio.id).count(),
             total_profesores=Profesor.query.filter_by(colegio_id=colegio.id).count(),
         )
 
     @app.route('/configuracion/guardar', methods=['POST'])
     @login_required
-    @admin_required
     def configuracion_guardar():
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         nombre = (request.form.get('nombre') or '').strip()
         minutos = parse_int(request.form.get('minutos_hora_catedra'), 40)

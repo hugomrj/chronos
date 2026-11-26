@@ -47,7 +47,10 @@ de optimización que evita choques de profesores, aulas y secciones.
   un décimo bloque martes y jueves) y Nivel Medio 60 bloques (12 diarios).
 - Etiquetas configurables para filas no clase (Actividades Formativas, Almuerzo, Receso)
   desde `config.py`, sin cambios en la base.
-- Una instancia por colegio con `COLEGIO_ID`; el superadmin administra los colegios.
+- **Una instancia por colegio** con `COLEGIO_ID`.
+- **Roles**: `admin` administra su colegio (menú, usuarios, configuración y roles);
+  el resto de los roles ven solo las pantallas que el admin les habilite.
+- Menú por rol (`rol_menu`), aplicado en la vista y también en las rutas.
 - Usuarios, perfil, preferencias y configuración.
 
 ---
@@ -114,8 +117,8 @@ python scripts/init_schema.py
 5. Cargar datos iniciales y demo (idempotente):
 
 ```bash
-python scripts/seed_data.py
-python scripts/seed_estructura.py
+python scripts/seed_data.py        # roles master/admin y usuarios
+python scripts/cargar_demo.py --force  # opcional: datos de ejemplo
 ```
 
 6. Ejecutar en desarrollo:
@@ -130,25 +133,49 @@ o en producción:
 gunicorn -w 2 -b 127.0.0.1:8000 wsgi:app
 ```
 
-**Credenciales demo:** `admin@chronos.com` / `admin123`.
+**Credenciales demo:**
+
+- `master@chronos.com` / `admin123` — rol master (roles, menú y ajustes de instancia)
+- `admin@chronos.com` / `admin123` — rol admin (administra el colegio)
 
 ---
 
-## 🏫 Una instancia por colegio
+## 🏫 Instancias: una por colegio
 
-Cada colegio corre en su **propia instancia** (subdominio propio) usando el
-mismo código y la misma base de datos. Una instancia nunca ve datos de otra:
+Cada colegio corre en su **propia instancia** (subdominio propio), con el mismo
+código y la misma base de datos. La instancia sirve **un solo colegio**:
 
-- `COLEGIO_ID` en el `.env` define el colegio que sirve la instancia.
-- El login rechaza usuarios que no pertenecen a ese colegio.
-- No hay selector de colegio: el colegio se deriva de la configuración.
-- La gestión de colegios (`/colegios`) solo existe en la instancia maestra
-  (`SUPERADMIN=True`); en el resto responde 404.
+- `COLEGIO_ID` en el `.env` define qué colegio sirve.
+- El login rechaza usuarios de otro colegio.
+- Todas las consultas filtran por `colegio_id`.
+- **No hay pantalla de Colegios**: el alta de colegios es tarea de servidor.
 
-### Crear una instancia para un colegio nuevo
+### Ajustes de instancia (solo master)
 
-1. Registrar el colegio en la base (instancia maestra con `SUPERADMIN=True`,
-   menú **Colegios**) y anotar su `id`.
+`/ajustes` define cómo funciona la instalación. Hoy incluye **Uso de aulas**:
+
+- **Con aulas**: cada clase necesita un aula y el motor controla choques de aula.
+- **Sin aulas**: el horario se genera solo con profesor y sección; la pantalla
+  Aulas desaparece del menú.
+
+Cambiar la opción **no reestructura** los horarios existentes: hay que generarlos
+de nuevo.
+
+### Roles
+
+| Rol | Alcance |
+|---|---|
+| `admin` | Administra todo el colegio: menú completo + usuarios, configuración y roles |
+| Otros roles | Solo las pantallas que el admin les habilite |
+
+El admin define el menú de cada rol en **Roles y menú** (`/roles`).
+`Usuarios` y `Configuración` quedan siempre habilitados para el admin.
+Los demás usuarios solo ven las pantallas marcadas para su rol, y si escriben
+una URL no permitida se los redirige al dashboard.
+
+### Alta de un colegio nuevo
+
+1. Crear el colegio en la base (script o SQL) y anotar su `id`.
 2. Generar el entorno de la instancia:
 
 ```bash
@@ -164,9 +191,8 @@ python scripts/nuevo_colegio.py 2 sanjose
 gunicorn -w 2 -b 127.0.0.1:8001 wsgi:app
 ```
 
-5. Publicar con nginx/apache en el subdominio, apuntando al puerto de la instancia.
-
-Cada colegio consume pocos recursos (Flask + 2 workers); la base es compartida.
+5. Publicar el subdominio en nginx/apache apuntando al puerto de la instancia.
+6. Entrar como `admin` y cargar estructura, profesores y horarios.
 
 ---
 
@@ -196,8 +222,9 @@ python -m unittest discover -s tests
 - Cookies de sesión `Secure`, `HttpOnly` y `SameSite=Lax` en producción.
 - Login restringido al colegio de la instancia (`COLEGIO_ID`).
 - Restricciones de integridad en PostgreSQL para choques de horario.
-- Roles: actualmente solo `admin`; la UI de usuarios y configuración está
-  protegida por rol.
+- El menú de cada rol se define en **Roles y menú** y se valida también en las
+  rutas, no solo en la vista.
+- Solo el rol `admin` accede a usuarios, configuración y roles.
 
 ---
 

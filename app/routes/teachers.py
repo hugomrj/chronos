@@ -9,8 +9,10 @@ from app.models import (
     SeccionMateria,
 )
 from app.utils.helpers import (
-    DIAS_SEMANA, anio_activo, colegio_actual, parse_int, parse_time,
+    DIAS_SEMANA, parse_int, parse_time,
 )
+from app.utils.colegio import anio_activo, colegio_actual
+
 
 
 def register_teachers_routes(app):
@@ -87,7 +89,7 @@ def register_teachers_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         edit = None
         edit_id = request.args.get('editar', type=int)
@@ -107,7 +109,7 @@ def register_teachers_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(Profesor, item_id) if item_id else None
@@ -213,7 +215,7 @@ def register_teachers_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         profesor_id = request.args.get('profesor_id', type=int)
         return render_template('teachers/disponibilidad.html',
@@ -225,7 +227,7 @@ def register_teachers_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         profesor_id = request.form.get('profesor_id', type=int)
         profesor = db.session.get(Profesor, profesor_id) if profesor_id else None

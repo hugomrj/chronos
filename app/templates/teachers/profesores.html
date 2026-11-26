@@ -3,8 +3,7 @@
 {% block title %}Profesores{% endblock %}
 
 {% block content %}
-{{ page_head('Profesores', 'Docentes del colegio, sus materias y su carga horaria.',
-             url_for('profesores', nuevo=1), 'Nuevo profesor') }}
+{{ page_head('Profesores', 'Docentes del colegio, sus materias y su carga horaria.') }}
 
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_activo = form.get('activo') if form else (edit.activo if edit else true) %}
@@ -112,6 +111,13 @@
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
+<div class="page-actions">
+  <a href="{{ url_for('profesores', nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nuevo profesor
+  </a>
+</div>
+
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>

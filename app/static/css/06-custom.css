@@ -1280,3 +1280,45 @@
   letter-spacing: .1em;
   color: var(--text-2);
 }
+
+
+/* Acciones principales de la pantalla, debajo del encabezado */
+.page-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+
+/* Selector de colegio para el rol master */
+.colegio-picker-wrap { margin-left: 0.5rem; }
+.colegio-picker {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 16rem;
+}
+.colegio-picker:hover { border-color: var(--acc); }
+
+
+/* Tarjetas del índice de reportes: mismo alto y botón alineado */
+.reporte-card { display: flex; flex-direction: column; }
+.reporte-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  flex: 1;
+  padding: 1.25rem 1.375rem;
+  position: relative;
+  z-index: 1;
+}

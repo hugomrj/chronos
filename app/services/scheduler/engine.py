@@ -73,8 +73,13 @@ def _profesor_habilitado(profesor, seccion, materia):
         return False
     return seccion.especialidad in profesor.especialidades
 
-def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fijados=None):
-    """Genera un horario para las secciones recibidas (de un mismo turno)."""
+def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fijados=None,
+                    usa_aulas=True):
+    """Genera un horario para las secciones recibidas (de un mismo turno).
+
+    Con `usa_aulas=False` el modelo no asigna ni controla aulas: solo profesor,
+    sección y bloques.
+    """
     inicio = _time.perf_counter()
     advertencias = []
     detalle = []
@@ -102,8 +107,9 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fi
             )
             continue
         for sm in seccion.materias:
-            items.append(_Item(sm, seccion, bloques,
-                               aulas_elegibles(sm, seccion, aulas)))
+            item = _Item(sm, seccion, bloques,
+                         aulas_elegibles(sm, seccion, aulas) if usa_aulas else [])
+            items.append(item)
 
     if detalle:
         return ResultadoGeneracion(
@@ -162,7 +168,7 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fi
 
     for item in items:
         sm = item.sm
-        if not item.aulas:
+        if usa_aulas and not item.aulas:
             habitaciones_faltantes.append(
                 f'{sm.materia.nombre} en {item.seccion.grado.nombre} {item.seccion.nombre}'
                 f' no tiene aulas disponibles del tipo requerido.'
@@ -406,20 +412,21 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fi
                     name=f"prof_{prof_id}_{b1.id}_{b2.id}",
                 )
 
-    # Aulas: y[sm, bloque, aula]
+    # Aulas: y[sm, bloque, aula]. Sin aulas no existe la variable.
     y = {}
-    for item in items:
-        for b in item.bloques:
-            aula_vars = []
-            for aula in item.aulas:
-                var = prob.add_variable(
-                    f"y_{item.sm.id}_{b.id}_{aula.id}", cat='Binary')
-                y[(item.sm.id, b.id, aula.id)] = var
-                aula_vars.append(var)
-            prob.addConstraint(
-                lpSum(aula_vars) == x[(item.sm.id, b.id)],
-                name=f"aula_{item.sm.id}_{b.id}",
-            )
+    if usa_aulas:
+        for item in items:
+            for b in item.bloques:
+                aula_vars = []
+                for aula in item.aulas:
+                    var = prob.add_variable(
+                        f"y_{item.sm.id}_{b.id}_{aula.id}", cat='Binary')
+                    y[(item.sm.id, b.id, aula.id)] = var
+                    aula_vars.append(var)
+                prob.addConstraint(
+                    lpSum(aula_vars) == x[(item.sm.id, b.id)],
+                    name=f"aula_{item.sm.id}_{b.id}",
+                )
 
     # Celdas fijadas: x = 1 y, si tiene aula, y = 1
     for sm_id, fijos in fijos_por_sm.items():
@@ -430,14 +437,14 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fi
                 name=f"fijo_x_{sm_id}_{b_id}",
             )
             aula_id = fijo.get('aula_id')
-            if aula_id:
+            if aula_id and usa_aulas:
                 prob.addConstraint(
                     y[(sm_id, b_id, aula_id)] == 1,
                     name=f"fijo_y_{sm_id}_{b_id}_{aula_id}",
                 )
 
     # Choques de aula
-    aulas_usadas = {a.id: a for item in items for a in item.aulas}
+    aulas_usadas = {a.id: a for item in items for a in item.aulas} if usa_aulas else {}
     for aula_id in aulas_usadas:
         # Dos clases en el mismo bloque para la misma aula
         for b in bloques_globales.values():
@@ -657,12 +664,13 @@ def generar_horario(secciones, profesores, aulas, reglas, limite_segundos=30, fi
             )
         for b in elegidos:
             aula = None
-            mejor = -1.0
-            for a in item.aulas:
-                valor = y[(item.sm.id, b.id, a.id)].value() or 0
-                if valor > mejor:
-                    mejor = valor
-                    aula = a
+            if usa_aulas:
+                mejor = -1.0
+                for a in item.aulas:
+                    valor = y[(item.sm.id, b.id, a.id)].value() or 0
+                    if valor > mejor:
+                        mejor = valor
+                        aula = a
             asignaciones.append(Asignacion(
                 seccion_materia_id=item.sm.id,
                 bloque_id=b.id,

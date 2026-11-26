@@ -41,6 +41,10 @@ def register_routes(app):
     from app.routes.users import register_users_routes
     register_users_routes(app)
 
+    # Roles y menú (solo master)
+    from app.routes.roles import register_roles_routes
+    register_roles_routes(app)
+
     # Guía de usuario
     from app.routes.docs import register_docs_routes
     register_docs_routes(app)

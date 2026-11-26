@@ -6,7 +6,8 @@ from flask_login import login_required
 from app.extensions import db
 from app.models import Materia, Nivel, Profesor, Regla
 from app.services.scheduler.catalog import REGLAS_CATALOGO
-from app.utils.helpers import colegio_actual, parse_int
+from app.utils.helpers import parse_int
+from app.utils.colegio import colegio_actual
 
 
 def register_rules_routes(app):
@@ -35,7 +36,7 @@ def register_rules_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         edit = None
         edit_id = request.args.get('editar', type=int)
@@ -52,7 +53,7 @@ def register_rules_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(Regla, item_id) if item_id else None

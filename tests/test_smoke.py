@@ -11,12 +11,13 @@ class SmokeTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = create_app()
-        cls.app.config.update(TESTING=True, CSRF_ENABLED=False)
+        # Los tests usan la instancia de un colegio (datos académicos).
+        cls.app.config.update(TESTING=True, CSRF_ENABLED=False, COLEGIO_ID=1)
         cls.client = cls.app.test_client()
 
     def test_login_y_paginas_principales(self):
         r = self.client.post('/login', data={
-            'email': 'admin@chronos.com',
+            'email': 'master@chronos.com',
             'password': 'admin123',
         })
         self.assertEqual(r.status_code, 302)
@@ -35,7 +36,7 @@ class SmokeTest(unittest.TestCase):
 
     def test_areas_y_planes(self):
         self.client.post('/login', data={
-            'email': 'admin@chronos.com',
+            'email': 'master@chronos.com',
             'password': 'admin123',
         })
         with self.app.app_context():
@@ -68,7 +69,7 @@ class SmokeTest(unittest.TestCase):
 
     def test_configuracion_hora_catedra(self):
         self.client.post('/login', data={
-            'email': 'admin@chronos.com',
+            'email': 'master@chronos.com',
             'password': 'admin123',
         })
         r = self.client.post('/configuracion/guardar', data={
@@ -81,20 +82,25 @@ class SmokeTest(unittest.TestCase):
             'nombre': 'Colegio Demo', 'minutos_hora_catedra': '40',
         })
 
-    def test_colegios_solo_para_superadmin(self):
+    def test_instancia_de_un_colegio(self):
+        # Cada instancia sirve un solo colegio: no se administran colegios.
         self.client.post('/login', data={
-            'email': 'admin@chronos.com',
-            'password': 'admin123',
+            'email': 'admin@chronos.com', 'password': 'admin123',
         })
-        # La instancia normal no administra colegios.
-        self.assertEqual(self.client.get('/colegios').status_code, 404)
+        r = self.client.get('/colegios')
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/dashboard', r.headers.get('Location', ''))
+
+        # El admin gestiona roles y usuarios de su colegio.
+        self.assertEqual(self.client.get('/roles').status_code, 200)
+        self.assertEqual(self.client.get('/usuarios').status_code, 200)
 
     def test_instancia_ajena_rechaza_login(self):
         app = create_app()
         app.config.update(TESTING=True, CSRF_ENABLED=False, COLEGIO_ID=9999)
         client = app.test_client()
         r = client.post('/login', data={
-            'email': 'admin@chronos.com',
+            'email': 'master@chronos.com',
             'password': 'admin123',
         })
         self.assertEqual(r.status_code, 200)
@@ -109,12 +115,12 @@ class SmokeTest(unittest.TestCase):
         token = re.search(r'name="_csrf_token" value="([^"]+)"', html).group(1)
 
         self.assertEqual(client.post('/login', data={
-            'email': 'admin@chronos.com',
+            'email': 'master@chronos.com',
             'password': 'admin123',
         }).status_code, 400)
 
         self.assertEqual(client.post('/login', data={
-            'email': 'admin@chronos.com',
+            'email': 'master@chronos.com',
             'password': 'admin123',
             '_csrf_token': token,
         }).status_code, 302)

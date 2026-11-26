@@ -3,8 +3,7 @@
 {% block title %}Plantillas de horario{% endblock %}
 
 {% block content %}
-{{ page_head('Plantillas de horario', 'Estructura de bloques por turno: horas de clase y recesos de cada día.',
-             url_for('plantillas', nuevo=1), 'Nueva plantilla') }}
+{{ page_head('Plantillas de horario', 'Estructura de bloques por turno: horas de clase y recesos de cada día.') }}
 
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_turno = (form.get('turno_id') or '') if form else (edit.turno_id if edit else '') %}
@@ -42,7 +41,30 @@
 </section>
 {% endif %}
 
+{% if not (edit or form or request.args.get('nuevo')) and not turnos %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head"><h2>No hay turnos cargados</h2></div>
+  <div class="form-panel">
+    <div class="hint">
+      Una plantilla siempre pertenece a un turno.
+      {% if current_user.puede_ver('turnos') %}
+      <a href="{{ url_for('turnos') }}" style="color: var(--acc-txt); font-weight: 600;">Configurar turnos</a>
+      {% else %}
+      Pedile al administrador master que habilite la pantalla de Turnos.
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 {% if not (edit or form or request.args.get('nuevo')) %}
+<div class="page-actions">
+  <a href="{{ url_for('plantillas', nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nueva plantilla
+  </a>
+</div>
+
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>

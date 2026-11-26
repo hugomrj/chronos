@@ -22,6 +22,7 @@ El cliente trabaja con:
 3. **Planes**
    - `plan_estudio` pertenece a un ciclo.
    - El plan ahora vive en `seccion.plan_id`; un curso puede tener varios planes/secciones.
+   - `grado.especialidad_id` marca la especialidad por defecto del curso (opcional).
    - Un plan puede abarcar varios grados.
    - BATIN y BATAN son especialidades de Nivel Medio; los cursos 1°, 2° y 3° son genéricos y la sección elige el plan.
 
@@ -52,7 +53,10 @@ La base local fue recreada desde `scripts/schema.sql` y cargada con `scripts/car
 
 ```
 Colegio:              Colegio Demo
-Usuario:              admin@chronos.com / admin123
+Usuarios:             master@chronos.com / admin123 (master)
+                      admin@chronos.com  / admin123 (admin)
+Especialidades:       2 (BATIN, BATAN)
+Uso de aulas:         sí
 Hora cátedra:         40 min
 Turno:                Doble escolaridad
 Planes:               4
@@ -107,7 +111,7 @@ Bloques:              175
 | Áreas | `/areas` |
 | Planes | `/planes` |
 | Grados | `/grados` |
-| Plan del grado | `/grados/<id>/plan` |
+| Plan por curso | `/grados/<id>/plan?plan_id=<id>` |
 | Profesores | `/profesores` |
 | Disponibilidad | `/disponibilidad` |
 | Plantillas | `/plantillas` |
@@ -115,7 +119,10 @@ Bloques:              175
 | Secciones | `/secciones` |
 | Horarios | `/horarios` |
 | Horarios docentes | `/horarios/docentes` |
+| Reportes (índice) | `/reportes` |
 | Distribución | `/reportes/distribucion` |
+| Ajustes de instancia | `/ajustes` |
+| Roles y menú | `/roles` |
 | Configuración | `/configuracion` |
 | Guía | `/guia` |
 | Presentación | `/presentacion` |
@@ -125,7 +132,8 @@ Bloques:              175
 - CSRF en todos los POST (`_csrf_token`).
 - Cookies `HttpOnly`, `SameSite=Lax`, `Secure` en producción.
 - Login limitado al colegio de la instancia.
-- `/colegios` solo para superadmin.
+- `/ajustes` y `/roles`: solo rol master.
+- `/colegios` bloqueada: cada instancia sirve un colegio.
 - Contraseñas con bcrypt.
 - Sin recuperación de contraseña por email.
 

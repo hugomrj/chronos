@@ -10,7 +10,9 @@ CREATE TABLE colegio (
   id      serial PRIMARY KEY,
   nombre  text NOT NULL,
   minutos_hora_catedra int NOT NULL DEFAULT 40
-                       CHECK (minutos_hora_catedra BETWEEN 20 AND 120)
+                       CHECK (minutos_hora_catedra BETWEEN 20 AND 120),
+  usa_aulas         boolean NOT NULL DEFAULT true,
+  aulas_cambiado_en timestamptz
 );
 
 CREATE TABLE anio_lectivo (
@@ -60,16 +62,16 @@ CREATE TABLE plan_estudio (
   nivel_id        int  NOT NULL REFERENCES nivel(id),
   especialidad_id int  REFERENCES especialidad(id) ON DELETE SET NULL,
   nombre          text NOT NULL,           -- 'E.E.B. 7-9', 'BATIN', 'BATAN'
-  orden           int  NOT NULL DEFAULT 0,
   activo          boolean NOT NULL DEFAULT true,
-  UNIQUE (colegio_id, nombre)
+  -- La especialidad forma parte de la clave: mismo nombre por especialidad.
+  UNIQUE (colegio_id, nivel_id, nombre, especialidad_id)
 );
 
 CREATE TABLE grado (
-  id       serial PRIMARY KEY,
-  nivel_id int  NOT NULL REFERENCES nivel(id),
-  nombre   text NOT NULL,                  -- '7mo grado', '1° curso'
-  orden    int  NOT NULL DEFAULT 0,
+  id              serial PRIMARY KEY,
+  nivel_id        int  NOT NULL REFERENCES nivel(id),
+  especialidad_id int  REFERENCES especialidad(id) ON DELETE SET NULL,
+  nombre          text NOT NULL,           -- '7mo grado', '1° curso'
   UNIQUE (nivel_id, nombre)
 );
 
@@ -113,7 +115,6 @@ CREATE TABLE area_conocimiento (
   id                 serial PRIMARY KEY,
   colegio_id         int  NOT NULL REFERENCES colegio(id),
   nombre             text NOT NULL,
-  orden              int  NOT NULL DEFAULT 0,
   activa             boolean NOT NULL DEFAULT true,
   horas_max_semana   int CHECK (horas_max_semana IS NULL OR horas_max_semana >= 0),
   UNIQUE (colegio_id, nombre)
@@ -333,10 +334,19 @@ CREATE TRIGGER trg_celda_completar
 -- ACCESO (hoy solo admin)
 -- ---------------------------------------------------------------------
 CREATE TABLE rol (
-  id     serial PRIMARY KEY,
-  nombre text NOT NULL UNIQUE
+  id        serial PRIMARY KEY,
+  nombre    text NOT NULL UNIQUE,
+  es_master boolean NOT NULL DEFAULT false,
+  bloqueado boolean NOT NULL DEFAULT false
 );
-INSERT INTO rol (nombre) VALUES ('admin');
+INSERT INTO rol (nombre, es_master) VALUES ('master', true), ('admin', false);
+
+-- Menú habilitado por rol (lo define el rol master)
+CREATE TABLE rol_menu (
+  rol_id int  NOT NULL REFERENCES rol(id) ON DELETE CASCADE,
+  item   text NOT NULL,
+  PRIMARY KEY (rol_id, item)
+);
 
 CREATE TABLE usuario (
   id            serial PRIMARY KEY,

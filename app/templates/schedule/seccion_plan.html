@@ -114,6 +114,7 @@
         </select>
         <div class="hint">Solo se aceptan profesores que tengan habilitada la materia elegida.</div>
       </div>
+      {% if not colegio_actual or colegio_actual.usa_aulas %}
       <div class="field fw-2">
         <label for="aula_requerida_id">Aula requerida <span class="opt">(opcional)</span></label>
         <select class="input vanilla-select" id="aula_requerida_id" name="aula_requerida_id">
@@ -123,6 +124,7 @@
           {% endfor %}
         </select>
       </div>
+      {% endif %}
       <div class="field fw-full">
         <label class="switch-row">
           <input type="checkbox" class="switch" name="profesor_fijado" {{ 'checked' if v_fijado }}>

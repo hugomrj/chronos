@@ -4,8 +4,7 @@
 
 {% block content %}
 {{ page_head(plan.nombre,
-             (plan.nivel.nombre ~ ((' · ' ~ plan.especialidad.nombre) if plan.especialidad else ' · Plan común')),
-             url_for('planes'), 'Volver a planes') }}
+             (plan.nivel.nombre ~ ((' · ' ~ plan.especialidad.nombre) if plan.especialidad else ' · Plan común'))) }}
 
 <section class="panel glass">
   <div class="panel-head">

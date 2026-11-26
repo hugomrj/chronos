@@ -1,9 +1,4 @@
-from datetime import date, time
-
-from flask import current_app
-
-from app.extensions import db
-from app.models import AnioLectivo, Colegio
+import re
 
 TIPOS_AULA = ('regular', 'laboratorio', 'informatica', 'gimnasio', 'otro')
 
@@ -32,23 +27,6 @@ DIAS_SEMANA = {
     6: 'Sábado',
     7: 'Domingo',
 }
-
-
-def colegio_actual():
-    """Colegio que sirve esta instancia (COLEGIO_ID del .env).
-
-    Si la instancia no tiene COLEGIO_ID, en desarrollo se usa el primer
-    colegio de la base para no bloquear el trabajo local.
-    """
-    colegio_id = current_app.config.get('COLEGIO_ID') or 0
-    if colegio_id:
-        return db.session.get(Colegio, colegio_id)
-
-    return Colegio.query.order_by(Colegio.id).first()
-
-
-def anio_activo(colegio_id):
-    return AnioLectivo.query.filter_by(colegio_id=colegio_id, activo=True).first()
 
 
 def parse_int(value, default=None):

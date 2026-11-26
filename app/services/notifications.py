@@ -3,7 +3,7 @@ from flask import url_for
 from app.models import (
     HorarioVersion, Profesor, Seccion, SeccionMateria, Turno,
 )
-from app.utils.helpers import anio_activo
+from app.utils.colegio import anio_activo
 
 
 def obtener_avisos(colegio):

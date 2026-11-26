@@ -1,4 +1,4 @@
-from flask import abort, current_app, flash, redirect, render_template, request, url_for
+from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 from sqlalchemy.exc import IntegrityError
 
@@ -8,16 +8,14 @@ from app.models import (
     Nivel, Turno,
 )
 from app.utils.helpers import (
-    TIPOS_AULA, TIPOS_AULA_LABEL, colegio_actual, parse_date, parse_int,
+    TIPOS_AULA, TIPOS_AULA_LABEL, parse_date, parse_int,
 )
+from app.utils.colegio import colegio_actual
+
 
 
 def register_academic_routes(app):
     """CRUD de la estructura académica."""
-
-    def _solo_superadmin():
-        if not current_app.config.get('SUPERADMIN'):
-            abort(404)
 
     def _colegio_o_none():
         colegio = colegio_actual()
@@ -30,69 +28,6 @@ def register_academic_routes(app):
         return db.session.get(model, item_id) if item_id else None
 
     # ------------------------------------------------------------------
-    # COLEGIOS
-    # ------------------------------------------------------------------
-    @app.route('/colegios')
-    @login_required
-    def colegios():
-        _solo_superadmin()
-        return render_template(
-            'academic/colegios.html',
-            crumb='Colegios',
-            items=Colegio.query.order_by(Colegio.nombre).all(),
-            edit=_get(Colegio),
-            form={},
-            errors=[],
-        )
-
-    @app.route('/colegios/guardar', methods=['POST'])
-    @login_required
-    def colegio_guardar():
-        _solo_superadmin()
-        item_id = request.form.get('id', type=int)
-        item = db.session.get(Colegio, item_id) if item_id else None
-        nombre = (request.form.get('nombre') or '').strip()
-
-        errors = []
-        if not nombre:
-            errors.append('El nombre del colegio es obligatorio.')
-        if errors:
-            return render_template(
-                'academic/colegios.html', crumb='Colegios',
-                items=Colegio.query.order_by(Colegio.nombre).all(),
-                edit=item, form=request.form, errors=errors,
-            )
-
-        if item:
-            item.nombre = nombre
-        else:
-            item = Colegio(nombre=nombre)
-            db.session.add(item)
-
-        try:
-            db.session.commit()
-            flash('Colegio guardado correctamente.', 'success')
-        except IntegrityError:
-            db.session.rollback()
-            flash('No se pudo guardar el colegio. Verificá los datos.', 'error')
-
-        return redirect(url_for('colegios'))
-
-    @app.route('/colegios/<int:item_id>/eliminar', methods=['POST'])
-    @login_required
-    def colegio_eliminar(item_id):
-        _solo_superadmin()
-        item = db.get_or_404(Colegio, item_id)
-        try:
-            db.session.delete(item)
-            db.session.commit()
-            flash('Colegio eliminado.', 'success')
-        except IntegrityError:
-            db.session.rollback()
-            flash('No se puede eliminar: el colegio tiene datos asociados.', 'error')
-        return redirect(url_for('colegios'))
-
-    # ------------------------------------------------------------------
     # AÑOS LECTIVOS
     # ------------------------------------------------------------------
     @app.route('/anios')
@@ -100,7 +35,7 @@ def register_academic_routes(app):
     def anios():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         return render_template(
             'academic/anios.html',
             crumb='Años lectivos',
@@ -116,7 +51,7 @@ def register_academic_routes(app):
     def anio_guardar():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(AnioLectivo, item_id) if item_id else None
@@ -208,7 +143,7 @@ def register_academic_routes(app):
     def niveles():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         return render_template(
             'academic/niveles.html', crumb='Niveles',
             items=Nivel.query.filter_by(colegio_id=colegio.id)
@@ -221,7 +156,7 @@ def register_academic_routes(app):
     def nivel_guardar():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(Nivel, item_id) if item_id else None
@@ -273,7 +208,7 @@ def register_academic_routes(app):
     def grados():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         nivel = None
         nivel_id = request.args.get('nivel_id', type=int)
@@ -288,9 +223,11 @@ def register_academic_routes(app):
 
         return render_template(
             'academic/grados.html', crumb='Grados / Cursos',
-            items=consulta.order_by(Nivel.nombre, Grado.orden, Grado.nombre).all(),
+            items=consulta.order_by(Nivel.nombre, Grado.nombre).all(),
             niveles=Nivel.query.filter_by(colegio_id=colegio.id)
                                .order_by(Nivel.nombre).all(),
+            especialidades=Especialidad.query.filter_by(
+                colegio_id=colegio.id, activa=True).order_by(Especialidad.nombre).all(),
             nivel=nivel,
             edit=_get(Grado), form={}, errors=[],
         )
@@ -300,43 +237,51 @@ def register_academic_routes(app):
     def grado_guardar():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(Grado, item_id) if item_id else None
 
         nombre = (request.form.get('nombre') or '').strip()
         nivel_id = parse_int(request.form.get('nivel_id'))
-        orden = parse_int(request.form.get('orden'), 0) or 0
+        especialidad_id = parse_int(request.form.get('especialidad_id'))
 
         nivel = db.session.get(Nivel, nivel_id) if nivel_id else None
         if nivel and nivel.colegio_id != colegio.id:
             nivel = None
+        especialidad = db.session.get(Especialidad, especialidad_id) \
+            if especialidad_id else None
+        if especialidad and especialidad.colegio_id != colegio.id:
+            especialidad = None
 
         errors = []
         if not nombre:
             errors.append('El nombre del grado es obligatorio.')
         if not nivel:
             errors.append('Seleccioná un nivel válido.')
-        if orden < 0:
-            errors.append('El orden no puede ser negativo.')
+        if especialidad and (not nivel or especialidad.nivel_id != nivel.id):
+            errors.append('La especialidad no pertenece al nivel elegido.')
 
         if errors:
             return render_template(
                 'academic/grados.html', crumb='Grados / Cursos',
                 items=Grado.query.join(Nivel).filter(Nivel.colegio_id == colegio.id)
-                                 .order_by(Nivel.nombre, Grado.orden, Grado.nombre).all(),
+                                 .order_by(Nivel.nombre, Grado.nombre).all(),
                 niveles=Nivel.query.filter_by(colegio_id=colegio.id)
                                    .order_by(Nivel.nombre).all(),
+                especialidades=Especialidad.query.filter_by(
+                    colegio_id=colegio.id, activa=True
+                ).order_by(Especialidad.nombre).all(),
                 edit=item, form=request.form, errors=errors,
             )
 
         if item:
             item.nombre = nombre
             item.nivel_id = nivel.id
-            item.orden = orden
+            item.especialidad_id = especialidad.id if especialidad else None
         else:
-            item = Grado(nivel_id=nivel.id, nombre=nombre, orden=orden)
+            item = Grado(nivel_id=nivel.id, nombre=nombre,
+                         especialidad_id=especialidad.id if especialidad else None)
             db.session.add(item)
 
         try:
@@ -368,7 +313,7 @@ def register_academic_routes(app):
     def turnos():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         return render_template(
             'academic/turnos.html', crumb='Turnos',
             items=Turno.query.filter_by(colegio_id=colegio.id)
@@ -381,7 +326,7 @@ def register_academic_routes(app):
     def turno_guardar():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(Turno, item_id) if item_id else None
@@ -433,7 +378,7 @@ def register_academic_routes(app):
     def aulas():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         return render_template(
             'academic/aulas.html', crumb='Aulas',
             items=Aula.query.filter_by(colegio_id=colegio.id)
@@ -447,7 +392,7 @@ def register_academic_routes(app):
     def aula_guardar():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(Aula, item_id) if item_id else None
@@ -513,7 +458,7 @@ def register_academic_routes(app):
     def materias():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         area = None
         area_id = request.args.get('area_id', type=int)
@@ -529,7 +474,7 @@ def register_academic_routes(app):
         edit = _get(Materia)
         areas = AreaConocimiento.query.filter_by(
             colegio_id=colegio.id
-        ).order_by(AreaConocimiento.orden, AreaConocimiento.nombre).all()
+        ).order_by(AreaConocimiento.nombre).all()
         niveles = Nivel.query.filter_by(colegio_id=colegio.id) \
                              .order_by(Nivel.nombre).all()
         return render_template(
@@ -549,7 +494,7 @@ def register_academic_routes(app):
     def materia_guardar():
         colegio = _colegio_o_none()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(Materia, item_id) if item_id else None
@@ -600,7 +545,7 @@ def register_academic_routes(app):
                                    .order_by(Materia.nombre).all(),
                 areas=AreaConocimiento.query.filter_by(
                     colegio_id=colegio.id
-                ).order_by(AreaConocimiento.orden, AreaConocimiento.nombre).all(),
+                ).order_by(AreaConocimiento.nombre).all(),
                 niveles=Nivel.query.filter_by(colegio_id=colegio.id)
                                    .order_by(Nivel.nombre).all(),
                 especialidades=Especialidad.query.filter_by(

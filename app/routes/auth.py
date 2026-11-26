@@ -5,7 +5,8 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from app.extensions import bcrypt
 from app.models.auth import Usuario
-from app.utils.helpers import colegio_actual, is_safe_url
+from app.utils.helpers import is_safe_url
+from app.utils.colegio import colegio_actual
 
 
 def register_auth_routes(app):
@@ -30,6 +31,12 @@ def register_auth_routes(app):
             # Cada instancia sirve un único colegio: el usuario debe ser de ese colegio.
             colegio_id = current_app.config.get('COLEGIO_ID') or 0
             pertenece = not colegio_id or (user is not None and user.colegio_id == colegio_id)
+
+            if credenciales_ok and pertenece and user.rol and user.rol.bloqueado:
+                flash('Tu rol está bloqueado. Consultá con el administrador.',
+                      'error')
+                return render_template('auth/login.html',
+                                       colegio=colegio_actual())
 
             if credenciales_ok and pertenece:
                 login_user(user)

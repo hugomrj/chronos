@@ -8,9 +8,10 @@ from app.models import (
     PlanMateria, PlantillaHorario, Profesor, Seccion, SeccionMateria, Turno,
 )
 from app.utils.helpers import (
-    DIAS_SEMANA, TIPOS_PLAN, TIPOS_PLAN_LABEL, anio_activo, colegio_actual,
-    parse_int, parse_time,
+    DIAS_SEMANA, TIPOS_PLAN, TIPOS_PLAN_LABEL, parse_int, parse_time,
 )
+from app.utils.colegio import anio_activo, colegio_actual
+
 
 
 def register_schedule_routes(app):
@@ -83,17 +84,17 @@ def register_schedule_routes(app):
         if anio:
             items = Seccion.query.filter_by(anio_lectivo_id=anio.id) \
                                   .join(Grado) \
-                                  .order_by(Grado.orden, Grado.nombre, Seccion.nombre).all()
+                                  .order_by(Grado.nombre, Seccion.nombre).all()
         return dict(
             crumb='Secciones',
             anio=anio,
             items=items,
             grados=Grado.query.join(Grado.nivel)
                               .filter_by(colegio_id=colegio.id)
-                              .order_by(Grado.orden, Grado.nombre).all(),
+                              .order_by(Grado.nombre).all(),
             planes=PlanEstudio.query.filter_by(
                 colegio_id=colegio.id, activo=True
-            ).order_by(PlanEstudio.orden, PlanEstudio.nombre).all(),
+            ).order_by(PlanEstudio.nombre).all(),
             turnos=Turno.query.filter_by(colegio_id=colegio.id)
                                .order_by(Turno.nombre).all(),
             aulas=Aula.query.filter_by(colegio_id=colegio.id, activa=True)
@@ -170,7 +171,7 @@ def register_schedule_routes(app):
     def plantillas():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         edit = None
         edit_id = request.args.get('editar', type=int)
@@ -187,7 +188,7 @@ def register_schedule_routes(app):
     def plantilla_guardar():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         item_id = request.form.get('id', type=int)
         item = db.session.get(PlantillaHorario, item_id) if item_id else None
@@ -237,7 +238,7 @@ def register_schedule_routes(app):
     def plantilla_eliminar(plantilla_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         item = _plantilla(plantilla_id, colegio)
 
         try:
@@ -254,7 +255,7 @@ def register_schedule_routes(app):
     def plantilla_detalle(plantilla_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         item = _plantilla(plantilla_id, colegio)
 
         edit_bloque = None
@@ -273,7 +274,7 @@ def register_schedule_routes(app):
     def bloque_guardar(plantilla_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         plantilla = _plantilla(plantilla_id, colegio)
 
         bloque_id = request.form.get('id', type=int)
@@ -355,7 +356,7 @@ def register_schedule_routes(app):
     def bloque_eliminar(plantilla_id, bloque_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         plantilla = _plantilla(plantilla_id, colegio)
         bloque = db.get_or_404(Bloque, bloque_id)
         if bloque.plantilla_id != plantilla.id:
@@ -379,7 +380,7 @@ def register_schedule_routes(app):
     def grado_plan(grado_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         grado = _grado(grado_id, colegio)
 
         plan_id = request.args.get('plan_id', type=int)
@@ -404,7 +405,7 @@ def register_schedule_routes(app):
     def grado_plan_guardar(grado_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         grado = _grado(grado_id, colegio)
 
         plan_id = parse_int(request.form.get('plan_id'))
@@ -491,7 +492,7 @@ def register_schedule_routes(app):
     def grado_plan_eliminar(grado_id, materia_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         grado = _grado(grado_id, colegio)
         plan_id = request.args.get('plan_id', type=int) or request.form.get('plan_id', type=int)
         plan = db.session.get(PlanEstudio, plan_id) if plan_id else None
@@ -514,7 +515,7 @@ def register_schedule_routes(app):
     def secciones():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         edit = None
         edit_id = request.args.get('editar', type=int)
@@ -531,7 +532,7 @@ def register_schedule_routes(app):
     def seccion_guardar():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         anio = anio_activo(colegio.id)
         if not anio:
@@ -642,7 +643,7 @@ def register_schedule_routes(app):
     def seccion_eliminar(seccion_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         item = _seccion(seccion_id, colegio)
         try:
             db.session.delete(item)
@@ -661,7 +662,7 @@ def register_schedule_routes(app):
     def seccion_plan(seccion_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         seccion = _seccion(seccion_id, colegio)
 
         edit = None
@@ -679,7 +680,7 @@ def register_schedule_routes(app):
     def seccion_plan_guardar(seccion_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         seccion = _seccion(seccion_id, colegio)
 
         sm_id = request.form.get('sm_id', type=int)
@@ -791,7 +792,7 @@ def register_schedule_routes(app):
     def seccion_plan_eliminar(seccion_id, sm_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         seccion = _seccion(seccion_id, colegio)
         item = db.session.get(SeccionMateria, sm_id)
         if not item or item.seccion_id != seccion.id:
@@ -811,7 +812,7 @@ def register_schedule_routes(app):
     def seccion_plan_sincronizar(seccion_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         seccion = _seccion(seccion_id, colegio)
 
         creados = actualizados = 0

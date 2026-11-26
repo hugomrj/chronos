@@ -13,7 +13,7 @@ class Nivel(BaseModel):
 
     colegio = db.relationship('Colegio', back_populates='niveles')
     grados = db.relationship(
-        'Grado', back_populates='nivel', order_by='Grado.orden, Grado.nombre'
+        'Grado', back_populates='nivel', order_by='Grado.nombre'
     )
     materias = db.relationship('Materia', back_populates='nivel')
 
@@ -47,7 +47,8 @@ class Especialidad(BaseModel):
 class PlanEstudio(BaseModel):
     __tablename__ = 'plan_estudio'
     __table_args__ = (
-        db.UniqueConstraint('colegio_id', 'nombre', name='uq_plan_colegio_nombre'),
+        db.UniqueConstraint('colegio_id', 'nivel_id', 'nombre', 'especialidad_id',
+                            name='uq_plan_colegio_nivel_nombre_especialidad'),
     )
 
     colegio_id = db.Column(db.Integer, db.ForeignKey('colegio.id'), nullable=False)
@@ -55,7 +56,6 @@ class PlanEstudio(BaseModel):
     especialidad_id = db.Column(db.Integer,
                                 db.ForeignKey('especialidad.id', ondelete='SET NULL'))
     nombre = db.Column(db.Text, nullable=False)
-    orden = db.Column(db.Integer, nullable=False, default=0, server_default='0')
     activo = db.Column(db.Boolean, nullable=False, default=True, server_default='true')
 
     nivel = db.relationship('Nivel', backref='planes_estudio')
@@ -77,7 +77,6 @@ class AreaConocimiento(BaseModel):
 
     colegio_id = db.Column(db.Integer, db.ForeignKey('colegio.id'), nullable=False)
     nombre = db.Column(db.Text, nullable=False)
-    orden = db.Column(db.Integer, nullable=False, default=0, server_default='0')
     activa = db.Column(db.Boolean, nullable=False, default=True, server_default='true')
     horas_max_semana = db.Column(db.Integer)
 
@@ -94,10 +93,12 @@ class Grado(BaseModel):
     )
 
     nivel_id = db.Column(db.Integer, db.ForeignKey('nivel.id'), nullable=False)
+    especialidad_id = db.Column(db.Integer,
+                                db.ForeignKey('especialidad.id', ondelete='SET NULL'))
     nombre = db.Column(db.Text, nullable=False)
-    orden = db.Column(db.Integer, nullable=False, default=0, server_default='0')
 
     nivel = db.relationship('Nivel', back_populates='grados')
+    especialidad = db.relationship('Especialidad', backref='grados')
     planes = db.relationship(
         'PlanEstudio', secondary='plan_grado', back_populates='grados'
     )

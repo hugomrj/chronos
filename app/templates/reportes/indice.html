@@ -1,0 +1,67 @@
+{% extends 'layout/base.html' %}
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Reportes</h1>
+    <p>
+      {{ anio.nombre if anio else 'Sin año lectivo activo' }}
+      · {{ total_planes }} plan(es) · {{ total_profesores }} profesor(es)
+    </p>
+  </div>
+</div>
+
+<div class="dash-grid">
+  <section class="panel glass dc-6 reporte-card">
+    <div class="panel-head">
+      <h2>Distribución de materias</h2>
+    </div>
+    <div class="reporte-body">
+      <p class="hint">Materias por plan, curso y sección.</p>
+      <a class="btn btn-primary" href="{{ url_for('distribucion_materias') }}">
+        Abrir distribución
+      </a>
+    </div>
+  </section>
+
+  <section class="panel glass dc-6 reporte-card">
+    <div class="panel-head">
+      <h2>Horarios de docentes</h2>
+    </div>
+    <div class="reporte-body">
+      <p class="hint">Carga docente y horario individual.</p>
+      <a class="btn btn-primary" href="{{ url_for('horarios_docentes') }}">
+        Abrir docentes
+      </a>
+    </div>
+  </section>
+
+  <section class="panel glass dc-12">
+    <div class="panel-head">
+      <h2>Horario general por turno</h2>
+      <span class="hint">{{ versiones|length }} turno(s)</span>
+    </div>
+    {% if versiones %}
+    <div class="reporte-body">
+      <p class="hint">Todas las secciones del turno, por día.</p>
+      <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+        {% for v in versiones %}
+        <a class="btn btn-ghost" href="{{ url_for('horario_general', version_id=v.id) }}">
+          {{ v.turno.nombre }} · {{ v.nombre }}
+          {% if v.estado == 'publicado' %}<span class="status ok" style="margin-left:.4rem;">Publicado</span>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="form-panel">
+      <div class="hint">
+        Todavía no hay versiones de horario.
+        <a href="{{ url_for('horarios') }}" style="color: var(--acc-txt); font-weight: 600;">Generar horario</a>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

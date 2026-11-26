@@ -12,8 +12,10 @@ from app.models import (
 from app.services.scheduler.constraints import profesor_disponible
 from app.services.scheduler.engine import generar_horario
 from app.utils.helpers import (
-    DIAS_SEMANA, anio_activo, colegio_actual, parse_int,
+    DIAS_SEMANA, parse_int,
 )
+from app.utils.colegio import anio_activo, colegio_actual
+
 
 
 def register_horarios_routes(app):
@@ -108,7 +110,7 @@ def register_horarios_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         return render_template('horarios/horarios.html', **_ctx_lista(colegio))
 
     @app.route('/horarios/generar', methods=['POST'])
@@ -117,7 +119,7 @@ def register_horarios_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         anio = anio_activo(colegio.id)
         if not anio:
@@ -143,6 +145,7 @@ def register_horarios_routes(app):
             Aula.query.filter_by(colegio_id=colegio.id, activa=True).all(),
             Regla.query.filter_by(colegio_id=colegio.id, activa=True).all(),
             limite_segundos=30,
+            usa_aulas=colegio.usa_aulas,
         )
 
         if not resultado.ok:
@@ -305,7 +308,7 @@ def register_horarios_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         version = _version_de_colegio(version_id, colegio)
 
         seccion_id = request.args.get('seccion_id', type=int)
@@ -337,7 +340,7 @@ def register_horarios_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         version = _version_de_colegio(version_id, colegio)
 
         celda_id = request.form.get('celda_id', type=int)
@@ -452,7 +455,7 @@ def register_horarios_routes(app):
     def celda_eliminar(version_id, celda_id):
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         version = _version_de_colegio(version_id, colegio)
         celda = db.get_or_404(HorarioCelda, celda_id)
         if celda.version_id != version.id:
@@ -473,7 +476,7 @@ def register_horarios_routes(app):
     def horario_publicar(version_id):
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         version = _version_de_colegio(version_id, colegio)
 
         if not _completa(version):
@@ -497,7 +500,7 @@ def register_horarios_routes(app):
     def horario_archivar(version_id):
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         version = _version_de_colegio(version_id, colegio)
         version.estado = 'archivado'
         db.session.commit()
@@ -509,7 +512,7 @@ def register_horarios_routes(app):
     def horario_duplicar(version_id):
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         original = _version_de_colegio(version_id, colegio)
 
         copia = HorarioVersion(
@@ -541,7 +544,7 @@ def register_horarios_routes(app):
     def horario_regenerar(version_id):
         colegio = colegio_actual()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         original = _version_de_colegio(version_id, colegio)
 
         secciones = _secciones_de_version(original)
@@ -562,6 +565,7 @@ def register_horarios_routes(app):
             Regla.query.filter_by(colegio_id=colegio.id, activa=True).all(),
             limite_segundos=30,
             fijados=fijados,
+            usa_aulas=colegio.usa_aulas,
         )
 
         if not resultado.ok:
@@ -611,7 +615,7 @@ def register_horarios_routes(app):
         colegio = colegio_actual()
         if not colegio:
             flash('Primero creá un colegio para continuar.', 'warning')
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         version = _version_de_colegio(version_id, colegio)
         if version.estado == 'publicado':
             flash('No se puede eliminar una versión publicada. Archivála primero.', 'error')

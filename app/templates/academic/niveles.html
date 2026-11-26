@@ -3,8 +3,7 @@
 {% block title %}Niveles{% endblock %}
 
 {% block content %}
-{{ page_head('Niveles', 'Agrupaciones de grados, por ejemplo Inicial, Primaria y Secundaria.',
-             url_for('niveles', nuevo=1), 'Nuevo nivel') }}
+{{ page_head('Niveles', 'Agrupaciones de grados, por ejemplo Inicial, Primaria y Secundaria.') }}
 
 {% if edit or form or request.args.get('nuevo') %}
 <section class="panel glass" style="margin-bottom: 1rem;">
@@ -33,6 +32,13 @@
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
+<div class="page-actions">
+  <a href="{{ url_for('niveles', nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nuevo nivel
+  </a>
+</div>
+
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>

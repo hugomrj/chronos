@@ -187,9 +187,8 @@ def seed():
 
     for nivel_nombre, grados in NIVELES.items():
         nivel, _ = get_or_create(Nivel, colegio_id=colegio.id, nombre=nivel_nombre)
-        for orden, grado_nombre in enumerate(grados, start=1):
-            get_or_create(Grado, nivel_id=nivel.id, nombre=grado_nombre,
-                          defaults={'orden': orden})
+        for grado_nombre in grados:
+            get_or_create(Grado, nivel_id=nivel.id, nombre=grado_nombre)
 
     for turno_nombre in TURNOS:
         get_or_create(Turno, colegio_id=colegio.id, nombre=turno_nombre)
@@ -202,7 +201,7 @@ def seed():
 
     area_general, _ = get_or_create(
         AreaConocimiento, colegio_id=colegio.id, nombre='General',
-        defaults={'orden': 0, 'activa': True},
+        defaults={'activa': True},
     )
     nivel_base = Nivel.query.filter_by(colegio_id=colegio.id).first()
     for nombre, tipo_aula in MATERIAS:
@@ -279,8 +278,7 @@ def seed():
             continue
         plan_db, _ = get_or_create(
             PlanEstudio, colegio_id=colegio.id, nombre=f'Plan {grado.nombre}',
-            defaults={'nivel_id': grado.nivel_id, 'orden': grado.orden,
-                      'activo': True},
+            defaults={'nivel_id': grado.nivel_id, 'activo': True},
         )
         planes_por_grado[grado.id] = plan_db
         get_or_create(PlanGrado, plan_id=plan_db.id, grado_id=grado.id)

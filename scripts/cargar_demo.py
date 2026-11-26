@@ -277,18 +277,17 @@ def crear_estructura(colegio):
     db.session.flush()
 
     planes = {}
-    for nivel, nombre, orden, esp_nombre in [
-        (nivel_tercero, 'E.E.B. 7°-9°', 1, None),
-        (nivel_medio, 'Nivel Medio Común', 1, None),
-        (nivel_medio, 'BATIN', 2, 'BATIN'),
-        (nivel_medio, 'BATAN', 3, 'BATAN'),
+    for nivel, nombre, esp_nombre in [
+        (nivel_tercero, 'E.E.B. 7°-9°', None),
+        (nivel_medio, 'Nivel Medio Común', None),
+        (nivel_medio, 'BATIN', 'BATIN'),
+        (nivel_medio, 'BATAN', 'BATAN'),
     ]:
         plan = PlanEstudio(
             colegio_id=colegio.id,
             nivel_id=nivel.id,
             especialidad_id=(especialidades[esp_nombre].id if esp_nombre else None),
             nombre=nombre,
-            orden=orden,
             activo=True,
         )
         db.session.add(plan)
@@ -296,15 +295,16 @@ def crear_estructura(colegio):
     db.session.flush()
 
     grados = {}
-    for orden, nombre in enumerate(['7°', '8°', '9°'], start=1):
-        grado = Grado(nivel_id=nivel_tercero.id, nombre=nombre, orden=orden)
+    for nombre in ['7°', '8°', '9°']:
+        grado = Grado(nivel_id=nivel_tercero.id, nombre=nombre)
         db.session.add(grado)
         grados[nombre] = grado
-    for orden, nombre in enumerate(['1°', '2°', '3°'], start=1):
-        grado = Grado(nivel_id=nivel_medio.id, nombre=nombre, orden=orden)
+    for nombre in ['1°', '2°', '3°']:
+        grado = Grado(nivel_id=nivel_medio.id, nombre=nombre)
         db.session.add(grado)
         grados[nombre] = grado
     db.session.flush()
+
 
     for plan_nombre, plan in planes.items():
         if plan_nombre == 'E.E.B. 7°-9°':
@@ -330,7 +330,7 @@ def crear_estructura(colegio):
     db.session.flush()
 
     areas = {}
-    for orden, nombre in enumerate([
+    for nombre in [
         'Lengua y Literatura',
         'Expresión Artística',
         'Ciencias Básicas',
@@ -341,7 +341,7 @@ def crear_estructura(colegio):
         'Técnicas y Tecnológicas',
         'S.I.L.',
         'Plan Optativo',
-    ], start=1):
+    ]:
         horas = {
             'Lengua y Literatura': 20,
             'Expresión Artística': 10,
@@ -355,7 +355,7 @@ def crear_estructura(colegio):
             'Plan Optativo': 10,
         }.get(nombre)
         area = AreaConocimiento(
-            colegio_id=colegio.id, nombre=nombre, orden=orden, activa=True,
+            colegio_id=colegio.id, nombre=nombre, activa=True,
             horas_max_semana=horas)
         db.session.add(area)
         areas[nombre] = area

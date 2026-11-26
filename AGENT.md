@@ -90,15 +90,23 @@ tests/test_smoke.py
 
 ## Modelo de datos clave
 
-- `colegio`: `minutos_hora_catedra`.
+- `colegio`: `minutos_hora_catedra`, `usa_aulas` (si es `false` el motor no
+  asigna ni controla aulas), `aulas_cambiado_en`.
 - `nivel` = ciclo educativo.
 - `plan_estudio`: un ciclo puede tener varios planes.
-- `grado`: curso o grado; 1°-3° de Nivel Medio son genéricos.
+- `grado`: curso o grado; 1°-3° de Nivel Medio son genéricos y pueden tener `especialidad_id`.
 - `plan_estudio`: plan de estudios; puede tener `especialidad_id`.
 - `plan_grado`: cursos que cubre un plan.
 - `plan_materia`: materias/horas del plan por curso; incluye `tipo_plan`.
 - `seccion.plan_id`: plan concreto de la sección; `especialidad_id` se deriva del plan.
 - `especialidad`: BATIN/BATAN, asociada a Nivel Medio.
+- `rol`: `master` (define roles y menú, y los ajustes de instancia) y `admin`
+  (administra el colegio). `rol.bloqueado` impide el login.
+- `rol_menu`: pantallas habilitadas por rol; las define el master en **Roles y menú**.
+- **Una instancia por colegio**: no existe pantalla de Colegios; el alta de
+  colegios se hace en el servidor (`scripts/nuevo_colegio.py`).
+- Usuarios iniciales del seed: `master@chronos.com` y `admin@chronos.com`,
+  ambos con contraseña `admin123`.
 - `materia`: asignatura; puede tener varias especialidades.
 - `profesor`: puede tener varias especialidades.
 - `area_conocimiento`: áreas del colegio.

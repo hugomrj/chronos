@@ -223,12 +223,13 @@ def html_manual(fecha):
     <tbody>
       <tr><td><b>Estructura → Años lectivos</b></td><td>El año de trabajo (por ejemplo 2026). Solo uno puede estar activo.</td></tr>
       <tr><td><b>Estructura → Niveles</b></td><td>Inicial, Primaria, Secundaria. El número de grados abre el listado filtrado de ese nivel.</td></tr>
-      <tr><td><b>Estructura → Grados</b></td><td>Los cursos de cada nivel: 1er grado, 2do grado…</td></tr>
+      <tr><td><b>Estructura → Grado / Curso</b></td><td>Los cursos de cada nivel: 7°, 8°, 1°, 2°…</td></tr>
       <tr><td><b>Estructura → Turnos</b></td><td>Mañana, Tarde.</td></tr>
       <tr><td><b>Estructura → Aulas</b></td><td>Aulas regulares, laboratorios, sala de informática, gimnasio.</td></tr>
       <tr><td><b>Estructura → Materias</b></td><td>Las asignaturas y, si corresponde, el tipo de aula que necesitan.</td></tr>
       <tr><td><b>Estructura → Áreas</b></td><td>Agrupaciones de materias: Lengua, Ciencias Básicas, Técnicas, etc. Cada materia pertenece a un área.</td></tr>
-      <tr><td><b>Estructura → Planes</b></td><td>Planes de estudio de cada ciclo y los grados que los componen.</td></tr>
+      <tr><td><b>Estructura → Especialidades</b></td><td>Bachilleratos técnicos (por ejemplo BATIN y BATAN).</td></tr>
+      <tr><td><b>Estructura → Planes</b></td><td>Planes de estudio de cada ciclo, su especialidad y los cursos que los componen.</td></tr>
       <tr><td><b>Profesores → Listado</b></td><td>Docentes, materias que pueden dictar y su carga máxima.</td></tr>
       <tr><td><b>Profesores → Disponibilidad</b></td><td>Días y horarios en que cada docente puede dar clases.</td></tr>
       <tr><td><b>Planificación → Plantillas y bloques</b></td><td>La grilla horaria de cada turno: horas de clase y recesos.</td></tr>
@@ -236,6 +237,11 @@ def html_manual(fecha):
       <tr><td><b>Planificación → Secciones y plan</b></td><td>Los cursos concretos (A, B) con su profesor por materia.</td></tr>
       <tr><td><b>Planificación → Reglas</b></td><td>Preferencias pedagógicas opcionales.</td></tr>
       <tr><td><b>Planificación → Horarios</b></td><td>Generar, revisar y publicar el horario.</td></tr>
+      <tr><td><b>Planificación → Reportes</b></td><td>Distribución de materias, horarios de docentes y horario general.</td></tr>
+      <tr><td><b>Sistema → Usuarios</b></td><td>Accesos del colegio y rol de cada uno.</td></tr>
+      <tr><td><b>Sistema → Configuración</b></td><td>Nombre del colegio y minutos por hora cátedra.</td></tr>
+      <tr><td><b>Sistema → Roles y menú</b></td><td>Solo el master: qué pantallas ve cada rol.</td></tr>
+      <tr><td><b>Sistema → Ajustes de instancia</b></td><td>Solo el master: si esta instalación usa aulas.</td></tr>
     </tbody>
   </table>
 
@@ -245,7 +251,18 @@ def html_manual(fecha):
   <p>Creá el año con su fecha de inicio y fin, y activalo. El año activo es el que se usa en todas las demás pantallas.</p>
   <div class="nota"><b>Importante:</b> al activar un año nuevo, el anterior se desactiva automáticamente.</div>
 
+  <h3>Especialidades</h3>
+  <p>
+    Solo para bachilleratos técnicos: BATIN, BATAN, etc. La especialidad se usa
+    en el plan de estudios y en los cursos técnicos.
+  </p>
+
   <h3>Aulas</h3>
+  <div class="nota">
+    <b>Si tu colegio no usa aulas</b>, el master puede desactivarlas en
+    <b>Ajustes de instancia</b>. En ese caso esta pantalla no aparece y el horario
+    se genera solo con profesor y sección.
+  </div>
   <p>Indicá el tipo de cada espacio:</p>
   <ul>
     <li><b>Aula regular</b>: para materias comunes.</li>
@@ -257,6 +274,7 @@ def html_manual(fecha):
   <p>
     Si una materia necesita un espacio especial, elegilo en <b>Aula requerida</b>.
     Por ejemplo, Educación Física → Gimnasio. Así el sistema nunca la va a ubicar en un aula común.
+    En las materias de especialidad, marcá a qué especialidad pertenece.
   </p>
   <p>
     Cada materia pertenece a <b>un área de conocimiento</b> y a <b>un nivel</b>.
@@ -274,7 +292,8 @@ def html_manual(fecha):
   <p>
     En el listado, la columna <b>Materias</b> cuenta las materias distintas del área.
     Si hacés clic en ese número, se abre el listado filtrado con esas materias.
-    El campo <b>Orden</b> solo define el orden de visualización; no afecta la generación del horario.
+    Las áreas se listan por nombre.
+  </p>
   <h2><span class="num">4</span>Cargar profesores</h2>
   <p>Para cada docente registrá:</p>
   <ul>
@@ -324,11 +343,12 @@ def html_manual(fecha):
   <table>
     <thead><tr><th style="width: 40%">Dónde</th><th>Para qué</th></tr></thead>
     <tbody>
-      <tr><td><b>Grados → Plan</b></td><td>Define las materias, horas semanales y tipo de plan (común, específico u optativo) de cada grado. Las áreas se heredan de la materia.</td></tr>
-      <tr><td><b>Secciones → Plan</b></td><td>Cada curso concreto puede tener ajustes propios.</td></tr>
+      <tr><td><b>Planes → Materias por curso</b></td><td>Define las materias, horas semanales y tipo de plan (común, específico u optativo) de cada curso dentro del plan. Las áreas se heredan de la materia.</td></tr>
+      <tr><td><b>Secciones → Plan</b></td><td>Cada curso concreto puede tener ajustes propios y docentes asignados.</td></tr>
     </tbody>
   </table>
-  <p>Al crear una sección, el plan del grado se copia automáticamente. Si después cambiás el plan del grado, podés actualizar la sección con el botón <b>Sincronizar desde el grado</b>.</p>
+  <p>La especialidad forma parte de la clave del plan: podés tener dos planes con el mismo nombre si pertenecen a especialidades distintas (por ejemplo «Técnico BATIN» y «Técnico BATAN»).</p>
+  <p>Al crear una sección se elige el plan, y sus materias se copian automáticamente. Si después cambiás el plan, podés actualizar la sección con el botón <b>Sincronizar desde el plan</b>.</p>
   <p>En <b>Áreas de conocimiento</b> definís las <b>horas máximas por semana</b> del área. Ese máximo se aplica a cada grado: la suma de las materias de esa área no puede superarlo. Por ejemplo, Lengua 7 h puede estar formada por Castellano 5 h + Guaraní 2 h.</p>
   <div class="alerta">
     El sistema avisa si las horas del plan superan los bloques de clase disponibles en la plantilla.

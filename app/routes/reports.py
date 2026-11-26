@@ -11,9 +11,10 @@ from app.models import (
     Turno,
 )
 from app.utils.helpers import (
-    DIAS_SEMANA, TIPOS_PLAN_LABEL, anio_activo, colegio_actual,
-    etiqueta_bloque, etiqueta_seccion, parse_int,
+    DIAS_SEMANA, TIPOS_PLAN_LABEL, etiqueta_bloque, etiqueta_seccion, parse_int,
 )
+from app.utils.colegio import anio_activo, colegio_actual
+
 
 
 def register_report_routes(app):
@@ -35,7 +36,7 @@ def register_report_routes(app):
         return Seccion.query.join(Grado).filter(
             Seccion.anio_lectivo_id == version.anio_lectivo_id,
             Seccion.turno_id == version.turno_id,
-        ).order_by(Grado.orden, Grado.nombre, Seccion.nombre).all()
+        ).order_by(Grado.nombre, Seccion.nombre).all()
 
     def _versiones_vigentes(colegio, anio):
         """La versión vigente de cada turno: publicada o, si no, el último borrador."""
@@ -58,6 +59,31 @@ def register_report_routes(app):
         return vigentes
 
     # ------------------------------------------------------------------
+    # ÍNDICE DE REPORTES
+    # ------------------------------------------------------------------
+    @app.route('/reportes')
+    @login_required
+    def reportes():
+        colegio = _colegio()
+        if not colegio:
+            return redirect(url_for('dashboard'))
+
+        anio = anio_activo(colegio.id)
+        versiones = _versiones_vigentes(colegio, anio)
+        profesores = Profesor.query.filter_by(
+            colegio_id=colegio.id, activo=True).count()
+        planes = PlanEstudio.query.filter_by(colegio_id=colegio.id).count()
+
+        return render_template(
+            'reportes/indice.html',
+            crumb='Reportes',
+            anio=anio,
+            versiones=versiones,
+            total_profesores=profesores,
+            total_planes=planes,
+        )
+
+    # ------------------------------------------------------------------
     # DISTRIBUCIÓN DE MATERIAS POR PLAN / GRADO
     # ------------------------------------------------------------------
     @app.route('/reportes/distribucion')
@@ -65,7 +91,7 @@ def register_report_routes(app):
     def distribucion_materias():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         anios = AnioLectivo.query.filter_by(colegio_id=colegio.id) \
                                   .order_by(AnioLectivo.nombre.desc()).all()
@@ -79,7 +105,7 @@ def register_report_routes(app):
             anio = anio_activo(colegio.id) or (anios[0] if anios else None)
 
         planes = PlanEstudio.query.filter_by(colegio_id=colegio.id) \
-                                   .order_by(PlanEstudio.orden, PlanEstudio.nombre).all()
+                                   .order_by(PlanEstudio.nombre).all()
         plan = None
         plan_id = request.args.get('plan_id', type=int)
         if plan_id:
@@ -91,7 +117,7 @@ def register_report_routes(app):
 
         grados = []
         if plan:
-            grados = sorted(plan.grados, key=lambda g: (g.orden, g.nombre))
+            grados = sorted(plan.grados, key=lambda g: g.nombre)
         grado = None
         grado_id = request.args.get('grado_id', type=int)
         if grado_id:
@@ -175,7 +201,6 @@ def register_report_routes(app):
 
             filas.sort(key=lambda f: (
                 orden_tipo.get(f['tipo_plan'], 9),
-                f['area'].orden if f['area'] else 999,
                 f['area'].nombre if f['area'] else 'Sin área',
                 f['gm'].materia.nombre,
             ))
@@ -221,7 +246,7 @@ def register_report_routes(app):
     def horario_general(version_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         version = _version(version_id, colegio)
         secciones = _secciones(version)
 
@@ -306,7 +331,7 @@ def register_report_routes(app):
     def horarios_docentes():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         anio = anio_activo(colegio.id)
         versiones = _versiones_vigentes(colegio, anio)
@@ -339,7 +364,7 @@ def register_report_routes(app):
     def horario_docente(profesor_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
 
         profesor = db.get_or_404(Profesor, profesor_id)
         if profesor.colegio_id != colegio.id:

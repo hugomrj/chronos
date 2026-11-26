@@ -3,8 +3,7 @@
 {% block title %}Materias{% endblock %}
 
 {% block content %}
-{{ page_head('Materias', 'Asignaturas del colegio y el tipo de espacio que necesitan.',
-             url_for('materias', nuevo=1), 'Nueva materia') }}
+{{ page_head('Materias', 'Asignaturas del colegio y el tipo de espacio que necesitan.') }}
 
 {% if area is defined and area %}
 <section class="panel glass" style="margin-bottom: 1rem;">
@@ -83,6 +82,7 @@
         </div>
         <div class="hint">Una materia puede pertenecer a varias especialidades.</div>
       </div>
+      {% if not colegio_actual or colegio_actual.usa_aulas %}
       <div class="field fw-full materia-field">
         <label for="tipo_aula_requerida">Aula requerida <span class="opt">(opcional)</span></label>
         <select class="input vanilla-select" id="tipo_aula_requerida" name="tipo_aula_requerida">
@@ -93,6 +93,7 @@
         </select>
         <div class="hint">Si la materia necesita laboratorio, informática o gimnasio, elegilo acá.</div>
       </div>
+      {% endif %}
     </div>
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear materia' }}</button>
@@ -103,6 +104,13 @@
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
+<div class="page-actions">
+  <a href="{{ url_for('materias', nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nueva materia
+  </a>
+</div>
+
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -118,7 +126,9 @@
         <th class="c-state">Nivel</th>
         <th class="c-state">Especialidad</th>
         <th class="c-state">Horas</th>
+        {% if not colegio_actual or colegio_actual.usa_aulas %}
         <th class="c-state">Aula requerida</th>
+        {% endif %}
         <th style="width: 110px; text-align: right;">Acciones</th>
       </tr>
     </thead>
@@ -141,6 +151,7 @@
           {% else %}Común{% endif %}
         </td>
         <td class="c-state">{{ m.horas_semanales }} h</td>
+        {% if not colegio_actual or colegio_actual.usa_aulas %}
         <td class="c-state">
           {% if m.tipo_aula_requerida %}
             <span class="status">{{ tipos_label.get(m.tipo_aula_requerida, m.tipo_aula_requerida) }}</span>
@@ -148,6 +159,7 @@
             <span class="status off">Cualquiera</span>
           {% endif %}
         </td>
+        {% endif %}
         <td>{{ row_actions(url_for('materias', editar=m.id), url_for('materia_eliminar', item_id=m.id), m.nombre) }}</td>
       </tr>
       {% endfor %}

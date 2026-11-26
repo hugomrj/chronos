@@ -1,0 +1,102 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
+{% block title %}Roles y menú{% endblock %}
+
+{% block content %}
+{{ page_head('Roles y menú', 'Cada rol define qué pantallas ve. Solo el rol master puede cambiar el menú.') }}
+
+{% if nuevo or form or edit %}
+<section class="panel glass" style="margin-bottom: 1rem;">
+  <div class="panel-head">
+    <h2>{{ 'Editar rol' if edit else 'Nuevo rol' }}</h2>
+  </div>
+  <form method="post" action="{{ url_for('rol_guardar') }}" class="form-panel" autocomplete="off">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {{ form_errors(errors) }}
+    {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
+    <div class="form-grid">
+      <div class="field fw-full">
+        <label for="nombre">Nombre del rol</label>
+        <input class="input" id="nombre" name="nombre" type="text" required autofocus
+               value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
+               placeholder="Ej. direccion"
+               {% if edit and edit.es_master %}readonly{% endif %}>
+        <div class="hint">Sin espacios. Ej.: direccion, secretaria, docente.</div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear rol' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('roles') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+{% if not (nuevo or form or edit) %}
+<div class="page-actions">
+  <a href="{{ url_for('roles', nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nuevo rol
+  </a>
+</div>
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Listado</h2>
+    <span class="hint">{{ items|length }} rol(es)</span>
+  </div>
+  {% if items %}
+  <table>
+    <thead>
+      <tr>
+        <th>Rol</th>
+        <th class="c-state">Tipo</th>
+        <th class="c-state">Pantallas</th>
+        <th class="c-state">Estado</th>
+        <th style="width: 200px; text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in items %}
+      <tr>
+        <td><b>{{ r.nombre }}</b></td>
+        <td class="c-state">
+          {% if r.es_master %}<span class="status ok">Master</span>
+          {% else %}<span class="status">Configurable</span>{% endif %}
+        </td>
+        <td class="c-state">
+          {% if r.es_master %}Todas{% else %}{{ r.items_menu|length }}{% endif %}
+        </td>
+        <td class="c-state">
+          {% if r.bloqueado %}<span class="status off">Bloqueado</span>
+          {% else %}<span class="status ok">Activo</span>{% endif %}
+        </td>
+        <td>
+          <div class="actions-cell">
+            {% if not r.es_master %}
+            <form method="post" action="{{ url_for('rol_bloqueo', rol_id=r.id) }}" style="display:inline;">
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-ghost btn-sm">
+                {{ 'Habilitar' if r.bloqueado else 'Bloquear' }}
+              </button>
+            </form>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('rol_menu', rol_id=r.id) }}">Menú</a>
+            <a href="{{ url_for('roles', editar=r.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
+            <button type="button" class="icon-btn danger" data-tip="Eliminar"
+                    data-del-url="{{ url_for('rol_eliminar', rol_id=r.id) }}"
+                    data-del-name="{{ r.nombre }}">{{ icon_eliminar() }}</button>
+            {% else %}
+            <span class="hint">Acceso total</span>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  {{ empty_state('No hay roles', 'Creá un rol para definir su menú.') }}
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

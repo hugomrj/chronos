@@ -3,8 +3,7 @@
 {% block title %}Planes de estudio{% endblock %}
 
 {% block content %}
-{{ page_head('Planes de estudio', 'Un ciclo puede tener varios planes. Cada plan define las materias por curso y puede tener una especialidad.',
-             url_for('planes', nuevo=1), 'Nuevo plan') }}
+{{ page_head('Planes de estudio', 'Un ciclo puede tener varios planes. Cada plan define las materias por curso y puede tener una especialidad.') }}
 
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_nivel = (form.get('nivel_id') or '') if form else (edit.nivel_id if edit else '') %}
@@ -47,11 +46,6 @@
         </select>
         <div class="hint">Opcional. Si tiene especialidad, la sección la hereda.</div>
       </div>
-      <div class="field fw-1">
-        <label for="orden">Orden</label>
-        <input class="input" id="orden" name="orden" type="number" min="0"
-               value="{{ form.get('orden') or (edit.orden if edit else 0) }}">
-      </div>
       <div class="field fw-full">
         <label>Grados que forman este plan</label>
         <div class="check-grid">
@@ -82,6 +76,13 @@
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
+<div class="page-actions">
+  <a href="{{ url_for('planes', nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nuevo plan
+  </a>
+</div>
+
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -106,7 +107,7 @@
         <td class="c-state">{{ p.nivel.nombre }}</td>
         <td class="c-state">{{ p.especialidad.nombre if p.especialidad else 'Común' }}</td>
         <td>
-          {% for g in p.grados|sort(attribute='orden') %}
+          {% for g in p.grados|sort(attribute='nombre') %}
           <span class="status">{{ g.nombre }}</span>
           {% else %}
           <span class="hint">Sin grados</span>

@@ -1,0 +1,42 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors %}
+{% block title %}Menú · {{ rol.nombre }}{% endblock %}
+
+{% block content %}
+{{ page_head('Menú del rol ' ~ rol.nombre,
+             'Marcá las pantallas que verá este rol. Los usuarios de este rol solo podrán entrar a las marcadas.') }}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Pantallas</h2>
+  </div>
+  <form method="post" action="{{ url_for('rol_menu_guardar', rol_id=rol.id) }}" class="form-panel">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {{ form_errors(errors) }}
+
+    {% for grupo, lista in grupos.items() %}
+    <div style="margin-bottom: 1.25rem;">
+      <h4 class="materias-nivel-title">{{ grupo }}</h4>
+      <div class="check-grid">
+        {% for clave, etiqueta in lista %}
+        <label class="check-item">
+          <input type="checkbox" name="items" value="{{ clave }}"
+                 {{ 'checked' if clave in seleccionados }}>
+          <span>{{ etiqueta }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="hint">
+      <br>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Guardar menú</button>
+      <a class="btn btn-ghost" href="{{ url_for('roles') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

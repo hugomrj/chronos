@@ -1,5 +1,5 @@
 from app.models.base import BaseModel
-from app.models.auth import Rol, Colegio, AnioLectivo, Usuario
+from app.models.auth import Rol, RolMenu, Colegio, AnioLectivo, Usuario
 from app.models.academic import (
     Nivel, Grado, Turno, Aula, Materia, PlantillaHorario, Bloque,
     PlanEstudio, PlanGrado, MateriaEspecialidad, AreaConocimiento, Especialidad,
@@ -13,7 +13,7 @@ from app.models.results import HorarioVersion, HorarioCelda
 from app.models.rules import Regla
 
 __all__ = [
-    'BaseModel', 'Rol', 'Colegio', 'AnioLectivo', 'Usuario',
+    'BaseModel', 'Rol', 'RolMenu', 'Colegio', 'AnioLectivo', 'Usuario',
     'Nivel', 'Grado', 'Turno', 'Aula', 'Materia', 'PlantillaHorario', 'Bloque',
     'PlanEstudio', 'PlanGrado', 'MateriaEspecialidad', 'AreaConocimiento',
     'Especialidad',

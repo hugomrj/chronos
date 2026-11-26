@@ -3,8 +3,7 @@
 {% block title %}Grados / Cursos{% endblock %}
 
 {% block content %}
-{{ page_head('Grados / Cursos', 'Cursos que pertenecen a cada nivel: grado en primaria, curso en media.',
-             url_for('grados', nuevo=1, nivel_id=nivel.id if nivel is defined and nivel else none), 'Nuevo grado / curso') }}
+{{ page_head('Grados / Cursos', 'Cursos que pertenecen a cada nivel: grado en primaria, curso en media.') }}
 
 {% if nivel is defined and nivel %}
 <section class="panel glass" style="margin-bottom: 1rem;">
@@ -17,6 +16,7 @@
 
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_nivel = (form.get('nivel_id') or '') if form else (edit.nivel_id if edit else (nivel.id if nivel is defined and nivel else '')) %}
+{% set v_especialidad = (form.get('especialidad_id') or '') if form else (edit.especialidad_id if edit else '') %}
 <section class="panel glass" style="margin-bottom: 1rem;">
   <div class="panel-head">
     <h2>{{ 'Editar grado' if edit else 'Nuevo grado' }}</h2>
@@ -27,13 +27,13 @@
     {{ form_errors(errors) }}
     {% if edit %}<input type="hidden" name="id" value="{{ edit.id }}">{% endif %}
     <div class="form-grid">
-      <div class="field fw-2">
+      <div class="field fw-full">
         <label for="nombre">Nombre del grado / curso</label>
         <input class="input" id="nombre" name="nombre" type="text"
                value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
                placeholder="Ej. 1er grado" required autofocus>
       </div>
-      <div class="field fw-1">
+      <div class="field fw-2">
         <label for="nivel_id">Nivel</label>
         <select class="input vanilla-select" id="nivel_id" name="nivel_id" required>
           <option value="">Seleccioná un nivel</option>
@@ -42,10 +42,15 @@
           {% endfor %}
         </select>
       </div>
-      <div class="field fw-1">
-        <label for="orden">Orden <span class="opt">(opcional)</span></label>
-        <input class="input" id="orden" name="orden" type="number" min="0"
-               value="{{ form.get('orden') or (edit.orden if edit else 0) }}">
+      <div class="field fw-2">
+        <label for="especialidad_id">Especialidad <span class="opt">(opcional)</span></label>
+        <select class="input vanilla-select" id="especialidad_id" name="especialidad_id">
+          <option value="">Sin especialidad</option>
+          {% for e in especialidades %}
+          <option value="{{ e.id }}" data-nivel="{{ e.nivel_id }}" {{ 'selected' if (v_especialidad|string) == (e.id|string) }}>{{ e.nombre }}</option>
+          {% endfor %}
+        </select>
+        <div class="hint">Solo para cursos técnicos.</div>
       </div>
     </div>
     <div class="form-actions">
@@ -57,6 +62,13 @@
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
+<div class="page-actions">
+  <a href="{{ url_for('grados', nuevo=1, nivel_id=nivel.id if nivel is defined and nivel else none) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nuevo grado / curso
+  </a>
+</div>
+
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -69,7 +81,7 @@
       <tr>
         <th>Grado / Curso</th>
         <th class="c-state">Nivel</th>
-        <th class="c-state">Orden</th>
+        <th class="c-state">Especialidad</th>
         <th style="width: 110px; text-align: right;">Acciones</th>
       </tr>
     </thead>
@@ -78,7 +90,11 @@
       <tr>
         <td><b>{{ g.nombre }}</b></td>
         <td class="c-state">{{ g.nivel.nombre }}</td>
-        <td class="c-state">{{ g.orden }}</td>
+        <td class="c-state">
+          {% if g.especialidad %}
+            {{ g.especialidad.nombre }}
+          {% else %}—{% endif %}
+        </td>
         <td>
           <div class="actions-cell">
             <a href="{{ url_for('planes') }}" class="btn btn-ghost btn-sm">Planes</a>

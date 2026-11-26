@@ -3,8 +3,7 @@
 {% block title %}Áreas de conocimiento{% endblock %}
 
 {% block content %}
-{{ page_head('Áreas de conocimiento', 'Agrupan materias por campo del saber. Una materia puede pertenecer a más de un área.',
-             url_for('areas', nuevo=1), 'Nueva área') }}
+{{ page_head('Áreas de conocimiento', 'Agrupan materias por campo del saber. Una materia puede pertenecer a más de un área.') }}
 
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_activa = (form.get('activa') == 'on') if form else (edit.activa if edit else true) %}
@@ -32,12 +31,6 @@
         <div class="hint">Máximo de horas que puede sumar esta área en un grado.</div>
       </div>
 
-      <div class="field fw-full" style="max-width: 14rem;">
-        <label for="orden">Orden</label>
-        <input class="input" id="orden" name="orden" type="number" min="0"
-               value="{{ form.get('orden') or (edit.orden if edit else 0) }}">
-        <div class="hint">Solo define el orden de visualización.</div>
-      </div>
       <div class="field fw-full">
         <label class="switch-row">
           <input type="checkbox" class="switch" name="activa" {{ 'checked' if v_activa }}>
@@ -55,6 +48,13 @@
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
+<div class="page-actions">
+  <a href="{{ url_for('areas', nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nueva área
+  </a>
+</div>
+
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
@@ -65,7 +65,6 @@
     <thead>
       <tr>
         <th>Área</th>
-        <th class="c-state">Orden</th>
         <th class="c-state">Horas máx.</th>
         <th class="c-state">Materias</th>
         <th class="c-state">Estado</th>
@@ -76,7 +75,6 @@
       {% for a in items %}
       <tr>
         <td><b>{{ a.nombre }}</b></td>
-        <td class="c-state">{{ a.orden }}</td>
         <td class="c-state">{{ a.horas_max_semana if a.horas_max_semana is not none else '—' }}</td>
         <td class="c-state">
           {% set total_materias = a.materias|length %}

@@ -1,0 +1,57 @@
+{% extends 'layout/base.html' %}
+{% from 'academic/_partials.html' import page_head, form_errors %}
+{% block title %}Ajustes de instancia{% endblock %}
+
+{% block content %}
+{{ page_head('Ajustes de instancia',
+             'Opciones que definen cómo funciona esta instalación de Chronos. Solo el rol master las cambia.') }}
+
+<section class="panel glass">
+  <div class="panel-head">
+    <h2>Uso de aulas</h2>
+    <span class="status">{{ 'Con aulas' if colegio.usa_aulas else 'Sin aulas' }}</span>
+  </div>
+
+  <form method="post" action="{{ url_for('ajustes_guardar') }}" class="form-panel"
+        onsubmit="return confirm('Cambiar el uso de aulas no actualiza los horarios ya generados. Vas a tener que generarlos de nuevo. ¿Continuar?');">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {{ form_errors(errors) }}
+
+    <div class="form-grid">
+      <div class="field fw-full">
+        <label class="switch-row">
+          <input type="checkbox" class="switch" name="usa_aulas"
+                 {{ 'checked' if colegio.usa_aulas }}>
+          <span class="switch-state"></span>
+          <span style="margin-left: .5rem; font-weight: 600;">El colegio usa aulas</span>
+        </label>
+        <div class="hint">
+          Si está desmarcado, el horario se genera solo con profesor y sección:
+          no se asignan aulas ni se controlan choques de aula.
+        </div>
+      </div>
+    </div>
+
+    <div
+      style="margin: 0 0 1rem; padding: 0.75rem 1rem; border-radius: 0.75rem;
+             background: color-mix(in srgb, var(--warn) 12%, transparent);
+             border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+             font-size: 0.82rem;">
+      <b>Importante:</b> cambiar esta opción <b>no reestructura</b> los horarios
+      existentes. Las versiones ya generadas quedan como están y hay que
+      <b>generarlas de nuevo</b> para que reflejen la nueva configuración.
+    </div>
+
+    {% if colegio.aulas_cambiado_en %}
+    <div class="hint" style="margin-bottom: 1rem;">
+      Último cambio: {{ colegio.aulas_cambiado_en.strftime('%d/%m/%Y %H:%M') }}
+    </div>
+    {% endif %}
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Guardar ajustes</button>
+      <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

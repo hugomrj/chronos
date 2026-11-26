@@ -7,7 +7,8 @@ from app.models import (
     AreaConocimiento, Especialidad, Grado, Nivel, PlanEstudio, PlanGrado,
     PlanMateria, Seccion,
 )
-from app.utils.helpers import colegio_actual, parse_int
+from app.utils.helpers import parse_int
+from app.utils.colegio import colegio_actual
 
 
 def register_plan_routes(app):
@@ -21,8 +22,7 @@ def register_plan_routes(app):
         return dict(
             crumb='Áreas de conocimiento',
             items=AreaConocimiento.query.filter_by(colegio_id=colegio.id)
-                                        .order_by(AreaConocimiento.orden,
-                                                  AreaConocimiento.nombre).all(),
+                                        .order_by(AreaConocimiento.nombre).all(),
             edit=edit, form=form or {}, errors=errors or [],
         )
 
@@ -40,8 +40,7 @@ def register_plan_routes(app):
         return dict(
             crumb='Planes de estudio',
             items=PlanEstudio.query.filter_by(colegio_id=colegio.id)
-                                   .order_by(PlanEstudio.orden,
-                                             PlanEstudio.nombre).all(),
+                                   .order_by(PlanEstudio.nombre).all(),
             niveles=Nivel.query.filter_by(colegio_id=colegio.id)
                                .order_by(Nivel.nombre).all(),
             especialidades=Especialidad.query.filter_by(
@@ -49,7 +48,7 @@ def register_plan_routes(app):
             ).order_by(Especialidad.nombre).all(),
             grados=Grado.query.join(Nivel).filter(
                 Nivel.colegio_id == colegio.id
-            ).order_by(Nivel.nombre, Grado.orden, Grado.nombre).all(),
+            ).order_by(Nivel.nombre, Grado.nombre).all(),
             edit=edit, form=form or {}, errors=errors or [],
         )
 
@@ -61,7 +60,7 @@ def register_plan_routes(app):
     def areas():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         edit_id = request.args.get('editar', type=int)
         return render_template(
             'academic/areas.html',
@@ -74,14 +73,13 @@ def register_plan_routes(app):
     def area_guardar():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         item_id = request.form.get('id', type=int)
         item = db.session.get(AreaConocimiento, item_id) if item_id else None
         if item and item.colegio_id != colegio.id:
             abort(404)
 
         nombre = (request.form.get('nombre') or '').strip()
-        orden = parse_int(request.form.get('orden'), 0) or 0
         activa = request.form.get('activa') == 'on'
         raw_horas = (request.form.get('horas_max_semana') or '').strip()
         horas_max = parse_int(raw_horas) if raw_horas else None
@@ -89,8 +87,6 @@ def register_plan_routes(app):
         errors = []
         if not nombre:
             errors.append('El nombre del área es obligatorio.')
-        if orden < 0:
-            errors.append('El orden no puede ser negativo.')
         if horas_max is not None and horas_max < 1:
             errors.append('El máximo de horas debe ser mayor a cero.')
         if item is not None and horas_max is not None and item.materias:
@@ -120,7 +116,6 @@ def register_plan_routes(app):
             item = AreaConocimiento(colegio_id=colegio.id)
             db.session.add(item)
         item.nombre = nombre
-        item.orden = orden
         item.activa = activa
         item.horas_max_semana = horas_max
         try:
@@ -136,7 +131,7 @@ def register_plan_routes(app):
     def area_eliminar(item_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         item = db.get_or_404(AreaConocimiento, item_id)
         if item.colegio_id != colegio.id:
             abort(404)
@@ -160,7 +155,7 @@ def register_plan_routes(app):
     def especialidades():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         edit_id = request.args.get('editar', type=int)
         return render_template(
             'academic/especialidades.html',
@@ -174,7 +169,7 @@ def register_plan_routes(app):
     def especialidad_guardar():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         item_id = request.form.get('id', type=int)
         item = db.session.get(Especialidad, item_id) if item_id else None
         if item and item.colegio_id != colegio.id:
@@ -223,7 +218,7 @@ def register_plan_routes(app):
     def especialidad_eliminar(item_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         item = db.get_or_404(Especialidad, item_id)
         if item.colegio_id != colegio.id:
             abort(404)
@@ -247,7 +242,7 @@ def register_plan_routes(app):
     def planes():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         edit_id = request.args.get('editar', type=int)
         return render_template(
             'academic/planes.html',
@@ -260,7 +255,7 @@ def register_plan_routes(app):
     def plan_guardar():
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         item_id = request.form.get('id', type=int)
         item = db.session.get(PlanEstudio, item_id) if item_id else None
         if item and item.colegio_id != colegio.id:
@@ -276,7 +271,6 @@ def register_plan_routes(app):
             if especialidad_id else None
         if especialidad and especialidad.colegio_id != colegio.id:
             especialidad = None
-        orden = parse_int(request.form.get('orden'), 0) or 0
         activo = request.form.get('activo') == 'on'
         grado_ids = [int(x) for x in request.form.getlist('grado_ids') if x.isdigit()]
 
@@ -287,12 +281,18 @@ def register_plan_routes(app):
             errors.append('Seleccioná un nivel válido.')
         if especialidad and (not nivel or especialidad.nivel_id != nivel.id):
             errors.append('La especialidad no pertenece al nivel elegido.')
-        if orden < 0:
-            errors.append('El orden no puede ser negativo.')
-        existente = PlanEstudio.query.filter_by(
-            colegio_id=colegio.id, nombre=nombre).first()
+        # El nombre se repite por especialidad: la clave es nombre + nivel + especialidad.
+        existente = PlanEstudio.query.filter(
+            PlanEstudio.colegio_id == colegio.id,
+            PlanEstudio.nombre == nombre,
+            PlanEstudio.nivel_id == (nivel.id if nivel else None),
+            PlanEstudio.especialidad_id == (especialidad.id if especialidad else None),
+        ).first()
         if existente and (item is None or existente.id != item.id):
-            errors.append('Ya existe un plan con ese nombre.')
+            detalle = f'en {especialidad.nombre}' if especialidad else 'sin especialidad'
+            errors.append(
+                f'Ya existe un plan «{nombre}» {detalle} en ese nivel.'
+            )
 
         grados = []
         if nivel and grado_ids:
@@ -311,7 +311,6 @@ def register_plan_routes(app):
         item.nombre = nombre
         item.nivel_id = nivel.id
         item.especialidad_id = especialidad.id if especialidad else None
-        item.orden = orden
         item.activo = activo
         db.session.flush()
 
@@ -334,7 +333,7 @@ def register_plan_routes(app):
         plan = db.get_or_404(PlanEstudio, item_id)
         if plan.colegio_id != colegio.id:
             abort(404)
-        grados = sorted(plan.grados, key=lambda g: (g.orden, g.nombre))
+        grados = sorted(plan.grados, key=lambda g: g.nombre)
         datos = []
         for grado in grados:
             datos.append({
@@ -350,7 +349,7 @@ def register_plan_routes(app):
     def plan_eliminar(item_id):
         colegio = _colegio()
         if not colegio:
-            return redirect(url_for('colegios'))
+            return redirect(url_for('dashboard'))
         item = db.get_or_404(PlanEstudio, item_id)
         if item.colegio_id != colegio.id:
             abort(404)

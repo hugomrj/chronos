@@ -82,7 +82,8 @@ document.querySelectorAll('.swatch').forEach(sw=>sw.addEventListener('click',()=
 }));
 
 /* ═══ COLOR PICKER ═══ */
-document.getElementById('customColor').addEventListener('input',e=>{
+const customColor=document.getElementById('customColor');
+if(customColor) customColor.addEventListener('input',e=>{
   const hex=e.target.value;
   const r=parseInt(hex.slice(1,3),16)/255,
         g=parseInt(hex.slice(3,5),16)/255,

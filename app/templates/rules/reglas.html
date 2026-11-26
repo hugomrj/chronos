@@ -3,8 +3,7 @@
 {% block title %}Reglas{% endblock %}
 
 {% block content %}
-{{ page_head('Reglas', 'Restricciones obligatorias y preferencias deseables que respeta el motor al generar horarios.',
-             url_for('reglas', nuevo=1), 'Nueva regla') }}
+{{ page_head('Reglas', 'Restricciones obligatorias y preferencias deseables que respeta el motor al generar horarios.') }}
 
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_codigo = (form.get('codigo') or '') if form else (edit.codigo if edit else '') %}
@@ -125,6 +124,13 @@
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
+<div class="page-actions">
+  <a href="{{ url_for('reglas', nuevo=1) }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nueva regla
+  </a>
+</div>
+
 <section class="panel glass">
   <div class="panel-head">
     <h2>Reglas configuradas</h2>
