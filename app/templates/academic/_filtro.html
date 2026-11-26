@@ -1,0 +1,19 @@
+{% macro barra_filtro(endpoint, q, args={}, placeholder='Buscar...') %}
+<form method="get" action="{{ url_for(endpoint) }}" class="filtro-barra">
+  {% for clave, valor in args.items() %}
+    {% if valor is not none %}<input type="hidden" name="{{ clave }}" value="{{ valor }}">{% endif %}
+  {% endfor %}
+  <div class="filtro-campo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--text-2)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input type="search" name="q" value="{{ q or '' }}" placeholder="{{ placeholder }}"
+           autocomplete="off" spellcheck="false">
+  </div>
+  <button class="btn btn-ghost" type="submit">Buscar</button>
+  {% if q %}
+  <a class="btn btn-ghost" href="{{ url_for(endpoint, **args) }}">Limpiar</a>
+  {% endif %}
+  {% if caller %}
+  <div class="filtro-acciones">{{ caller() }}</div>
+  {% endif %}
+</form>
+{% endmacro %}

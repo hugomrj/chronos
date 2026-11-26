@@ -2,6 +2,7 @@
 {% from 'academic/_partials.html' import form_errors, icon_eliminar, empty_state %}
 {% block title %}Horarios{% endblock %}
 
+{% from 'academic/_paginador.html' import paginador with context %}
 {% block content %}
 <div class="page-head">
   <div>
@@ -161,6 +162,7 @@
       {% endfor %}
     </tbody>
   </table>
+  {% if pagina %}{{ paginador(pagina, 'horarios', {}) }}{% endif %}
   {% else %}
   {{ empty_state('Todavía no hay horarios generados', 'Elegí un turno y generá el primer borrador. El motor respeta profesores, aulas, disponibilidad y reglas.') }}
   {% endif %}

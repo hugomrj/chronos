@@ -2,6 +2,8 @@
 {% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
 {% block title %}Usuarios{% endblock %}
 
+{% from 'academic/_paginador.html' import paginador with context %}
+{% from 'academic/_filtro.html' import barra_filtro with context %}
 {% block content %}
 {{ page_head('Usuarios', 'Accesos al sistema para ' ~ colegio.nombre ~ '.') }}
 
@@ -69,20 +71,21 @@
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
-<div class="page-actions">
+{% call barra_filtro('usuarios', filtro, {}, 'Buscar por correo o rol...') %}
   <a href="{{ url_for('usuarios', nuevo=1) }}" class="btn btn-primary">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     Nuevo usuario
   </a>
-</div>
+{% endcall %}
 
 <section class="panel glass">
   <div class="panel-head">
     <h2>Usuarios del colegio</h2>
-    <span class="hint">{{ items|length }} usuario(s)</span>
+    <span class="hint">{{ pagina.total if pagina else items|length }} usuario(s)</span>
   </div>
 
-  {% if items %}
+  {% set lista = pagina.items if pagina else items %}
+  {% if lista %}
   <table>
     <thead>
       <tr>
@@ -94,7 +97,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for u in items %}
+      {% for u in lista %}
       <tr>
         <td>
           <b>{{ u.email }}</b>
@@ -123,8 +126,9 @@
       {% endfor %}
     </tbody>
   </table>
+  {% if pagina %}{{ paginador(pagina, 'usuarios', {}) }}{% endif %}
   {% else %}
-  {{ empty_state('Todavía no hay usuarios', 'Creá el primer usuario para que pueda acceder al sistema.') }}
+  {{ empty_state('Sin resultados', 'No hay usuarios que coincidan con la búsqueda.') if filtro else empty_state('Todavía no hay usuarios', 'Creá el primer usuario para que pueda acceder al sistema.') }}
   {% endif %}
 </section>
 {% endif %}

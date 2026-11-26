@@ -52,6 +52,8 @@ de optimización que evita choques de profesores, aulas y secciones.
   el resto de los roles ven solo las pantallas que el admin les habilite.
 - Menú por rol (`rol_menu`), aplicado en la vista y también en las rutas.
 - Usuarios, perfil, preferencias y configuración.
+- Listados de profesores, materias y usuarios con **búsqueda** y **paginación**
+  (10 por página).
 
 ---
 

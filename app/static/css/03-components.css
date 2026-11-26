@@ -1727,11 +1727,16 @@ input[type=number] {
 /* ═══ BUSCADOR GLOBAL (Command Palette) ═══ */
 .search-input {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   color: var(--text);
+  font-family: inherit;
   font-size: 1rem;
+  line-height: 1.6;
+  padding: 0.125rem 0;
   outline: none;
+  caret-color: var(--acc-txt); /* el cursor tapa la primera letra sin esto */
 }
 
 .search-input::placeholder {

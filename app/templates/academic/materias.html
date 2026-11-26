@@ -2,6 +2,8 @@
 {% from 'academic/_partials.html' import page_head, form_errors, row_actions, empty_state %}
 {% block title %}Materias{% endblock %}
 
+{% from 'academic/_paginador.html' import paginador with context %}
+{% from 'academic/_filtro.html' import barra_filtro with context %}
 {% block content %}
 {{ page_head('Materias', 'Asignaturas del colegio y el tipo de espacio que necesitan.') }}
 
@@ -104,20 +106,21 @@
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
-<div class="page-actions">
+{% call barra_filtro('materias', filtro, {'area_id': area.id if area else none}, 'Buscar por materia, área o nivel...') %}
   <a href="{{ url_for('materias', nuevo=1) }}" class="btn btn-primary">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
     Nueva materia
   </a>
-</div>
+{% endcall %}
 
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
-    <span class="hint">{{ items|length }} materia(s)</span>
+    <span class="hint">{{ pagina.total if pagina else items|length }} materia(s)</span>
   </div>
 
-  {% if items %}
+  {% set lista = pagina.items if pagina else items %}
+  {% if lista %}
   <table>
     <thead>
       <tr>
@@ -133,7 +136,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for m in items %}
+      {% for m in lista %}
       <tr>
         <td><b>{{ m.nombre }}</b></td>
         <td>
@@ -147,8 +150,14 @@
         <td class="c-state">{{ m.nivel.nombre }}</td>
         <td class="c-state">
           {% if m.especialidades %}
-            {{ m.especialidades|map(attribute='nombre')|join(', ') }}
-          {% else %}Común{% endif %}
+            <div class="pills">
+              {% for e in m.especialidades %}
+              <span class="status">{{ e.nombre }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <span class="status off">Común</span>
+          {% endif %}
         </td>
         <td class="c-state">{{ m.horas_semanales }} h</td>
         {% if not colegio_actual or colegio_actual.usa_aulas %}
@@ -165,8 +174,9 @@
       {% endfor %}
     </tbody>
   </table>
+  {% if pagina %}{{ paginador(pagina, 'materias', {'area_id': area.id if area else none}) }}{% endif %}
   {% else %}
-  {{ empty_state('Todavía no hay materias', 'Cargá las asignaturas del colegio para después armar el plan de estudios de cada grado.') }}
+  {{ empty_state('Sin resultados', 'No hay materias que coincidan con la búsqueda.') if filtro else empty_state('Todavía no hay materias', 'Cargá las asignaturas del colegio para después armar el plan de estudios de cada grado.') }}
   {% endif %}
 </section>
 {% endif %}

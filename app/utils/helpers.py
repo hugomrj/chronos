@@ -1,5 +1,8 @@
 import re
 
+# Registros por página en los listados paginados.
+POR_PAGINA = 10
+
 TIPOS_AULA = ('regular', 'laboratorio', 'informatica', 'gimnasio', 'otro')
 
 TIPOS_AULA_LABEL = {

@@ -8,7 +8,7 @@ from app.models import (
     Nivel, Turno,
 )
 from app.utils.helpers import (
-    TIPOS_AULA, TIPOS_AULA_LABEL, parse_date, parse_int,
+    POR_PAGINA, TIPOS_AULA, TIPOS_AULA_LABEL, parse_date, parse_int,
 )
 from app.utils.colegio import colegio_actual
 
@@ -467,9 +467,19 @@ def register_academic_routes(app):
             if area and area.colegio_id != colegio.id:
                 area = None
 
+        texto = (request.args.get('q') or '').strip()
         consulta = Materia.query.filter_by(colegio_id=colegio.id)
         if area:
             consulta = consulta.filter(Materia.area_id == area.id)
+        if texto:
+            patron = f'%{texto}%'
+            consulta = consulta.join(Materia.area).join(Materia.nivel).filter(
+                db.or_(
+                    Materia.nombre.ilike(patron),
+                    AreaConocimiento.nombre.ilike(patron),
+                    Nivel.nombre.ilike(patron),
+                )
+            )
 
         edit = _get(Materia)
         areas = AreaConocimiento.query.filter_by(
@@ -479,8 +489,11 @@ def register_academic_routes(app):
                              .order_by(Nivel.nombre).all()
         return render_template(
             'academic/materias.html', crumb='Materias',
-            items=consulta.order_by(Materia.nombre).all(),
+            pagina=consulta.order_by(Materia.nombre)
+                          .paginate(page=request.args.get('pagina', 1, type=int),
+                                    per_page=POR_PAGINA, error_out=False),
             area=area,
+            filtro=texto,
             areas=areas,
             niveles=niveles,
             especialidades=Especialidad.query.filter_by(

@@ -9,7 +9,7 @@ from app.models import (
     SeccionMateria,
 )
 from app.utils.helpers import (
-    DIAS_SEMANA, parse_int, parse_time,
+    DIAS_SEMANA, POR_PAGINA, parse_int, parse_time,
 )
 from app.utils.colegio import anio_activo, colegio_actual
 
@@ -17,6 +17,21 @@ from app.utils.colegio import anio_activo, colegio_actual
 
 def register_teachers_routes(app):
     """CRUD de profesores y su disponibilidad horaria."""
+
+    def _pagina_profesores(colegio, texto):
+        consulta = Profesor.query.filter_by(colegio_id=colegio.id)
+        if texto:
+            patron = f'%{texto.strip()}%'
+            consulta = consulta.filter(db.or_(
+                Profesor.nombre.ilike(patron),
+                Profesor.documento.ilike(patron),
+                Profesor.materias.any(Materia.nombre.ilike(patron)),
+                Profesor.especialidades.any(
+                    Especialidad.nombre.ilike(patron)),
+            ))
+        return consulta.order_by(Profesor.nombre).paginate(
+            page=request.args.get('pagina', 1, type=int),
+            per_page=POR_PAGINA, error_out=False)
 
     def _ctx_profesores(colegio, edit=None, form=None, errors=None, seleccionadas=None):
         materias = Materia.query.filter_by(colegio_id=colegio.id) \
@@ -27,8 +42,9 @@ def register_teachers_routes(app):
             por_nivel.setdefault(materia.nivel, []).append(materia)
         return dict(
             crumb='Profesores',
-            items=Profesor.query.filter_by(colegio_id=colegio.id)
-                                .order_by(Profesor.nombre).all(),
+            items=None,
+            pagina=_pagina_profesores(colegio, request.args.get('q')),
+            filtro=request.args.get('q') or '',
             materias=materias,
             materias_por_nivel=por_nivel,
             especialidades=Especialidad.query.filter_by(

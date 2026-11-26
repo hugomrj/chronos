@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import bcrypt, db
 from app.models import Profesor, Rol, Usuario
-from app.utils.helpers import parse_int
+from app.utils.helpers import POR_PAGINA, parse_int
 from app.utils.colegio import colegio_actual
 
 EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
@@ -15,12 +15,25 @@ EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 def register_users_routes(app):
     """Usuarios, perfil, preferencias y configuración."""
 
+    def _pagina_usuarios(colegio, texto):
+        consulta = Usuario.query.filter_by(colegio_id=colegio.id)
+        if texto:
+            patron = f'%{texto.strip()}%'
+            consulta = consulta.join(Usuario.rol).filter(db.or_(
+                Usuario.email.ilike(patron),
+                Rol.nombre.ilike(patron),
+            ))
+        return consulta.order_by(Usuario.email).paginate(
+            page=request.args.get('pagina', 1, type=int),
+            per_page=POR_PAGINA, error_out=False)
+
     def _ctx_usuarios(colegio, edit=None, form=None, errors=None):
         return dict(
             crumb='Usuarios',
             colegio=colegio,
-            items=Usuario.query.filter_by(colegio_id=colegio.id)
-                               .order_by(Usuario.email).all(),
+            items=None,
+            pagina=_pagina_usuarios(colegio, request.args.get('q')),
+            filtro=request.args.get('q') or '',
             roles=Rol.query.order_by(Rol.es_master.desc(), Rol.nombre).all(),
             profesores=Profesor.query.filter_by(colegio_id=colegio.id)
                                      .order_by(Profesor.nombre).all(),

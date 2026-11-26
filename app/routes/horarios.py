@@ -12,7 +12,7 @@ from app.models import (
 from app.services.scheduler.constraints import profesor_disponible
 from app.services.scheduler.engine import generar_horario
 from app.utils.helpers import (
-    DIAS_SEMANA, parse_int,
+    DIAS_SEMANA, POR_PAGINA, parse_int,
 )
 from app.utils.colegio import anio_activo, colegio_actual
 
@@ -91,15 +91,20 @@ def register_horarios_routes(app):
                     anio_lectivo_id=anio.id, turno_id=turno.id
                 ).count()
         versiones = []
+        pagina = None
         if anio:
-            versiones = HorarioVersion.query.filter_by(anio_lectivo_id=anio.id) \
-                                            .order_by(HorarioVersion.creado_en.desc()).all()
+            pagina = HorarioVersion.query.filter_by(anio_lectivo_id=anio.id) \
+                .order_by(HorarioVersion.creado_en.desc()) \
+                .paginate(page=request.args.get('pagina', 1, type=int),
+                          per_page=POR_PAGINA, error_out=False)
+            versiones = pagina.items
         return dict(
             crumb='Horarios',
             anio=anio,
             turnos=turnos,
             secciones_por_turno=secciones_por_turno,
             versiones=versiones,
+            pagina=pagina,
             resultado=resultado,
             turno_sel=turno_sel,
         )

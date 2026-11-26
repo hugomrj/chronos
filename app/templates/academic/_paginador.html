@@ -1,0 +1,28 @@
+{% macro paginador(pagina, endpoint, args={}) %}
+{% if pagina and pagina.pages > 1 %}
+{% set ventana = 1 %}
+<div class="pager-row">
+  <span class="pager-info">Mostrando {{ pagina.per_page }} de {{ pagina.total }} registros</span>
+  <div class="pager">
+    <button type="button"
+            onclick="location.href='{{ url_for(endpoint, pagina=pagina.prev_num, **args) }}'"
+            {{ 'disabled' if not pagina.has_prev }} aria-label="Anterior">‹</button>
+
+    {% for num in range(1, pagina.pages + 1) %}
+      {% if num == 1 or num == pagina.pages
+            or (num >= pagina.page - ventana and num <= pagina.page + ventana) %}
+        <button type="button"
+                class="{{ 'on' if num == pagina.page }}"
+                onclick="location.href='{{ url_for(endpoint, pagina=num, **args) }}'">{{ num }}</button>
+      {% elif num == pagina.page - ventana - 1 or num == pagina.page + ventana + 1 %}
+        <button type="button" disabled>...</button>
+      {% endif %}
+    {% endfor %}
+
+    <button type="button"
+            onclick="location.href='{{ url_for(endpoint, pagina=pagina.next_num, **args) }}'"
+            {{ 'disabled' if not pagina.has_next }} aria-label="Siguiente">›</button>
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
