@@ -197,9 +197,6 @@ def register_schedule_routes(app):
 
         nombre = (request.form.get('nombre') or '').strip()
         turno_id = parse_int(request.form.get('turno_id'))
-        plan = db.session.get(PlanEstudio, plan_id) if plan_id else None
-        if plan and plan.colegio_id != colegio.id:
-            plan = None
         turno = db.session.get(Turno, turno_id) if turno_id else None
         if turno and turno.colegio_id != colegio.id:
             turno = None
