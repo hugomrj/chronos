@@ -262,6 +262,19 @@ def register_academic_routes(app):
         if especialidad and (not nivel or especialidad.nivel_id != nivel.id):
             errors.append('La especialidad no pertenece al nivel elegido.')
 
+        # La clave es nombre + nivel + especialidad.
+        if nombre and nivel and not errors:
+            existente = Grado.query.filter_by(
+                nivel_id=nivel.id, nombre=nombre,
+                especialidad_id=especialidad.id if especialidad else None,
+            ).first()
+            if existente and (item is None or existente.id != item.id):
+                detalle = (f'en {especialidad.nombre}' if especialidad
+                           else 'sin especialidad')
+                errors.append(
+                    f'Ya existe el curso «{nombre}» {detalle} en ese nivel.'
+                )
+
         if errors:
             return render_template(
                 'academic/grados.html', crumb='Grados / Cursos',
@@ -289,7 +302,8 @@ def register_academic_routes(app):
             flash('Grado guardado correctamente.', 'success')
         except IntegrityError:
             db.session.rollback()
-            flash('Ya existe un grado con ese nombre en el nivel.', 'error')
+            flash('Ya existe un curso con ese nombre, nivel y especialidad.',
+                  'error')
         return redirect(url_for('grados'))
 
     @app.route('/grados/<int:item_id>/eliminar', methods=['POST'])

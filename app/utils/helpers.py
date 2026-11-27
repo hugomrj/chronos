@@ -1,4 +1,5 @@
 import re
+from datetime import date, time
 
 # Registros por página en los listados paginados.
 POR_PAGINA = 10

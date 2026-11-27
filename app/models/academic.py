@@ -89,7 +89,8 @@ class AreaConocimiento(BaseModel):
 class Grado(BaseModel):
     __tablename__ = 'grado'
     __table_args__ = (
-        db.UniqueConstraint('nivel_id', 'nombre', name='uq_grado_nivel_nombre'),
+        db.UniqueConstraint('nivel_id', 'nombre', 'especialidad_id',
+                            name='uq_grado_nivel_nombre_especialidad'),
     )
 
     nivel_id = db.Column(db.Integer, db.ForeignKey('nivel.id'), nullable=False)

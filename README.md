@@ -48,6 +48,9 @@ de optimización que evita choques de profesores, aulas y secciones.
 - Etiquetas configurables para filas no clase (Actividades Formativas, Almuerzo, Receso)
   desde `config.py`, sin cambios en la base.
 - **Una instancia por colegio** con `COLEGIO_ID`.
+- La **especialidad** forma parte de la clave de cursos y planes: se pueden tener
+  «1° BATIN» y «1° BATAN» como cursos distintos, o un «1°» genérico por especialidad
+  en la sección.
 - **Roles**: `admin` administra su colegio (menú, usuarios, configuración y roles);
   el resto de los roles ven solo las pantallas que el admin les habilite.
 - Menú por rol (`rol_menu`), aplicado en la vista y también en las rutas.

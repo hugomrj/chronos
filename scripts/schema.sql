@@ -72,7 +72,8 @@ CREATE TABLE grado (
   nivel_id        int  NOT NULL REFERENCES nivel(id),
   especialidad_id int  REFERENCES especialidad(id) ON DELETE SET NULL,
   nombre          text NOT NULL,           -- '7mo grado', '1° curso'
-  UNIQUE (nivel_id, nombre)
+  -- La especialidad forma parte de la clave: 1° BATIN y 1° BATAN son distintos.
+  UNIQUE (nivel_id, nombre, especialidad_id)
 );
 
 CREATE TABLE plan_grado (

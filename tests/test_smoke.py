@@ -4,7 +4,7 @@ import unittest
 
 from app.extensions import db
 from app.factory import create_app
-from app.models import AreaConocimiento, Colegio, Grado, PlanEstudio
+from app.models import AreaConocimiento, Colegio, Grado, Nivel, PlanEstudio
 
 
 class SmokeTest(unittest.TestCase):
@@ -40,7 +40,13 @@ class SmokeTest(unittest.TestCase):
             'password': 'admin123',
         })
         with self.app.app_context():
-            nivel_id = Grado.query.first().nivel_id
+            # El test no depende de datos previos: crea su propio nivel.
+            nivel = Nivel.query.filter_by(nombre='Smoke').first()
+            if nivel is None:
+                nivel = Nivel(colegio_id=Colegio.query.first().id, nombre='Smoke')
+                db.session.add(nivel)
+                db.session.commit()
+            nivel_id = nivel.id
             AreaConocimiento.query.filter_by(nombre='Área Smoke').delete()
             PlanEstudio.query.filter_by(nombre='Plan Smoke').delete()
             db.session.commit()
@@ -66,6 +72,9 @@ class SmokeTest(unittest.TestCase):
 
         self.client.post(f'/planes/{plan_id}/eliminar')
         self.client.post(f'/areas/{area_id}/eliminar')
+        with self.app.app_context():
+            Nivel.query.filter_by(nombre='Smoke').delete()
+            db.session.commit()
 
     def test_configuracion_hora_catedra(self):
         self.client.post('/login', data={
