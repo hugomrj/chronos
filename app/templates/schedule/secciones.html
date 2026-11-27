@@ -59,7 +59,7 @@
         </select>
       </div>
       <div class="field fw-1">
-        <label for="plan_id">Especialidad / plan</label>
+        <label for="plan_id">Plan de estudios</label>
         <select class="input vanilla-select" id="plan_id" name="plan_id" required>
           <option value="">Seleccioná un plan</option>
           {% for p in planes %}
@@ -68,7 +68,15 @@
           </option>
           {% endfor %}
         </select>
-        <div class="hint">La especialidad se toma del plan elegido.</div>
+        <div class="hint">
+          Define las materias y horas de la sección. La especialidad se toma del plan.
+        </div>
+        {% if not planes %}
+        <div class="hint" style="color: var(--warn);">
+          Todavía no hay planes con cursos asignados.
+          <a href="{{ url_for('planes') }}" style="color: var(--acc-txt); font-weight: 600;">Crear un plan</a>
+        </div>
+        {% endif %}
       </div>
       <div class="field fw-1">
         <label for="turno_id">Turno</label>
