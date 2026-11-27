@@ -106,7 +106,7 @@
       </button>
       <div class="sub"><div class="sub-inner">
         {% if current_user.puede_ver('plantillas') %}
-        <a href="/plantillas" class="sub-item {{ 'active' if request.path.startswith('/plantillas') }}"><span>Plantillas y bloques</span></a>
+        <a href="/plantillas" class="sub-item {{ 'active' if request.path.startswith('/plantillas') }}"><span>Estructura de horarios</span></a>
         {% endif %}
         {% if current_user.puede_ver('secciones') %}
         <a href="/secciones" class="sub-item {{ 'active' if request.path.startswith('/secciones') }}"><span>Secciones y plan</span></a>

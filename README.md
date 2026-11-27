@@ -32,7 +32,7 @@ de optimización que evita choques de profesores, aulas y secciones.
 - Límite semanal de horas por área y horas semanales por profesor con historial por año.
 - Profesores con materias y especialidades habilitadas, carga horaria y disponibilidad semanal.
 - Especialidades BATIN/BATAN, plan de estudios por curso y selección de plan por sección.
-- Plantillas de horario con bloques de clase y receso.
+- Estructura de horarios con bloques de clase y receso.
 - Secciones por año/curso/turno con plan de estudios y especialidad por sección.
 - Reglas obligatorias/deseables con alcance y parámetros JSON.
 - Motor MILP con restricciones duras y reglas ponderadas.

@@ -18,7 +18,7 @@ MENU_ITEMS = [
     ('aulas', 'Aulas', 'Estructura', ('/aulas',)),
     ('profesores', 'Profesores', 'Profesores', ('/profesores',)),
     ('disponibilidad', 'Disponibilidad', 'Profesores', ('/disponibilidad',)),
-    ('plantillas', 'Plantillas y bloques', 'Planificación', ('/plantillas',)),
+    ('plantillas', 'Estructura de horarios', 'Planificación', ('/plantillas',)),
     ('secciones', 'Secciones y plan', 'Planificación', ('/secciones',)),
     ('reglas', 'Reglas', 'Planificación', ('/reglas',)),
     ('horarios', 'Horarios', 'Planificación', ('/horarios',)),

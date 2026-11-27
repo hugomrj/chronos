@@ -95,16 +95,16 @@
         </select>
       </div>
       <div class="field fw-2">
-        <label for="plantilla_id">Plantilla de horario</label>
+        <label for="plantilla_id">Estructura de horario</label>
         <select class="input vanilla-select" id="plantilla_id" name="plantilla_id" required>
-          <option value="">Seleccioná una plantilla</option>
+          <option value="">Seleccioná una estructura</option>
           {% for p in plantillas %}
           <option value="{{ p.id }}" {{ 'selected' if (v_plantilla|string) == (p.id|string) }}>
             {{ p.nombre }} ({{ p.turno.nombre }})
           </option>
           {% endfor %}
         </select>
-        <div class="hint">La plantilla debe pertenecer al turno elegido.</div>
+        <div class="hint">La estructura debe pertenecer al turno elegido.</div>
       </div>
     </div>
     <div class="form-actions">
@@ -136,7 +136,7 @@
         <th>Sección</th>
         <th class="c-state">Turno</th>
         <th class="c-state">Aula base</th>
-        <th class="c-state">Plantilla</th>
+        <th class="c-state">Estructura</th>
         <th>Plan / especialidad</th>
         <th style="width: 175px; text-align: right;">Acciones</th>
       </tr>
@@ -176,7 +176,7 @@
     </tbody>
   </table>
   {% else %}
-  {{ empty_state('Todavía no hay secciones', 'Creá la primera sección: elegí grado, turno y plantilla. El plan de estudios elegido se copia automáticamente.') }}
+  {{ empty_state('Todavía no hay secciones', 'Creá la primera sección: elegí curso, turno y estructura. El plan de estudios elegido se copia automáticamente.') }}
   {% endif %}
 </section>
 {% endif %}

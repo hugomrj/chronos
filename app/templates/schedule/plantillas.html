@@ -1,15 +1,15 @@
 {% extends 'layout/base.html' %}
 {% from 'academic/_partials.html' import page_head, form_errors, icon_editar, icon_eliminar, empty_state %}
-{% block title %}Plantillas de horario{% endblock %}
+{% block title %}Estructura de horarios{% endblock %}
 
 {% block content %}
-{{ page_head('Plantillas de horario', 'Estructura de bloques por turno: horas de clase y recesos de cada día.') }}
+{{ page_head('Estructura de horarios', 'Horas de clase y recesos de cada jornada. Cada estructura pertenece a un turno.') }}
 
 {% if edit or form or request.args.get('nuevo') %}
 {% set v_turno = (form.get('turno_id') or '') if form else (edit.turno_id if edit else '') %}
 <section class="panel glass" style="margin-bottom: 1rem;">
   <div class="panel-head">
-    <h2>{{ 'Editar plantilla' if edit else 'Nueva plantilla' }}</h2>
+    <h2>{{ 'Editar estructura' if edit else 'Nueva estructura' }}</h2>
     
   </div>
   <form method="post" action="{{ url_for('plantilla_guardar') }}" class="form-panel" autocomplete="off">
@@ -34,7 +34,7 @@
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear plantilla' }}</button>
+      <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear estructura' }}</button>
       <a class="btn btn-ghost" href="{{ url_for('plantillas') }}">Cancelar</a>
     </div>
   </form>
@@ -46,7 +46,7 @@
   <div class="panel-head"><h2>No hay turnos cargados</h2></div>
   <div class="form-panel">
     <div class="hint">
-      Una plantilla siempre pertenece a un turno.
+      Una estructura de horario siempre pertenece a un turno.
       {% if current_user.puede_ver('turnos') %}
       <a href="{{ url_for('turnos') }}" style="color: var(--acc-txt); font-weight: 600;">Configurar turnos</a>
       {% else %}
@@ -61,25 +61,25 @@
 <div class="page-actions">
   <a href="{{ url_for('plantillas', nuevo=1) }}" class="btn btn-primary">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-    Nueva plantilla
+    Nueva estructura
   </a>
 </div>
 
 <section class="panel glass">
   <div class="panel-head">
     <h2>Listado</h2>
-    <span class="hint">{{ items|length }} plantilla(s)</span>
+    <span class="hint">{{ items|length }} estructura(s)</span>
   </div>
 
   {% if items %}
   <table>
     <thead>
       <tr>
-        <th>Plantilla</th>
-        <th class="c-state">Turno</th>
-        <th class="c-state">Bloques</th>
+        <th>Estructura</th>
+        <th style="width: 22%;">Turno</th>
+        <th style="width: 18%;">Bloques</th>
         <th class="c-state">Secciones</th>
-        <th style="width: 140px; text-align: right;">Acciones</th>
+        <th style="width: 160px; text-align: right;">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -90,8 +90,8 @@
             {{ p.nombre }}
           </a>
         </td>
-        <td class="c-state">{{ p.turno.nombre }}</td>
-        <td class="c-state">
+        <td>{{ p.turno.nombre }}</td>
+        <td>
           {{ p.bloques|selectattr('tipo', 'equalto', 'clase')|list|length }} clase(s)
           {% if p.bloques|selectattr('tipo', 'equalto', 'receso')|list|length %}
           · {{ p.bloques|selectattr('tipo', 'equalto', 'receso')|list|length }} receso(s)
@@ -112,7 +112,7 @@
     </tbody>
   </table>
   {% else %}
-  {{ empty_state('Todavía no hay plantillas', 'Creá una plantilla por turno y después cargá sus bloques de clase y recesos.') }}
+  {{ empty_state('Todavía no hay estructuras de horario', 'Creá una estructura por turno y después cargá sus bloques de clase y recesos.') }}
   {% endif %}
 </section>
 {% endif %}
