@@ -205,6 +205,8 @@ gunicorn -w 2 -b 127.0.0.1:8001 wsgi:app
 
 - `AGENT.md`: guía técnica para agentes/desarrolladores.
 - `CONTEXT.md`: contexto funcional, decisiones y estado del proyecto.
+- `docs/conceptos.html`: guía de conceptos del modelo (nivel, curso, plan, sección…).
+  Se sirve en `/conceptos`.
 - `docs/doc.html`: presentación de una sola página para el cliente.
   Se sirve en `/presentacion` (también `/doc`) y sus enlaces abren el sistema
   en una pestaña nueva usando la sesión activa.

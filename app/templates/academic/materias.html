@@ -42,7 +42,17 @@
                value="{{ form.get('nombre') or (edit.nombre if edit else '') }}"
                placeholder="Ej. Matemática" required autofocus>
       </div>
-      <div class="field fw-full materia-field">
+
+      <div class="field fw-1 materia-field">
+        <label for="nivel_id">Nivel</label>
+        <select class="input vanilla-select" id="nivel_id" name="nivel_id" required>
+          <option value="">Seleccioná un nivel</option>
+          {% for n in niveles %}
+          <option value="{{ n.id }}" {{ 'selected' if (v_nivel|string) == (n.id|string) }}>{{ n.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field fw-2 materia-field">
         <label for="area_id">Área de conocimiento</label>
         <select class="input vanilla-select" id="area_id" name="area_id" required>
           <option value="">Seleccioná un área</option>
@@ -52,37 +62,23 @@
           </option>
           {% endfor %}
         </select>
-        
       </div>
-      <div class="field fw-full materia-field">
-        <label for="nivel_id">Nivel</label>
-        <select class="input vanilla-select" id="nivel_id" name="nivel_id" required>
-          <option value="">Seleccioná un nivel</option>
-          {% for n in niveles %}
-          <option value="{{ n.id }}" {{ 'selected' if (v_nivel|string) == (n.id|string) }}>{{ n.nombre }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field fw-full materia-field">
-        <label for="horas_semanales">Horas semanales</label>
+      <div class="field fw-1 materia-field">
+        <label for="horas_semanales">Horas</label>
         <input class="input" id="horas_semanales" name="horas_semanales" type="number" min="0"
                value="{{ v_horas }}" placeholder="Ej. 6" required>
-        <div class="hint">Valor por defecto al agregar la materia al plan de un grado.</div>
       </div>
       <div class="field fw-full">
-        <label>Especialidades <span class="opt">(vacío = común a todas)</span></label>
-        <div class="check-grid">
+        <label for="esp_pick">Especialidades <span class="opt">(vacío = común)</span></label>
+        <select class="input vanilla-select" id="esp_pick" name="especialidad_pick">
+          <option value="">Seleccioná una especialidad…</option>
           {% for e in especialidades %}
-          <label class="check-item">
-            <input type="checkbox" name="especialidades" value="{{ e.id }}"
-                   {{ 'checked' if (e.id|string) in seleccionadas_str }}>
-            <span>{{ e.nombre }}</span>
-          </label>
+          <option value="{{ e.id }}" data-nivel="{{ e.nivel_id }}">{{ e.nombre }}</option>
           {% else %}
-          <span class="hint">No hay especialidades cargadas.</span>
+          <option value="" disabled>No hay especialidades cargadas</option>
           {% endfor %}
-        </div>
-        <div class="hint">Una materia puede pertenecer a varias especialidades.</div>
+        </select>
+        <div id="espSel" class="picker-sel"></div>
       </div>
       {% if not colegio_actual or colegio_actual.usa_aulas %}
       <div class="field fw-full materia-field">
@@ -93,9 +89,14 @@
           <option value="{{ t }}" {{ 'selected' if v_tipo == t }}>{{ tipos_label[t] }}</option>
           {% endfor %}
         </select>
-        <div class="hint">Si la materia necesita laboratorio, informática o gimnasio, elegilo acá.</div>
       </div>
       {% endif %}
+      <div class="field fw-full">
+        <div class="hint">
+          Materia <b>sin especialidad</b> = común a todos los planes.
+          Las horas son el valor por defecto al agregarla al plan de un curso.
+        </div>
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear materia' }}</button>
@@ -103,6 +104,87 @@
     </div>
   </form>
 </section>
+
+<script>
+(function () {
+  const picker = document.getElementById('esp_pick');
+  const cont = document.getElementById('espSel');
+  const nivel = document.getElementById('nivel_id');
+  if (!picker || !cont) return;
+
+  const elegidas = new Map();
+  {% for eid in seleccionadas_str %}
+  (function () {
+    const opt = Array.from(picker.options).find(o => o.value === '{{ eid }}');
+    if (opt) elegidas.set(opt.value, { texto: opt.text.trim(), nivel: opt.dataset.nivel });
+  })();
+  {% endfor %}
+
+  function pintar() {
+    cont.innerHTML = '';
+    if (!elegidas.size) return;
+    const grid = document.createElement('div');
+    grid.className = 'check-grid';
+
+    elegidas.forEach((datos, id) => {
+      const card = document.createElement('div');
+      card.className = 'check-item';
+      card.innerHTML = '<span class="picker-tag">' + datos.texto + '</span>'
+        + '<button type="button" class="picker-del" data-id="' + id + '" aria-label="Quitar">×</button>';
+      grid.appendChild(card);
+    });
+    cont.appendChild(grid);
+
+    // Se envían con el nombre que espera la ruta.
+    const ocultos = document.createElement('div');
+    elegidas.forEach((_d, id) => {
+      const inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = 'especialidades';
+      inp.value = id;
+      ocultos.appendChild(inp);
+    });
+    cont.appendChild(ocultos);
+
+    cont.querySelectorAll('.picker-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        elegidas.delete(btn.dataset.id);
+        pintar();
+      });
+    });
+  }
+
+  function filtrarPorNivel() {
+    const nid = nivel ? nivel.value : '';
+    let quitadas = false;
+    Array.from(picker.options).forEach(opt => {
+      if (!opt.value) return;
+      const visible = !nid || opt.dataset.nivel === nid;
+      opt.hidden = !visible;
+      opt.disabled = !visible;
+    });
+    if (nid) {
+      elegidas.forEach((datos, id) => {
+        if (datos.nivel !== nid) { elegidas.delete(id); quitadas = true; }
+      });
+    }
+    if (quitadas) pintar();
+  }
+
+  picker.addEventListener('change', () => {
+    const opt = picker.selectedOptions[0];
+    if (!opt || !opt.value) return;
+    elegidas.set(opt.value, { texto: opt.text.trim(), nivel: opt.dataset.nivel });
+    picker.value = '';
+    pintar();
+  });
+
+  if (nivel) nivel.addEventListener('change', filtrarPorNivel);
+
+  filtrarPorNivel();
+  pintar();
+})();
+</script>
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}

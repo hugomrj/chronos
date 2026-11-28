@@ -79,17 +79,17 @@
   <table>
     <thead>
       <tr>
-        <th>Grado / Curso</th>
-        <th class="c-state">Nivel</th>
+        <th style="width: 32%;">Grado / Curso</th>
+        <th style="width: 26%;">Nivel</th>
         <th class="c-state">Especialidad</th>
-        <th style="width: 110px; text-align: right;">Acciones</th>
+        <th style="width: 150px; text-align: right;">Acciones</th>
       </tr>
     </thead>
     <tbody>
       {% for g in items %}
       <tr>
         <td><b>{{ g.nombre }}</b></td>
-        <td class="c-state">{{ g.nivel.nombre }}</td>
+        <td>{{ g.nivel.nombre }}</td>
         <td class="c-state">
           {% if g.especialidad %}
             {{ g.especialidad.nombre }}

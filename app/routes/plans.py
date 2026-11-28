@@ -272,7 +272,11 @@ def register_plan_routes(app):
         if especialidad and especialidad.colegio_id != colegio.id:
             especialidad = None
         activo = request.form.get('activo') == 'on'
+        # Se acepta un curso suelto (select) o varios (campo oculto con "1,2,3").
         grado_ids = [int(x) for x in request.form.getlist('grado_ids') if x.isdigit()]
+        extra = request.form.get('grado_id') or ''
+        if extra.isdigit() and int(extra) not in grado_ids:
+            grado_ids.append(int(extra))
 
         errors = []
         if not nombre:

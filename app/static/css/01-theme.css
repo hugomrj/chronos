@@ -44,8 +44,8 @@
     --warn-bg: hsl(38 85% 50% / 0.15);
     --info: hsl(212 85% 65%); /* <--- AGREGAR ESTA LÍNEA (Azul suave) */
     --info-bg: hsl(212 85% 55% / 0.15);
-    --danger: hsl(354 66% 62%);
-    --danger-bg: hsl(354 66% 55% / 0.14);
+    --danger: hsl(0 92% 72%);          /* claro: se lee sobre fondo negro */
+    --danger-bg: hsl(354 75% 55% / 0.18);
 
 
 

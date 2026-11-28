@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chronos — Conceptos del modelo</title>
+<style>
+  :root {
+    --bg: #0d1110;
+    --panel: #151b19;
+    --panel-2: #1b2321;
+    --line: #263130;
+    --text: #e7efec;
+    --text-2: #9baba6;
+    --acc: #10b981;
+    --acc-soft: #10312a;
+    --warn: #f0b44a;
+    --danger: #ff7b7b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2.5rem 1.25rem 5rem;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.65;
+    font-size: 15px;
+  }
+  main { max-width: 62rem; margin: 0 auto; }
+  h1 { font-size: 2rem; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  h2 {
+    font-size: 1.25rem; margin: 2.75rem 0 1rem;
+    padding-top: 1.4rem; border-top: 1px solid var(--line);
+  }
+  h3 { font-size: 1rem; margin: 1.6rem 0 .6rem; }
+  p, li { color: var(--text); }
+  .lead { color: var(--text-2); font-size: 1rem; margin-bottom: 2rem; }
+  a { color: var(--acc); }
+  code {
+    background: var(--panel-2); padding: .12rem .35rem; border-radius: .3rem;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: .85em; color: #8fe3c4;
+  }
+  pre {
+    background: var(--panel-2); padding: 1rem 1.1rem; border-radius: .6rem;
+    overflow-x: auto; border: 1px solid var(--line);
+    font-family: ui-monospace, Consolas, monospace; font-size: .82rem;
+    line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+  table {
+    width: 100%; border-collapse: collapse; margin: 1rem 0;
+    font-size: .88rem;
+  }
+  th, td { padding: .55rem .7rem; text-align: left; border-bottom: 1px solid var(--line); }
+  th { color: var(--text-2); font-weight: 600; text-transform: uppercase; font-size: .72rem; letter-spacing: .06em; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: .7rem; padding: 1.1rem 1.25rem; margin: 1rem 0;
+  }
+  .nota { border-left: 3px solid var(--acc); }
+  .warn { border-left: 3px solid var(--warn); }
+  .danger { border-left: 3px solid var(--danger); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  .pill {
+    display: inline-block; padding: .1rem .5rem; border-radius: .35rem;
+    background: var(--acc-soft); color: var(--acc);
+    font-size: .75rem; font-weight: 600;
+  }
+  .toc { columns: 2; column-gap: 2rem; font-size: .88rem; }
+  @media (max-width: 720px) { .toc { columns: 1; } }
+  .toc a { text-decoration: none; display: block; padding: .15rem 0; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Conceptos del modelo</h1>
+<p class="lead">
+  Guía corta para entender qué significa cada entidad de Chronos, en qué se diferencia
+  de las demás y cómo se encadenan hasta llegar a un horario. Pensada para alguien que
+  recién se suma: desarrollo, soporte o el propio colegio.
+</p>
+
+<div class="card">
+  <b>En una frase</b>
+  <p style="margin:.5rem 0 0">
+    El <b>nivel</b> agrupa <b>cursos</b>; cada curso tiene un <b>plan de estudios</b>;
+    cada año lectivo se abren <b>secciones</b> (divisiones) de esos cursos, que se ubican
+    en una <b>estructura de horario</b>; con profesores y disponibilidad, el motor
+    genera el <b>horario</b>.
+  </p>
+</div>
+
+<h2 id="indice">Índice</h2>
+<div class="toc">
+  <a href="#nivel">1. Nivel</a>
+  <a href="#curso">2. Curso (grado)</a>
+  <a href="#especialidad">3. Especialidad</a>
+  <a href="#area">4. Área de conocimiento</a>
+  <a href="#materia">5. Materia</a>
+  <a href="#plan">6. Plan de estudios</a>
+  <a href="#turno">7. Turno</a>
+  <a href="#estructura">8. Estructura de horario</a>
+  <a href="#seccion">9. Sección</a>
+  <a href="#profesor">10. Profesor y disponibilidad</a>
+  <a href="#horario">11. Horario (versión)</a>
+  <a href="#aulas">12. Aulas: con o sin uso</a>
+  <a href="#reglas">13. Reglas</a>
+  <a href="#flujo">14. El flujo completo</a>
+  <a href="#errores">15. Errores frecuentes</a>
+</div>
+
+<h2 id="nivel">1. Nivel</h2>
+<p>Es la etapa educativa. Agrupa cursos.</p>
+<pre><code>E.E.B.            → 7°, 8°, 9°
+Educación Media   → 1°, 2°, 3°</code></pre>
+<p>Un colegio puede tener los niveles que necesite. Todo lo demás cuelga del nivel:
+cursos, especialidades y materias.</p>
+
+<h2 id="curso">2. Curso (grado)</h2>
+<p>Es un año de esa etapa, <b>sin división</b>.</p>
+<pre><code>E.E.B.
+  └── 7°          ← curso
+
+Educación Media
+  └── 1°          ← curso</code></pre>
+<div class="card nota">
+  <b>Curso ≠ sección</b>
+  <p style="margin:.4rem 0 0">
+    El curso es la unidad académica (<code>7°</code>). La sección es la división
+    (<code>A</code>, <code>B</code>). Un curso puede tener muchas secciones y pertenecer
+    a varios planes.
+  </p>
+</div>
+
+<h2 id="especialidad">3. Especialidad</h2>
+<p>Solo aplica a bachilleratos técnicos, dentro de un nivel.</p>
+<pre><code>Educación Media
+  ├── BATIN   (Bachillerato Técnico en Informática)
+  └── BATAN   (Bachillerato Técnico en Administración de Negocios)</code></pre>
+<p>Se puede usar de dos formas, ambas válidas:</p>
+<div class="grid2">
+  <div class="card">
+    <b>En el curso</b>
+    <pre><code>1° · BATIN
+1° · BATAN</code></pre>
+    <p style="margin:0;font-size:.85rem;color:#9baba6">
+      Dos cursos distintos. Cada uno con su plan.
+    </p>
+  </div>
+  <div class="card">
+    <b>En la sección</b>
+    <pre><code>Curso 1°
+  Sección A · plan BATIN
+  Sección B · plan BATAN</code></pre>
+    <p style="margin:0;font-size:.85rem;color:#9baba6">
+      Un curso, dos divisiones con planes distintos.
+    </p>
+  </div>
+</div>
+
+<h2 id="area">4. Área de conocimiento</h2>
+<p>Agrupa materias por campo del saber. Sirve para ordenar, filtrar y limitar horas.</p>
+<pre><code>Ciencias Sociales
+  ├── Historia y Geografía
+  ├── Formación Ética
+  └── Ciencias Sociales
+
+Lengua y Literatura
+  ├── Lengua y Literatura
+  ├── Inglés
+  └── Guaraní</code></pre>
+<p>Cada materia pertenece a <b>una sola área</b>. Si la misma materia debe estar en otra
+área, se crea otro registro.</p>
+<p>El área puede tener <b>horas máximas por semana</b>, que se aplican por curso:</p>
+<pre><code>Área Lengua y Literatura: máximo 7 h por curso
+  Castellano 5 h + Guaraní 2 h = 7 h  ✔</code></pre>
+
+<h2 id="materia">5. Materia</h2>
+<p>Es la asignatura. Pertenece a un nivel y a un área.</p>
+<table>
+  <tr><th>Campo</th><th>Qué indica</th></tr>
+  <tr><td>Nombre</td><td>Matemática, Lengua y Literatura…</td></tr>
+  <tr><td>Área</td><td>Campo del saber al que pertenece</td></tr>
+  <tr><td>Nivel</td><td>E.E.B. o Educación Media</td></tr>
+  <tr><td>Horas</td><td>Valor por defecto al agregarla a un plan</td></tr>
+  <tr><td>Especialidades</td><td>Vacío = común a todas las especialidades</td></tr>
+  <tr><td>Aula requerida</td><td>Laboratorio, informática, gimnasio (opcional)</td></tr>
+</table>
+<div class="card nota">
+  Una materia existe <b>por nivel</b>. Por eso “Lengua y Literatura” aparece dos veces:
+  una para E.E.B. y otra para Educación Media, con horas distintas.
+</div>
+
+<h2 id="plan">6. Plan de estudios</h2>
+<p>Es la receta: qué materias y cuántas horas lleva cada curso.</p>
+<pre><code>Plan Educación Media
+  Curso 1°
+    Lengua y Literatura   4 h
+    Matemática            5 h
+    Informática           4 h
+                     total 13 h</code></pre>
+<p>Puede tener <b>especialidad</b>. Dos planes pueden llamarse igual si sus
+especialidades difieren:</p>
+<pre><code>Técnico · Educación Media · BATIN
+Técnico · Educación Media · BATAN</code></pre>
+<p>La <b>clave</b> del plan es: nombre + nivel + especialidad.</p>
+
+<h2 id="turno">7. Turno</h2>
+<p>Es la franja general de funcionamiento.</p>
+<pre><code>Jornada completa
+Mañana
+Tarde</code></pre>
+<p>Se usa para agrupar estructuras de horario y secciones. El motor genera
+<b>un horario por turno</b>.</p>
+
+<h2 id="estructura">8. Estructura de horario</h2>
+<p>Es el esqueleto de horas de un turno: qué bloques existen, con su hora real.</p>
+<pre><code>Jornada completa · lunes a viernes
+
+Bloque 1   07:30 – 08:10   clase
+Bloque 2   08:10 – 08:50   clase
+Bloque 3   08:50 – 09:30   clase
+Receso     09:30 – 09:50
+Bloque 4   09:50 – 10:30   clase
+...
+Receso     11:50 – 13:00   (almuerzo)
+...
+Bloque 9   14:20 – 15:00   clase</code></pre>
+<div class="card warn">
+  <b>No confundir</b>
+  <p style="margin:.4rem 0 0">
+    La <b>estructura</b> dice <i>cuándo</i> se puede dar clase.<br>
+    El <b>plan</b> dice <i>qué</i> se dicta y cuántas horas.
+  </p>
+</div>
+
+<h2 id="seccion">9. Sección</h2>
+<p>Es un grupo real de alumnos del año lectivo.</p>
+<pre><code>Año:          2026
+Curso:        1°
+Sección:      A
+Turno:        Jornada completa
+Plan:         Plan Educación Media
+Estructura:   Jornada completa</code></pre>
+<p>Eso es <b>1° A de Educación Media, 2026</b>.</p>
+<p>Al crearla, sus materias se copian del plan. Después se pueden ajustar solo para
+esa sección (por ejemplo, subir Matemática a 6 h sin tocar el plan de las demás).</p>
+<div class="grid2">
+  <div class="card">
+    <b>Curso</b>
+    <p style="margin:.4rem 0 0;font-size:.9rem">El <i>qué</i>. Estable en el tiempo.</p>
+    <pre style="margin:.6rem 0 0"><code>7°</code></pre>
+  </div>
+  <div class="card">
+    <b>Sección</b>
+    <p style="margin:.4rem 0 0;font-size:.9rem">El <i>quién</i>. Cambia cada año.</p>
+    <pre style="margin:.6rem 0 0"><code>7° A, 7° B, 7° C</code></pre>
+  </div>
+</div>
+<p>Si un curso tiene dos divisiones con el mismo plan, comparten las materias pero
+<b>no el horario</b>: cada una tiene sus profesores y bloques.</p>
+
+<h2 id="profesor">10. Profesor y disponibilidad</h2>
+<p>Cada docente tiene:</p>
+<table>
+  <tr><th>Dato</th><th>Para qué</th></tr>
+  <tr><td>Materias habilitadas</td><td>El motor solo le asigna esas</td></tr>
+  <tr><td>Especialidades</td><td>Requisito en materias técnicas</td></tr>
+  <tr><td>Carga máxima semanal</td><td>Tope de horas por semana</td></tr>
+  <tr><td>Disponibilidad</td><td>Días y franjas en que puede dar clase</td></tr>
+</table>
+<p>La misma materia puede ser fijada a un profesor desde el plan de la sección;
+si no, el motor elige entre los habilitados con carga disponible.</p>
+
+<h2 id="horario">11. Horario (versión)</h2>
+<p>El resultado es una <b>versión</b>, por turno y por año lectivo.</p>
+<pre><code>Borrador   →  se genera, se revisa, se corrigen celdas a mano
+Publicado  →  se marca como vigente
+Archivado  →  historial</code></pre>
+<p>Una versión contiene <b>celdas</b>: una clase en un día, un bloque, un aula y un
+docente.</p>
+<p>Al regenerar, se pueden <b>fijar</b> celdas para que el motor las respete.</p>
+
+<h2 id="aulas">12. Aulas: con o sin uso</h2>
+<p>Algunos colegios trabajan con aulas; otros solo con profesor y sección.
+El master decide en <b>Ajustes de instancia</b>.</p>
+<table>
+  <tr><th></th><th>Con aulas</th><th>Sin aulas</th></tr>
+  <tr><td>Menú Aulas</td><td>visible</td><td>oculto</td></tr>
+  <tr><td>Campo “Aula requerida”</td><td>visible</td><td>oculto</td></tr>
+  <tr><td>Motor</td><td>asigna aula a cada clase</td><td>no asigna ni controla aulas</td></tr>
+  <tr><td>Choques controlados</td><td>profesor, sección y aula</td><td>profesor y sección</td></tr>
+</table>
+<div class="card warn">
+  Cambiar esta opción <b>no reestructura</b> los horarios existentes: hay que generarlos
+  de nuevo.
+</div>
+
+<h2 id="reglas">13. Reglas</h2>
+<p>Restricciones que el motor respeta al generar.</p>
+<table>
+  <tr><th>Tipo</th><th>Ejemplo</th></tr>
+  <tr><td>Obligatoria</td><td>Educación Física no en el último bloque</td></tr>
+  <tr><td>Deseable (ponderada)</td><td>Evitar huecos del profesor</td></tr>
+  <tr><td>Distribución</td><td>Repartir las horas de una materia en la semana</td></tr>
+</table>
+
+<h2 id="flujo">14. El flujo completo</h2>
+<pre><code>1. Años lectivos        → 2026, activo
+2. Niveles              → E.E.B., Educación Media
+3. Especialidades       → BATIN, BATAN        (si hay técnicos)
+4. Cursos               → 7°, 1°
+5. Áreas                → Lengua, Ciencias, Técnicas…
+6. Materias             → Lengua 4 h, Matemática 5 h…
+7. Turnos               → Jornada completa
+8. Estructura de horario→ 9 clases + 2 recesos por día
+9. Planes               → Plan Educación Media con 1° y sus materias
+10. Profesores          → materias, especialidades, carga, disponibilidad
+11. Secciones           → 1° A (curso + plan + turno + estructura)
+12. Horarios            → generar, revisar, publicar</code></pre>
+<p>El resultado:</p>
+<pre><code>1° A · 2026 · Jornada completa
+
+        Lunes        Martes      ...
+07:30   Matemática   Lengua
+08:10   Lengua       Matemática
+...</code></pre>
+
+<h2 id="errores">15. Errores frecuentes</h2>
+
+<h3>“No tengo aulas disponibles del tipo requerido”</h3>
+<p>El colegio usa aulas y no hay ninguna cargada del tipo que pide la materia.
+Cargá aulas en <b>Estructura → Aulas</b>, o desactivá el uso de aulas en
+<b>Ajustes de instancia</b>.</p>
+
+<h3>“No hay profesor habilitado y disponible”</h3>
+<p>Ningún docente tiene esa materia habilitada, o los que la tienen no están
+disponibles en los bloques de esa sección, o ya alcanzaron su carga máxima.</p>
+
+<h3>“Ya existe el curso «1°» en BATIN”</h3>
+<p>La clave del curso es nombre + nivel + especialidad. Si querés otra división del
+mismo curso, va en la <b>sección</b>, no en el curso.</p>
+
+<h3>“Algún curso no pertenece al nivel elegido”</h3>
+<p>En el plan se eligió un ciclo y se agregó un curso de otro ciclo. Al cambiar el
+ciclo, las tarjetas de otro nivel se descartan solas.</p>
+
+<h3>“El plan suma más horas que la estructura”</h3>
+<p>La estructura tiene menos bloques de clase por semana que las horas del plan.
+Hay que ampliar la estructura o bajar horas del plan.</p>
+
+<div class="card">
+  <b>Nomenclatura</b>
+  <p style="margin:.5rem 0 0;font-size:.9rem">
+    <span class="pill">Nivel</span> etapa ·
+    <span class="pill">Curso</span> año de la etapa ·
+    <span class="pill">Sección</span> división ·
+    <span class="pill">Plan</span> materias del curso ·
+    <span class="pill">Estructura</span> horas disponibles ·
+    <span class="pill">Horario</span> resultado
+  </p>
+</div>
+
+</main>
+</body>
+</html>

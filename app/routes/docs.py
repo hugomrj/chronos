@@ -18,6 +18,12 @@ def register_docs_routes(app):
         destino = app.config.get('DOCS_DIRECTORY') or 'docs'
         return send_from_directory(destino, 'doc.html', mimetype='text/html')
 
+    @app.route('/conceptos')
+    def conceptos():
+        """Guía de conceptos del modelo de datos."""
+        destino = app.config.get('DOCS_DIRECTORY') or 'docs'
+        return send_from_directory(destino, 'conceptos.html', mimetype='text/html')
+
     @app.route('/guia/pdf')
     @login_required
     def guia_pdf():

@@ -35,6 +35,7 @@
           <option value="{{ n.id }}" {{ 'selected' if (v_nivel|string) == (n.id|string) }}>{{ n.nombre }}</option>
           {% endfor %}
         </select>
+        <div class="hint">Al elegir el ciclo, el curso se filtra solo.</div>
       </div>
       <div class="field fw-1">
         <label for="especialidad_id">Especialidad</label>
@@ -47,17 +48,20 @@
         <div class="hint">Opcional. Si tiene especialidad, la sección la hereda.</div>
       </div>
       <div class="field fw-full">
-        <label>Grados que forman este plan</label>
-        <div class="check-grid">
+        <label for="grado_pick">Curso de este plan</label>
+        <select class="input vanilla-select" id="grado_pick">
+          <option value="">Seleccioná un curso…</option>
           {% for g in grados %}
-          <label class="check-item">
-            <input type="checkbox" name="grado_ids" value="{{ g.id }}"
-                   {{ 'checked' if (g.id|string) in seleccionados_str }}>
-            <span>{{ g.nombre }} <small>· {{ g.nivel.nombre }}</small></span>
-          </label>
+          <option value="{{ g.id }}" data-nivel="{{ g.nivel_id }}"
+                  {{ 'selected' if (g.id|string) in seleccionados_str }}>
+            {{ g.nivel.nombre }} · {{ g.nombre }}
+          </option>
           {% endfor %}
+        </select>
+        <div class="hint">
+          El curso pasa a ser una tarjeta. Podés agregar más de uno al mismo plan.
         </div>
-        <div class="hint">Un curso puede pertenecer a más de un plan; cada sección elige el suyo.</div>
+        <div id="pickerSel" class="picker-sel"></div>
       </div>
       <div class="field fw-full">
         <label class="switch-row">
@@ -73,6 +77,90 @@
     </div>
   </form>
 </section>
+
+<script>
+(function () {
+  const picker = document.getElementById('grado_pick');
+  const cont = document.getElementById('pickerSel');
+  const nivel = document.getElementById('nivel_id');
+  if (!picker || !cont) return;
+
+  const elegidos = new Map();
+  {% for gid in seleccionados_str %}
+  (function () {
+    const opt = Array.from(picker.options).find(o => o.value === '{{ gid }}');
+    if (opt) elegidos.set(opt.value, { texto: opt.text.trim(), nivel: opt.dataset.nivel });
+  })();
+  {% endfor %}
+
+  function pintar() {
+    cont.innerHTML = '';
+    if (!elegidos.size) return;
+    const grid = document.createElement('div');
+    grid.className = 'check-grid';
+
+    elegidos.forEach((datos, id) => {
+      const card = document.createElement('div');
+      card.className = 'check-item';
+      card.innerHTML = '<span class="picker-tag">' + datos.texto + '</span>'
+        + '<button type="button" class="picker-del" data-id="' + id + '" aria-label="Quitar">×</button>';
+      grid.appendChild(card);
+    });
+    cont.appendChild(grid);
+
+    const ocultos = document.createElement('div');
+    elegidos.forEach((_d, id) => {
+      const inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = 'grado_ids';
+      inp.value = id;
+      ocultos.appendChild(inp);
+    });
+    cont.appendChild(ocultos);
+
+    cont.querySelectorAll('.picker-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        elegidos.delete(btn.dataset.id);
+        pintar();
+      });
+    });
+  }
+
+  // Al elegir un ciclo, se ocultan los cursos de otros ciclos
+  // y se descartan las tarjetas que ya no corresponden.
+  function filtrarPorNivel() {
+    const nid = nivel ? nivel.value : '';
+    let quitadas = false;
+    Array.from(picker.options).forEach(opt => {
+      if (!opt.value) return;
+      const visible = !nid || opt.dataset.nivel === nid;
+      opt.hidden = !visible;
+      opt.disabled = !visible;
+    });
+    if (picker.selectedOptions[0] && picker.selectedOptions[0].disabled) picker.value = '';
+
+    if (nid) {
+      elegidos.forEach((datos, id) => {
+        if (datos.nivel !== nid) { elegidos.delete(id); quitadas = true; }
+      });
+    }
+    if (quitadas) pintar();
+  }
+
+  picker.addEventListener('change', () => {
+    const opt = picker.selectedOptions[0];
+    if (!opt || !opt.value) return;
+    elegidos.set(opt.value, { texto: opt.text.trim(), nivel: opt.dataset.nivel });
+    picker.value = '';
+    pintar();
+  });
+
+  if (nivel) nivel.addEventListener('change', filtrarPorNivel);
+
+  filtrarPorNivel();
+  pintar();
+})();
+</script>
 {% endif %}
 
 {% if not (edit or form or request.args.get('nuevo')) %}
@@ -119,7 +207,7 @@
         </td>
         <td>
           <div class="actions-cell">
-            <a href="{{ url_for('plan_detalle', item_id=p.id) }}" class="icon-btn" data-tip="Materias">Materias</a>
+            <a href="{{ url_for('plan_detalle', item_id=p.id) }}" class="btn btn-ghost btn-sm">Materias</a>
             <a href="{{ url_for('planes', editar=p.id) }}" class="icon-btn" data-tip="Editar">{{ icon_editar() }}</a>
             <button type="button" class="icon-btn danger" data-tip="Eliminar"
                     data-del-url="{{ url_for('plan_eliminar', item_id=p.id) }}"

@@ -58,47 +58,147 @@
 
     <div class="form-sep"></div>
 
-    <div class="materias-block">
-      <label class="block-label">Materias que puede dictar</label>
-      {% if materias %}
-      {% for nivel, lista in materias_por_nivel.items() %}
-      <div class="materias-nivel">
-        <h4 class="materias-nivel-title">{{ nivel.nombre }}</h4>
-        <div class="check-grid">
-          {% for m in lista %}
-          <label class="check-item">
-            <input type="checkbox" name="materias" value="{{ m.id }}"
-                   {{ 'checked' if (m.id|string) in seleccionadas }}>
-            <span>{{ m.nombre }}{% if m.area and m.area.nombre != m.nombre %}<small class="check-sub">{{ m.area.nombre }}</small>{% endif %}</span>
-          </label>
+    <div class="form-grid">
+      <div class="field fw-full">
+        <label for="mat_pick">Materias que puede dictar</label>
+        {% if materias %}
+        <select class="input vanilla-select" id="mat_pick" name="materia_pick">
+          <option value="">Seleccioná una materia…</option>
+          {% for nivel, lista in materias_por_nivel.items() %}
+          <optgroup label="{{ nivel.nombre }}">
+            {% for m in lista %}
+            <option value="{{ m.id }}" data-nivel="{{ nivel.id }}"
+                    data-nivel-nombre="{{ nivel.nombre }}"
+                    data-area="{{ m.area.nombre if m.area and m.area.nombre != m.nombre else '' }}">
+              {{ m.nombre }}
+            </option>
+            {% endfor %}
+          </optgroup>
           {% endfor %}
+        </select>
+        <div class="hint">
+          Elegí una y baja como tarjeta. El motor solo asignará materias de esta lista.
         </div>
+        <div id="matSel" class="picker-sel"></div>
+        {% else %}
+        <div class="hint">
+          Todavía no hay materias cargadas.
+          <a href="{{ url_for('materias', nuevo=1) }}" style="color: var(--acc-txt); font-weight: 600;">Crear una materia</a>
+        </div>
+        {% endif %}
       </div>
-      {% endfor %}
-      <div class="hint">Podés seleccionar varias. El motor solo asignará materias de esta lista.</div>
-      {% else %}
-      <div class="hint">
-        Todavía no hay materias cargadas.
-        <a href="{{ url_for('materias', nuevo=1) }}" style="color: var(--acc-txt); font-weight: 600;">Crear una materia</a>
+
+      <div class="field fw-full">
+        <label for="esp_pick">Especialidades <span class="opt">(opcional)</span></label>
+        <select class="input vanilla-select" id="esp_pick" name="especialidad_pick">
+          <option value="">Seleccioná una especialidad…</option>
+          {% for e in especialidades %}
+          <option value="{{ e.id }}" data-nivel="{{ e.nivel_id }}">{{ e.nombre }}</option>
+          {% else %}
+          <option value="" disabled>No hay especialidades cargadas</option>
+          {% endfor %}
+        </select>
+        <div class="hint">Un profesor puede tener varias especialidades.</div>
+        <div id="espSel" class="picker-sel"></div>
       </div>
-      {% endif %}
     </div>
 
-    <div class="materias-block">
-      <label class="block-label">Especialidades <span class="opt">(opcional)</span></label>
-      <div class="check-grid">
-        {% for e in especialidades %}
-        <label class="check-item">
-          <input type="checkbox" name="especialidades" value="{{ e.id }}"
-                 {{ 'checked' if e.id in especialidades_sel }}>
-          <span>{{ e.nombre }}</span>
-        </label>
-        {% else %}
-        <span class="hint">No hay especialidades cargadas.</span>
-        {% endfor %}
-      </div>
-      <div class="hint">Un profesor puede tener varias especialidades.</div>
-    </div>
+    <script>
+    (function () {
+      // ── selector genérico: select → tarjeta → campo oculto ──
+      function montarPicker(pickId, contId, fieldName, iniciales, agrupar) {
+        const picker = document.getElementById(pickId);
+        const cont = document.getElementById(contId);
+        if (!picker || !cont) return;
+
+        const elegidos = new Map();
+        iniciales.forEach(v => {
+          const opt = Array.from(picker.options).find(o => o.value === String(v));
+          if (opt) elegidos.set(opt.value, {
+            texto: opt.text.trim(),
+            area: opt.dataset.area || '',
+            grupo: opt.dataset.nivelNombre || '',
+          });
+        });
+
+        function tarjeta(datos, id) {
+          const card = document.createElement('div');
+          card.className = 'check-item';
+          let html = '<span class="picker-tag">' + datos.texto
+            + (datos.area ? '<small class="check-sub">' + datos.area + '</small>' : '')
+            + '</span>'
+            + '<button type="button" class="picker-del" data-id="' + id + '" aria-label="Quitar">×</button>';
+          card.innerHTML = html;
+          return card;
+        }
+
+        function pintar() {
+          cont.innerHTML = '';
+          if (!elegidos.size) return;
+
+          if (agrupar) {
+            const grupos = new Map();
+            elegidos.forEach((datos, id) => {
+              const clave = datos.grupo || 'Otros';
+              if (!grupos.has(clave)) grupos.set(clave, []);
+              grupos.get(clave).push([id, datos]);
+            });
+            grupos.forEach((lista, nombre) => {
+              const bloque = document.createElement('div');
+              bloque.className = 'materias-nivel';
+              bloque.innerHTML = '<h4 class="materias-nivel-title">' + nombre + '</h4>';
+              const grid = document.createElement('div');
+              grid.className = 'check-grid';
+              lista.forEach(([id, datos]) => grid.appendChild(tarjeta(datos, id)));
+              bloque.appendChild(grid);
+              cont.appendChild(bloque);
+            });
+          } else {
+            const grid = document.createElement('div');
+            grid.className = 'check-grid';
+            elegidos.forEach((datos, id) => grid.appendChild(tarjeta(datos, id)));
+            cont.appendChild(grid);
+          }
+
+          const ocultos = document.createElement('div');
+          elegidos.forEach((_d, id) => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = fieldName;
+            inp.value = id;
+            ocultos.appendChild(inp);
+          });
+          cont.appendChild(ocultos);
+
+          cont.querySelectorAll('.picker-del').forEach(btn => {
+            btn.addEventListener('click', () => {
+              elegidos.delete(btn.dataset.id);
+              pintar();
+            });
+          });
+        }
+
+        picker.addEventListener('change', () => {
+          const opt = picker.selectedOptions[0];
+          if (!opt || !opt.value) return;
+          elegidos.set(opt.value, {
+            texto: opt.text.trim(),
+            area: opt.dataset.area || '',
+            grupo: opt.dataset.nivelNombre || '',
+          });
+          picker.value = '';
+          pintar();
+        });
+
+        pintar();
+      }
+
+      montarPicker('mat_pick', 'matSel', 'materias',
+        {{ seleccionadas|list|tojson }}, true);
+      montarPicker('esp_pick', 'espSel', 'especialidades',
+        {{ (especialidades_sel|map(attribute='id')|list)|tojson }}, false);
+    })();
+    </script>
 
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">{{ 'Guardar cambios' if edit else 'Crear profesor' }}</button>

@@ -9,7 +9,9 @@
 
 {% macro form_errors(errors) %}
 {% if errors %}
-<div style="margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 0.75rem; background: var(--danger-bg); color: var(--danger); font-size: 0.82rem; border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);">
+<div style="margin-bottom: 1rem; padding: 0.85rem 1rem; border-radius: 0.75rem;
+            background: var(--danger-bg); color: var(--danger); font-size: 0.85rem;
+            border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent);">
   <b>Revisá los datos:</b>
   <ul style="margin: 0.35rem 0 0 1.1rem; list-style: disc;">
     {% for e in errors %}<li>{{ e }}</li>{% endfor %}

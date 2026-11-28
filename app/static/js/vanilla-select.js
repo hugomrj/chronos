@@ -56,6 +56,7 @@ class VanillaSelect {
 
     populateOptions() {
         const originalOptions = this.select.querySelectorAll('option');
+        this.optgroups = {};
         const valueSpan = this.control.querySelector('.vs-value');
 
         // CAMBIO 2: Leer el texto de la primera opción (si su valor es vacío) para usarlo como placeholder.
@@ -67,12 +68,29 @@ class VanillaSelect {
             const li = document.createElement('li');
             li.className = 'vs-option';
             li.dataset.value = opt.value;
-            li.textContent = opt.textContent;
+
+            // Etiqueta del <optgroup> para poder buscar y distinguir opciones iguales
+            const grupo = opt.parentElement && opt.parentElement.tagName === 'OPTGROUP'
+                ? opt.parentElement.label : '';
+            li.dataset.group = grupo;
+            li.dataset.label = opt.textContent.trim();
+            if (grupo) {
+                const nombre = document.createElement('span');
+                nombre.textContent = opt.textContent.trim();
+                const nivel = document.createElement('span');
+                nivel.className = 'vs-group';
+                nivel.textContent = grupo;
+                li.textContent = '';
+                li.appendChild(nombre);
+                li.appendChild(nivel);
+            } else {
+                li.textContent = opt.textContent;
+            }
             
             // Si una opción viene seleccionada por defecto y NO está vacía
             if (opt.selected && opt.value !== "") {
                 li.classList.add('is-selected');
-                valueSpan.textContent = opt.textContent;
+                valueSpan.textContent = li.dataset.label || opt.textContent;
                 valueSpan.classList.remove('vs-placeholder'); // Quitar gris
             } else if (opt.selected && opt.value === "") {
                 // Si la opción seleccionada por defecto es la vacía, se marca visualmente
@@ -127,7 +145,9 @@ class VanillaSelect {
     filterOptions(query) {
         let hasVisible = false;
         this.options.forEach(li => {
-            if (li.textContent.toLowerCase().includes(query)) {
+            // Busca en el nombre y también en el grupo (nivel)
+            const texto = (li.textContent + ' ' + (li.dataset.group || '')).toLowerCase();
+            if (texto.includes(query)) {
                 li.classList.remove('is-hidden');
                 hasVisible = true;
             } else {
@@ -154,7 +174,7 @@ class VanillaSelect {
         li.classList.add('is-selected');
         
         const valueSpan = this.control.querySelector('.vs-value');
-        valueSpan.textContent = li.textContent;
+        valueSpan.textContent = li.dataset.label || li.textContent;
 
         // CAMBIO 3: Si el valor es vacío (ej. "Todos"), vuelve a ponerse gris. Si no, se quita el gris.
         if (li.dataset.value === "") {
